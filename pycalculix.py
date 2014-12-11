@@ -35,8 +35,8 @@ Future Goals:
 __author__ = "Justin Black"
 __copyright__ = "Copyright 2014, Justin Black"
 __credits__ = ["Justin Black"]
-__license__ = "GPL"
-__version__ = "1.0"
+__license__ = "GPL V2"
+__version__ = "0.9"
 __maintainer__ = "Justin Black"
 __email__ = "justin.a.black[incert~at~sine]gmail.com"
 __status = "Production"
@@ -753,49 +753,33 @@ class Area(Idobj):
         else:
             return False
 
-# this class is used to store the id numbers
-class IDMaker():
-    def __init__(s):
-        s.ids=()
-    def get_id(s):
-        # finds the next sequential id that isn't taken
-        minid = 0
-        if len(s.ids) == 0:
-            s.ids = (minid,)+s.ids
-            return minid
-        else:
-            mymin = min(s.ids)
-            mymax = max(s.ids)+1
-            for i in range(mymin, mymax):
-                if i not in s.ids:
-                    s.ids = (i,)+s.ids
-                    return i
-            else:
-                # I execute if we don't break out of the for loop
-                s.ids = (mymax,)+s.ids
-                return mymax
-    def remove(s, idnum):
-        # free the id and update the tuple of ids
-        tmp = list(s.ids)
-        tmp.remove(idnum)
-        s.ids = tuple(tmp)
-
 # this class is used for lists of nodes, lines, areas, parts, etc
 class Item_List(list):
     def __init__(s):
-        list.__init__([])
-        s.idmaker = IDMaker()
+        super().__init__() # these lists start empty
+
+    def get_ids(s):
+        # returns list of ids
+        return [a.id for a in s]
+
+    def get_next_id(s):
+        # returns the next id to use
+        ids = s.get_ids()
+        minid = 0
+        if len(ids) == 0:
+            return minid    # list is empty so return the minid number
+        else:
+            ids = sorted(ids)
+            maxid = ids[-1]
+            unused = list(set(list(range(minid, maxid+2))) - set(ids))
+            return unused[0]    # return first available id number
+
     def append(s, item):
         # add item to the list and set it's id
-        idnum = s.idmaker.get_id()
+        idnum = s.get_next_id()
         item.set_id(idnum)
-        index = len(s)
-        s.insert(index, item)
+        super().append(item)
         return item
-    def free_id(s, item):
-        # frees an item's ID before removing it
-        idnum = item.id
-        s.idmaker.remove(idnum)        
 
 class ID_List(list):
     def __init__(s):
@@ -1114,7 +1098,7 @@ class Part(Idobj):
         # make the buffer
         area = s.p.areas.append( Area(s, []) )
         s.areas.append(area)
-        Idobj.__init__(s)                
+        Idobj.__init__(s)             
         s.left = None
         s.right = None
         s.top = None
@@ -1342,8 +1326,8 @@ class Part(Idobj):
             p2_new = l2.arc_tang_intersection(ctrpt, magnitude)
             rempt = l1.pt(1)
             
-            # free point ID and make + store new points for the arc
-            s.p.points.free_id(rempt)
+            # delete rempoint and make + store new points for the arc
+            s.p.points.remove(rempt)
             [p1_new,b] = s.make_get_pt( p1_new.x, p1_new.y )
             [ctrpt,b] = s.make_get_pt( ctrpt.x, ctrpt.y )
             [p2_new,b] = s.make_get_pt( p2_new.x, p2_new.y )
@@ -3510,7 +3494,6 @@ class FeaModel():
 
         # read in the calculix mesh
         s.read_inp(fname)
-
 
 class Matl(Idobj):
     # stores a material
