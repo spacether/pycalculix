@@ -54,7 +54,7 @@ for [x,y] in pts_ft_other:
     [L1,p1,p2] = b.draw_line_to(x, y)
     air_lines.append(L1)
 b.draw_line_to(0, 0)
-b.plot_geometry(proj_name+'_geom') # view the geometry, points, lines, and areas
+a.plot_geometry(proj_name+'_geom', b) # view the geometry, points, lines, and areas
 
 # set part material
 mat = a.MatlMaker('concrete')
@@ -66,7 +66,7 @@ a.set_eshape('quad', 2)
 a.set_etype(b, 'plstrain', thickness)
 b.get_item('L8').set_ediv(2)
 a.mesh(0.5, 'gmsh')               # mesh with 1.0 fineness, smaller is finer
-b.plot_elements(proj_name+'_elem')   # plot the part elements
+a.plot_elements(proj_name+'_elem', b)   # plot the part elements
 
 # set loads and constraints
 a.set_load('press', air_lines, press_atm)
@@ -74,7 +74,7 @@ a.set_fluid_press(water_lines, dens_water, grav, water_ht_m, press_atm)
 a.set_gravity(grav, b)
 a.set_constr('fix', b.bottom, 'x')
 a.set_constr('fix', b.bottom, 'y')
-b.plot_pressures(proj_name+'_press')
+a.plot_pressures(proj_name+'_press', b)
 
 '''
 a.set_time(2.0)

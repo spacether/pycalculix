@@ -173,6 +173,7 @@ class Point(Idobj):
     def __init__(s, x, y):
         s.x = x
         s.y = y
+        s.nodes= []
         Idobj.__init__(s)
     def get_name(s):
         # returns item name
@@ -632,10 +633,13 @@ class Area(Idobj):
         # initialtes the area
         s.p = p # parent part reference
         s.closed = False
+        s.lines = []
         s.update(line_list)
         Idobj.__init__(s)
         s.matl = None
         s.etype = None
+        s.nodes = []
+        s.element = []
 
     def set_etype(s, etype):
         s.etype = etype
@@ -820,7 +824,7 @@ class Component(Idobj):
     def __init__(s, item_list, ctype, cname=''):
         # stores components for application of pressure, displacement, etc
         # item list can be a list of points or lines
-        # ctype can be 'nall'=all nodes, 'n1'=element 1st order nodes
+        # ctype can be 'nodes'=all nodes, 'n1'=element 1st order nodes
         #       or 'faces' or 'elements' for elements
         s.items = item_list
         s.ctype = ctype
@@ -846,7 +850,7 @@ class Component(Idobj):
         res = []
         items_per_line = 6
         firstline = ''
-        if s.ctype in ['nodes', 'nall']:
+        if s.ctype == 'nodes':
             # node componenet
             firstline = '*NSET,NSET='+s.name
         elif s.ctype == 'elements':
@@ -881,7 +885,7 @@ class Component(Idobj):
         if s.ctype == 'n1':
             # write component of line element first order nodes
             res.append('seta '+s.name+' '+parent+' '+alist)                       
-        elif s.ctype == 'nall':
+        elif s.ctype == 'nodes':
             res.append('seta '+s.name+' '+parent+' '+alist)                       
             res.append('comp '+s.name+' do')                       
             # write component of all line element nodes
@@ -1106,6 +1110,9 @@ class Part(Idobj):
         s.file = None
         s.meshmult = 1
         s.loads = {}
+        s.nodes = []
+        s.elements= []
+        
     def get_item(s, item):
         # return item from part given string identifying item
         if item in ['left','right','top','bottom']:
@@ -1569,256 +1576,10 @@ class Part(Idobj):
         s.set_side('right',-1,'y')
         s.set_side('top',-1,'x')
         s.set_side('bottom',0,'x')
+        
     def set_matl(s, mat):
         # this sets the matl of the part
         s.matl = mat
-
-    def plot_pressures(s, fname='', display=True):
-        # plot the pressures on elements
-
-        pts = s.get_points()
-        radials = [p.x for p in pts]
-        axials = [p.y for p in pts]
-        
-        # plot all elements and store length, length determins min pressure arrow
-        if hasattr(s, 'elements'):
-            
-            # plotting elements
-            fig = plt.figure()
-            ax = fig.add_subplot(111,aspect='equal')
-
-            patches = []
-            face_len = []
-            for e in s.elements:
-                face_len.append( e.face[1].length() )
-                xycoords = e.get_corner_nodes()
-                polygon = Polygon(xycoords, closed=True)
-                patches.append(polygon)
-            p = PatchCollection(patches, edgecolors=_ecolor, facecolors=_fcolor)
-            ax.add_collection(p)
-                        
-            # average face length is min arrow length
-            face_len = sum(face_len)/len(face_len)            
-
-            # store pressures we'll want to plot
-            # this is a list of lists [face, pval]
-            plist = []
-            for load in s.p.loads[s.p.time]:
-                if load.ltype in  ['press','press_fluid']:
-                    plist += load.get_list()
-            pressures = [pval for [face,pval] in plist]
-
-            # check min and max bounds
-            pmin = min(pressures)
-            pmax = max(pressures)
-            mult = face_len/abs(pmin)    # mult to go from pressure to length
-            
-            # make tick list for later plot, and color map
-            tick_list = [pmin]  # default to plot one val
-            cmap = colors.ListedColormap(['b', 'b']) # default to plot one val
-            if pmax != pmin:
-                # we have a range of values we're plotting
-                tick_list = frange(pmin,pmax,(pmax-pmin)/8)
-                cmap = plt.cm.jet
-                        
-            # set color contours for arrows
-            cNorm  = colors.Normalize(vmin=pmin, vmax=pmax)
-            scalarMap = cmx.ScalarMappable(norm=cNorm,cmap=cmap)            
-            scalarMap._A = [] # need to set this for it to work
-            
-            # make arrows
-            for [face, pval] in plist:
-                [p1, unit] = face.get_mnorm()
-                pdelta = unit*(mult*abs(pval))
-                p2 = p1 + pdelta
-                
-                # assuming positive pressure, arrow points to face p2->p1
-                pstart = p2
-                delta = p1 - p2
-                if pval < 0:
-                    pstart = p1
-                    delta = p2 - p1                    
-                radials.append(p2.x)
-                axials.append(p2.y)
-
-                hw = face_len*0.2
-                hl = face_len*0.3
-                colorVal = scalarMap.to_rgba(pval)
-                plt.arrow(pstart.y,  #x1
-                          pstart.x,  # y1
-                          delta.y, # x2 - x1
-                          delta.x, # y2 - y1
-                          color=colorVal, head_width=hw, head_length=hl,
-                          length_includes_head=True)                
-                            
-            # set the horizontal and vertical axes
-            vert = max(radials) - min(radials)
-            horiz = max(axials) - min(axials)
-            vadder = (vert)/5
-            hadder = (horiz)/5    
-            (vmax,vmin) = (max(radials)+vadder, min(radials)-vadder)
-            (hmax,hmin) = (max(axials)+hadder, min(axials)-hadder)
-
-            # set units
-            [d_unit, p_unit, t_unit] = s.p.get_units('dist', 'stress', 'time')
-
-            # set plot axes
-            tstr = '%s pressures %s\nTime=%f%s' % (s.get_name(), p_unit, s.p.time,
-                                                 t_unit)
-            plt.title(tstr)
-            plt.xlabel('axial, y'+d_unit)
-            plt.ylabel('radial, x'+d_unit)
-
-            # set min and max vertical and axial limits
-            plt.xlim(hmin, hmax)
-            plt.ylim(vmin, vmax)            
-            
-            # set the colorbar
-            cbar = plt.colorbar(scalarMap, orientation='vertical', ticks=tick_list)
-            
-            if fname != '':
-                # save the image
-                fname += '.png'
-                if _dpi != None:
-                    plt.savefig(fname, dpi=_dpi, bbox_inches='tight')
-                else:
-                    plt.savefig(fname, bbox_inches='tight')
-            
-            if display:
-                plt.tight_layout()
-                plt.show()        
-
-            # remove all figures
-            plt.close()
-
-        else:
-            # part has not been meshed yet
-            res = 'Part: %s does not have any elements! ' % (s)
-            res += 'Try meshing it with model.mesh(1)' 
-            print(res)
-
-        
-    def plot_geometry(s, fname='', display=True):
-        # this method plots the part
-        # check out: http://nickcharlton.net/posts/drawing-animating-shapes-matplotlib.html
-        
-        pts = s.get_points()
-        nax=[pt.y for pt in pts]
-        nrad=[pt.x for pt in pts]
-        n_id=[pt.get_name() for pt in pts]
-        
-        # need to go through lines making list of points, don't have to be
-        # sequential
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        
-        #fig, ax = plt.subplots()
-        ax.scatter(nax, nrad)
-        
-        # plot points
-        for i, txt in enumerate(n_id):
-            ax.annotate(txt, (nax[i],nrad[i]))
-        
-        #plot lines
-        lines = s.get_lines()
-        for l in lines:
-            l.plot(ax)
-        
-        #plot area ids
-        for a in s.areas:
-            if a.closed == True:
-                pax = a.centroid.y
-                prad = a.centroid.x
-                ax.annotate(a.get_name(), (pax,prad))
-
-        # set the horizontal and vertical axes
-        vert = max(nrad) - min(nrad)
-        horiz = max(nax) - min(nax)
-        vadder = (vert)/5
-        hadder = (horiz)/5
-        (vmax,vmin) = (max(nrad)+vadder, min(nrad)-vadder)
-        (hmax,hmin) = (max(nax)+hadder, min(nax)-hadder)
-        plt.xlim(hmin, hmax)
-        plt.ylim(vmin, vmax)
-
-        # set units
-        [d_unit] = s.p.get_units('dist')            
-        
-        # show plot
-        plt.title(s.get_name()+' geometry')
-        plt.xlabel('axial, y'+d_unit)
-        plt.ylabel('radial, x'+d_unit)
-        ax.set_aspect('equal')
-
-        if fname != '':
-            # save the image
-            fname += '.png'
-            if _dpi != None:
-                plt.savefig(fname, dpi=_dpi, bbox_inches='tight')
-            else:
-                plt.savefig(fname, bbox_inches='tight')
-        
-        if display:
-            plt.tight_layout()
-            plt.show()
-        
-        # remove all figures
-        plt.close()
-
-    def plot_elements(s, fname='', display=True):
-        # plots the elements in the part
-
-        pts = s.get_points()
-        radials = [p.x for p in pts]
-        axials = [p.y for p in pts]
-        vadder = (max(radials) - min(radials))/5
-        hadder = (max(axials) - min(axials))/5
-
-        (vmax,vmin) = (max(radials)+vadder, min(radials)-vadder)
-        (hmax,hmin) = (max(axials)+hadder, min(axials)-hadder)
-        
-        if hasattr(s, 'elements'):
-            # plotting elements
-            fig, ax = plt.subplots()            
-            patches = []
-            for e in s.elements:
-                xycoords = e.get_corner_nodes()
-                polygon = Polygon(xycoords, closed=True)
-                patches.append(polygon)
-            p = PatchCollection(patches, facecolors=_fcolor, edgecolors=_ecolor)
-            ax.add_collection(p)
-            
-            # set units
-            [d_unit] = s.p.get_units('dist')            
-            
-            plt.title(s.get_name()+' elements')
-            plt.xlabel('axial, y'+d_unit)
-            plt.ylabel('radial, x'+d_unit)
-            plt.axis('scaled')
-            plt.xlim(hmin, hmax)
-            plt.ylim(vmin, vmax)
-            
-            if fname != '':
-                # save the image
-                fname += '.png'
-                if _dpi != None:
-                    plt.savefig(fname, dpi=_dpi, bbox_inches='tight')
-                else:
-                    plt.savefig(fname, bbox_inches='tight')
-            
-            if display:
-                plt.tight_layout()
-                plt.show()        
-
-            # remove all figures
-            plt.close()
-
-        else:
-            # part has not been meshed yet
-            res = 'Part: %s does not have any elements! ' % (s)
-            res += 'Try meshing it with model.mesh(1)' 
-            print(res)
             
     def __str__(s):
         # prints a string representation of the part
@@ -2181,7 +1942,7 @@ class Results_File(object):
         if isinstance(item, Part) or isinstance(item, Part):
             nodes = item.nodes
         elif isinstance(item, Point) or isinstance(item, Line) or isinstance(item, Arc):
-            nodes = item.nall
+            nodes = item.nodes
 
         nodes = [n.id for n in nodes]
         for n in nodes:
@@ -2518,7 +2279,7 @@ class Model(Idobj):
     def get_ntxt(s, nodes):
         # returns text defining all nodes
         res = []
-        res.append('*NODE, NSET=Nall')
+        res.append('*NODE, NSET=nodes')
         for n in nodes:
             res.append(n.ccx())
         return res
@@ -2630,7 +2391,7 @@ class Model(Idobj):
             
             '''
             # set the output files for writing
-            inp.append('*NODE PRINT,NSET=Nall')
+            inp.append('*NODE PRINT,NSET=nodes')
             inp.append('U')
             inp.append('*EL PRINT,ELSET=Eall')
             inp.append('S')    
@@ -2759,6 +2520,301 @@ class FeaModel():
         m = Model(s, parts, mtype)
         s.models.append(m)
         return m    
+
+    def plot_elements(s, fname='', items=None, display=True):
+        # plots the elements in the part
+
+        nodes = []
+        elements = []
+        if items == None:
+            # use selected set
+            pass
+        else:
+            items = s.listify(items)
+            for i in items:
+                nodes += i.nodes
+                elements += i.elements
+        
+        if len(elements) > 0:
+                
+            radials = [n.x for n in nodes]
+            axials = [n.y for n in nodes]
+            vadder = (max(radials) - min(radials))/5
+            hadder = (max(axials) - min(axials))/5
+    
+            (vmax,vmin) = (max(radials)+vadder, min(radials)-vadder)
+            (hmax,hmin) = (max(axials)+hadder, min(axials)-hadder)
+        
+            # plotting elements
+            fig, ax = plt.subplots()            
+            patches = []
+            for e in elements:
+                xycoords = e.get_corner_nodes()
+                polygon = Polygon(xycoords, closed=True)
+                patches.append(polygon)
+            p = PatchCollection(patches, facecolors=_fcolor, edgecolors=_ecolor)
+            ax.add_collection(p)
+            
+            # set units
+            [d_unit] = s.get_units('dist')            
+            
+            iname = s.get_cname(items)
+            plt.title(iname+' elements')
+            plt.xlabel('axial, y'+d_unit)
+            plt.ylabel('radial, x'+d_unit)
+            plt.axis('scaled')
+            plt.xlim(hmin, hmax)
+            plt.ylim(vmin, vmax)
+            
+            if fname != '':
+                # save the image
+                fname += '.png'
+                if _dpi != None:
+                    plt.savefig(fname, dpi=_dpi, bbox_inches='tight')
+                else:
+                    plt.savefig(fname, bbox_inches='tight')
+            
+            if display:
+                plt.tight_layout()
+                plt.show()        
+
+            # remove all figures
+            plt.close()
+
+        else:
+            # part has not been meshed yet
+            res = 'No elements exist! ' % (s)
+            res += 'Try meshing your parts. ' 
+            print(res)
+
+    def plot_pressures(s, fname='', items = None, display=True):
+        # plot the pressures on elements
+
+        nodes = []
+        elements = []
+        if items == None:
+            # use selected set
+            pass
+        else:
+            items = s.listify(items)
+            for i in items:
+                nodes += i.nodes
+                elements += i.elements
+        
+        # plot all elements and store length, length determins min pressure arrow
+        if len(elements) > 0:
+            
+            # get axials and radials for bounds
+            radials = [p.x for p in nodes]
+            axials = [p.y for p in nodes]
+            
+            # plotting elements
+            fig = plt.figure()
+            ax = fig.add_subplot(111,aspect='equal')
+
+            patches = []
+            face_len = []
+            for e in elements:
+                face_len.append( e.face[1].length() )
+                xycoords = e.get_corner_nodes()
+                polygon = Polygon(xycoords, closed=True)
+                patches.append(polygon)
+            p = PatchCollection(patches, edgecolors=_ecolor, facecolors=_fcolor)
+            ax.add_collection(p)
+                        
+            # average face length is min arrow length
+            face_len = sum(face_len)/len(face_len)            
+
+            # store pressures we'll want to plot
+            # this is a list of lists [face, pval]
+            plist = []
+            for load in s.loads[s.time]:
+                if load.ltype in  ['press','press_fluid']:
+                    plist += load.get_list()
+            pressures = [pval for [face,pval] in plist]
+
+            # check min and max bounds
+            pmin = min(pressures)
+            pmax = max(pressures)
+            mult = face_len/abs(pmin)    # mult to go from pressure to length
+            
+            # make tick list for later plot, and color map
+            tick_list = [pmin]  # default to plot one val
+            cmap = colors.ListedColormap(['b', 'b']) # default to plot one val
+            if pmax != pmin:
+                # we have a range of values we're plotting
+                tick_list = frange(pmin,pmax,(pmax-pmin)/8)
+                cmap = plt.cm.jet
+                        
+            # set color contours for arrows
+            cNorm  = colors.Normalize(vmin=pmin, vmax=pmax)
+            scalarMap = cmx.ScalarMappable(norm=cNorm,cmap=cmap)            
+            scalarMap._A = [] # need to set this for it to work
+            
+            # make arrows
+            for [face, pval] in plist:
+                [p1, unit] = face.get_mnorm()
+                pdelta = unit*(mult*abs(pval))
+                p2 = p1 + pdelta
+                
+                # assuming positive pressure, arrow points to face p2->p1
+                pstart = p2
+                delta = p1 - p2
+                if pval < 0:
+                    pstart = p1
+                    delta = p2 - p1                    
+                radials.append(p2.x)
+                axials.append(p2.y)
+
+                hw = face_len*0.2
+                hl = face_len*0.3
+                colorVal = scalarMap.to_rgba(pval)
+                plt.arrow(pstart.y,  #x1
+                          pstart.x,  # y1
+                          delta.y, # x2 - x1
+                          delta.x, # y2 - y1
+                          color=colorVal, head_width=hw, head_length=hl,
+                          length_includes_head=True)                
+                            
+            # set the horizontal and vertical axes
+            vert = max(radials) - min(radials)
+            horiz = max(axials) - min(axials)
+            vadder = (vert)/5
+            hadder = (horiz)/5    
+            (vmax,vmin) = (max(radials)+vadder, min(radials)-vadder)
+            (hmax,hmin) = (max(axials)+hadder, min(axials)-hadder)
+
+            # set units
+            [d_unit, p_unit, t_unit] = s.get_units('dist', 'stress', 'time')
+
+            # set plot axes
+            iname = s.get_cname(items)
+            tstr = '%s pressures %s\nTime=%f%s' % (iname, p_unit, s.time,
+                                                 t_unit)
+            plt.title(tstr)
+            plt.xlabel('axial, y'+d_unit)
+            plt.ylabel('radial, x'+d_unit)
+
+            # set min and max vertical and axial limits
+            plt.xlim(hmin, hmax)
+            plt.ylim(vmin, vmax)            
+            
+            # set the colorbar
+            cbar = plt.colorbar(scalarMap, orientation='vertical', ticks=tick_list)
+            
+            if fname != '':
+                # save the image
+                fname += '.png'
+                if _dpi != None:
+                    plt.savefig(fname, dpi=_dpi, bbox_inches='tight')
+                else:
+                    plt.savefig(fname, bbox_inches='tight')
+            
+            if display:
+                plt.tight_layout()
+                plt.show()        
+
+            # remove all figures
+            plt.close()
+
+        else:
+            # part has not been meshed yet
+            res = 'Part: %s does not have any elements! ' % (s)
+            res += 'Try meshing it with model.mesh(1)' 
+            print(res)
+
+    def plot_geometry(s, fname='', items = None, display=True):
+        # this method plots the part
+        # check out: http://nickcharlton.net/posts/drawing-animating-shapes-matplotlib.html
+
+        points = []
+        lines = []
+        areas = []
+        if items == None:
+            # use selected set
+            pass
+        else:
+            items = s.listify(items)
+            if isinstance(items[0], Part):
+                for i in items:
+                    points += i.get_points()
+                    lines += i.get_lines()
+                    areas += i.areas
+            elif isinstance(items[0], Area):
+                for i in items:
+                    points += i.get_points()
+                    lines += i.lines
+                    areas += i
+            elif isinstance(items[0], Line):
+                for i in items:
+                    points += i._points_
+                    lines += i                
+            elif isinstance(items[0], Point):
+                for i in items:
+                    points += i
+        
+        nax=[pt.y for pt in points]
+        nrad=[pt.x for pt in points]
+        n_id=[pt.get_name() for pt in points]
+        
+        # need to go through lines making list of points, don't have to be
+        # sequential
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        
+        #fig, ax = plt.subplots()
+        ax.scatter(nax, nrad)
+        
+        # plot points
+        for i, txt in enumerate(n_id):
+            ax.annotate(txt, (nax[i],nrad[i]))
+        
+        #plot lines
+        for l in lines:
+            l.plot(ax)
+        
+        #plot area ids
+        for a in s.areas:
+            if a.closed == True:
+                pax = a.centroid.y
+                prad = a.centroid.x
+                ax.annotate(a.get_name(), (pax,prad))
+
+        # set the horizontal and vertical axes
+        vert = max(nrad) - min(nrad)
+        horiz = max(nax) - min(nax)
+        vadder = (vert)/5
+        hadder = (horiz)/5
+        (vmax,vmin) = (max(nrad)+vadder, min(nrad)-vadder)
+        (hmax,hmin) = (max(nax)+hadder, min(nax)-hadder)
+        plt.xlim(hmin, hmax)
+        plt.ylim(vmin, vmax)
+
+        # set units
+        [d_unit] = s.get_units('dist')            
+        
+        # show plot
+        iname = s.get_cname(items)
+        plt.title(iname+' geometry')
+        plt.xlabel('axial, y'+d_unit)
+        plt.ylabel('radial, x'+d_unit)
+        ax.set_aspect('equal')
+
+        if fname != '':
+            # save the image
+            fname += '.png'
+            if _dpi != None:
+                plt.savefig(fname, dpi=_dpi, bbox_inches='tight')
+            else:
+                plt.savefig(fname, bbox_inches='tight')
+        
+        if display:
+            plt.tight_layout()
+            plt.show()
+        
+        # remove all figures
+        plt.close()
     
     def listify(s, items):
         # converts item into a list if it's not one
@@ -2872,7 +2928,7 @@ class FeaModel():
             items = s.get_item(str_items)
         items = s.listify(items)
         
-        ctype = 'nall'
+        ctype = 'nodes'
         if ltype == 'press':
             ctype = 'faces'
         cname  = s.get_cname(items)
@@ -2892,7 +2948,7 @@ class FeaModel():
         # this sets constraints on lines
         # ltype = 'fix' or 'displ'
         # ldir = 'x' or 'y' or 'z'
-        ctype = 'nall'
+        ctype = 'nodes'
 
         # convert string into item(s)
         if isinstance(line_list, str):
@@ -3327,20 +3383,20 @@ class FeaModel():
                     ndist.append( {'dist':dist,'node':n} )
                 # sort the list by dist, sorts low to high
                 ndist = sorted(ndist, key=lambda k: k['dist'])
-                pt.nall = ndist[0]['node']
-                print('Point %s = node %s' % (pt, pt.nall))
+                pt.nodes = [ndist[0]['node']]
+                #print('Point %s = node %s' % (pt, pt.nodes))
             
-            # assign the nall and n1 and faces to lines
+            # assign the nodes and n1 and faces to lines
             lines = part.get_lines()
             for line in lines:
                 lname = line.get_name()
-                nall = sets['N'][lname]
-                n1 = [n for n in nall if n.order == 1]
+                nodes = sets['N'][lname]
+                n1 = [n for n in nodes if n.order == 1]
                 faces = []
                 for face in external:
-                    if set(face.nodes).issubset(set(nall)):
+                    if set(face.nodes).issubset(set(nodes)):
                         faces.append(face)
-                line.nall = nall
+                line.nodes = nodes
                 line.n1 = n1
                 line.faces = faces
                 
