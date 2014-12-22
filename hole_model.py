@@ -25,11 +25,11 @@ b.draw_line_ax(adist)
 b.draw_line_rad(-length/4.0)
 b.draw_line_rad(-length/4.0)
 b.draw_line_ax(-(adist-rad))
-b.plot_geometry(proj_name+'_prechunk') # view the geometry
+a.plot_geometry(proj_name+'_prechunk') # view the geometry
 
 # Cut the part into easier to mesh areas
 b.chunk() # cut the part into area pieces so CGX can mesh it
-b.plot_geometry(proj_name+'_chunked') # view the geometry
+a.plot_geometry(proj_name+'_chunked') # view the geometry
 
 # set loads and constraints
 a.set_load('press',b.top,-1000)
@@ -44,10 +44,11 @@ a.set_matl(mat, b)
 # set the element type and mesh database
 a.set_eshape('quad', 2)
 a.set_etype(b, 'plstress', 0.1)
-b.get_item('L0').set_ediv(20) # set element divisions
+a.get_item('L0').set_ediv(20) # set element divisions
 a.mesh(1.0, 'gmsh') # mesh 1.0 fineness, smaller is finer
-b.plot_elements(proj_name+'_elem')   # plot part elements
-b.plot_pressures(proj_name+'_press')
+a.plot_elements(proj_name+'_elem')   # plot part elements
+a.plot_pressures(proj_name+'_press')
+a.plot_constraints(proj_name+'_constr')
 
 # make and solve the model
 mod = a.ModelMaker(b, 'struct')

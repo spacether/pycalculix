@@ -80,7 +80,6 @@ if platform.system() == 'Windows':
 #accuracy for small numbers in math below
 _acc = .00001
 
-
 _ccx = r'C:\Program Files (x86)\bConverged\CalculiX\ccx\ccx.exe'
 _cgx = r'C:\Program Files (x86)\bConverged\CalculiX\cgx\cgx.exe'
 _gmsh = r'C:\Program Files (x86)\gmsh-2.8.5\gmsh.exe'
@@ -167,50 +166,68 @@ class Idobj():
         s.id = -1
     def set_id(s, id):
         s.id = id    
+    def __hash__(s):
+        # this allows me to make sets of this item
+        return s.id
+
     
 class Point(Idobj):
     # this stores a point or vector
-    def __init__(s, x, y):
+    def __init__(s, x, y, z=0):
         s.x = x
         s.y = y
+        s.z = z
         s.nodes= []
         Idobj.__init__(s)
+        
     def get_name(s):
         # returns item name
         return 'P'+str(s.id)
+    
     def __eq__(s, other):
         if s.x == other.x and s.y == other.y:
             return True
         return False
+    
+    def __hash__(s):
+        return Idobj.__hash__(s)
+    
     def __add__(s, other):
         # this doesn't need to return point with an ID
-        return Point(s.x+other.x,s.y+other.y)
+        return Point(s.x+other.x,s.y+other.y, s.z+other.z)
+
     def __sub__(s, other):
         # this doesn't need to return point with an ID
-        return Point(s.x-other.x,s.y-other.y)
+        return Point(s.x-other.x,s.y-other.y, s.z-other.z)
+
     def __mul__(s, factor):
         # this doesn't need to return point with an ID
-        return Point(s.x*factor, s.y*factor)
+        return Point(s.x*factor, s.y*factor, s.z*factor)
+
     def length(s):
         # returns distance from this point to 0,0
         res = (s.x**2 + s.y**2)**0.5
         return res
+
     def make_unit(s):
         # converts the current vector into a unit vector
         lenval  = s.length()
         s.x = s.x*1/lenval
         s.y = s.y*1/lenval
+
     def ang_rad(s):
         # returns angle, assume point is vector from 0,0
         vert = s.x
         horiz = s.y
         radians = atan2(vert, horiz)
         return radians
+
     def ang_deg(s):
         # returns angle, assume point is vector from 0,0
         radians = s.ang_rad()
         deg = radians * 180.0 / pi
         return deg
+
     def rot_ccw_deg(s, ang):
         # this rotates the current vector by ccw degrees about 0,0
         ang = radians(ang)
@@ -219,6 +236,7 @@ class Point(Idobj):
         ax = round(ax, 5)
         rad = round(rad, 5)
         (s.x, s.y) = (rad, ax)
+
     def ang_bet_rad(s, other):
         # returns the angle between two vectors
         # self is the first vector
@@ -226,6 +244,7 @@ class Point(Idobj):
         avect = Point(s.y*other.x - s.x*other.y, s.y*other.y + s.x*other.x)
         ang = avect.ang_rad()
         return ang
+
     def ang_bet_deg(s, other):
         # returns the angle between two vectors
         # self is the first vector
@@ -236,6 +255,7 @@ class Point(Idobj):
         ang = avect.ang_deg()
         #print('a1=%f, a2=%f, delta=%f' % (ang1, ang2, ang))
         return ang
+
     def __str__(s):
         val = 'Point, id %i, (x,y)=(%f,%f)' % (s.id, s.x,s.y)
         return val
@@ -246,6 +266,8 @@ class Line(Idobj):
         s._points_ = [p1, p2]
         s.sign = sign
         s.midpt = s.mid()
+        s.nodes = []
+        s.faces = []
         Idobj.__init__(s)
     def get_name(s):
         # returns line name
@@ -425,6 +447,8 @@ class Arc(Idobj):
         s.radius = (p1-actr).length()
         s.concavity = s.get_concavity()
         s.midpt = s.mid()
+        s.nodes = []
+        s.faces = []
         Idobj.__init__(s)        
     def get_name(s):
         # returns line name
@@ -639,7 +663,7 @@ class Area(Idobj):
         s.matl = None
         s.etype = None
         s.nodes = []
-        s.element = []
+        s.elements = []
 
     def set_etype(s, etype):
         s.etype = etype
@@ -969,13 +993,18 @@ class Load(Idobj):
         Idobj.__init__(s)
 
     def get_list(s):
-        # this returns a list of [item, val]
+        # this returns a list of [item, val] for plotting
         res = []
         if s.ltype == 'press':
             # pressure
             faces = s.comp.get_children()
             for f in faces:
                 res.append([f,s.val])
+        elif s.ltype in ['ux','uy','uz']:
+            nodes = s.comp.get_children()
+            d = {s.ltype:s.val}            
+            for n in nodes:
+                res.append( [n,d] )
         return res
         
     def ccx(s):
@@ -1208,7 +1237,7 @@ class Part(Idobj):
     
     def make_get_pt(s, x, y):
         # returns a point if it exists or a new point if it doesn't
-        # return (point, alread_existed)
+        # return (point, already_existed)
 
         pnew = Point(x,y)
         pts = s.get_points()
@@ -1267,6 +1296,7 @@ class Part(Idobj):
             s.set_side('right',-1,'y')
             s.set_side('top',-1,'x')
             s.set_side('bottom',0,'x')
+            s.p.select(s)
 
         return [line, pold, s.cursor]
 
@@ -1333,7 +1363,7 @@ class Part(Idobj):
             p2_new = l2.arc_tang_intersection(ctrpt, magnitude)
             rempt = l1.pt(1)
             
-            # delete rempoint and make + store new points for the arc
+            # del old pt, store new points for the arc
             s.p.points.remove(rempt)
             [p1_new,b] = s.make_get_pt( p1_new.x, p1_new.y )
             [ctrpt,b] = s.make_get_pt( ctrpt.x, ctrpt.y )
@@ -1351,10 +1381,8 @@ class Part(Idobj):
                 if l1 in area.lines:
                     area.line_insert(l1, arc)
                     print ('Arc inserted into area %i' % (area.id,))
-            
-            # remove point we're not using anymore
-            s.p.points.remove(rempt)
-            
+            s.p.sel_children()
+                        
         else:
             print ('Cannot fillet! Lines must touch!')
         # reset the cursor to where it should be
@@ -1576,6 +1604,7 @@ class Part(Idobj):
         s.set_side('right',-1,'y')
         s.set_side('top',-1,'x')
         s.set_side('bottom',0,'x')
+        s.p.select(s)
         
     def set_matl(s, mat):
         # this sets the matl of the part
@@ -1594,11 +1623,19 @@ class Node(object):
         s.y = y
         s.z = z
         s.order = 1
+        s.elements = set()
+
     def set_order(s, val):
         # 1 or 2
         s.order = val
+    
+    def add_element(s, e):
+        # adds an element to the set of elements
+        s.elements.add(e)
+
     def __hash__(s):
         return s.id
+
     def __eq__(s, other):
         if isinstance(other, Node):
             return s.id == other.id
@@ -1608,6 +1645,12 @@ class Node(object):
         # writes out line defining node for ccx inp writing
         val = '%i, %f, %f, %f' % (s.id, s.x, s.y, s.z)
         return val
+    
+    def get_name(s):
+        # returns name
+        name = 'N%i' % (s.id)
+        return name
+
     def __str__(s):
         val = 'Node, id %i, (x,y)=(%f,%f)' % (s.id, s.x,s.y)
         return val
@@ -1621,12 +1664,29 @@ class Face(object):
         s.nodes = [n1,n2]
         s.nmid = None
         s.ext = False   # stores if face is external
+
+    def __hash__(s):
+        # allows us to make sets of faces
+        # each element can have up to four faces
+        # so to have unique hashes, we need n*4 hashes available
+        '''
+        n*4 --> 0
+        n*4+1 --> 1
+        n*4+2 --> 2
+        n*4+3 --> 3
+        n*4+4 = (n+1)*4
+        '''
+        # we assume the largest number of faces is 4, face id is 1-4, need 0-3
+        hval = s.element.id*4+(s.id-1)
+        return hval
+
     def length(s):
         # return the length of the face
         p0 = Point(s.nodes[0].x,  s.nodes[0].y)
         p1 = Point(s.nodes[1].x,  s.nodes[1].y)
         vect = p1 - p0
         return vect.length()
+
     def get_mnorm(s):
         # return midpt, normal
         p0 = Point(s.nodes[0].x,  s.nodes[0].y)
@@ -1637,11 +1697,23 @@ class Face(object):
         norm.rot_ccw_deg(90)
         norm.make_unit()
         return [midpt, norm]
+
     def set_ext(s):
         # set the face to be external
         s.ext = True
+
+    def get_tris(s):
+        # this returns a triangle for plotting of face results
+        # triangles must be closed in a CCW direction
+        res = []
+        if s.nmid != None:
+            # make a triangle from the face nodes
+            res.append( [s.nodes[0].id, s.nmid.id, s.nodes[1].id] )
+        return res
+
     def set_nmid(s, nmid):
         s.nmid = nmid
+
     def __eq__(s, other):
         # check equality to other faces
         my_nodes = set([s.nodes[0].id,s.nodes[1].id])
@@ -1650,6 +1722,7 @@ class Face(object):
             return True
         else:
             return False
+
     def __str__(s):
         n1 = s.nodes[0].id
         n2 = s.nodes[1].id
@@ -1666,16 +1739,16 @@ class Element(object):
         s.node = {}
         s.face = {}
 
-        # figure out the number of faces
+        # calculate the number of faces
         fnum = len(nlist)
         if fnum > 4:
             fnum = int(fnum/2)
 
         # store nodes
         for (ind, node) in enumerate(nlist):
-            s.node[ind+1] = node
             if ind >= fnum:
                 node.set_order(2)
+            s.node[ind+1] = node
         
         # store faces
         n = nlist[0:fnum]+[nlist[0]]
@@ -1683,7 +1756,24 @@ class Element(object):
             n1 = n[i]
             n2 = n[i+1]
             f = Face(i+1, n1, n2, s)
+            if len(nlist) > fnum:
+                # we have second order nodes
+                f.set_nmid( s.node[i+1+fnum] )
             s.face[i+1] = f
+        
+        # set the element center
+        s.center = s.calc_center()
+    
+    def calc_center(s):
+        # calulates the element centroid
+        # [[ax1, rad1], [ax2, rad2] etc
+        pts = s.get_corner_nodes()
+        axials = [p[0] for p in pts]
+        radials = [p[1] for p in pts]
+        ax = sum(axials)/len(axials)
+        rad = sum(radials)/len(radials)
+        return Point(rad, ax)
+            
     def get_tris(s):
         # this returns the triangles for plotting of results
         # triangles must be closed in a CCW direction
@@ -1757,6 +1847,15 @@ class Element(object):
         val = str(s.id)+', '+', '.join(nids)
         return val
 
+    def get_name(s):
+        # returns name
+        name = 'E%i' % (s.id)
+        return name
+    
+    def __str__(s):
+        # returns element name string
+        return ('E%i' % (s.id))
+
 class Results_File(object):
     def __init__(s, solved_model, fname):
         # this stores a results file in python
@@ -1770,23 +1869,22 @@ class Results_File(object):
     def nplot(s, field, fname='', display=True, levels=21, gradient=False, gmult=1.0):
         # plot the results in the given field for the selected object
 
-        # make a list of the selected nodes and elements
-        sel = {'nodes':set( [] ),'elements':[]}
-        selected = s.p.p.selected
-
-        # store selected nodes and elements
-        for item in selected:
-            if isinstance(item, Element):
-                sel['elements'] += [item]
-                sel['nodes'].update( item.nodes() )
-            elif isinstance(item, Part) or isinstance(item, Area):
-                sel['elements'] += item.elements
-                sel['nodes'].update(item.nodes)
+        # store the selected nodes and elements
+        sel = {}
+        sel['nodes'] = s.p.p.sel['nodes']
+        sel['elements'] = s.p.p.sel['elements']
+        sel['faces'] = s.p.p.sel['faces']
         
         # sort nodes low to high so index is correct
-        # WITH SUBSET I'LL NEED TO REWRITE THIS WITH A ID TO INDEX MAPPING
+        # we have index to id below so showing subsets works
         sel['nodes'] = list(sel['nodes'])
         sel['nodes'] = sorted(sel['nodes'], key=lambda k: k.id)
+        
+        '''
+        faceplot = False
+        if len(sel['elements']) == 0 and len(sel['faces']) > 0
+        NEED TO ADD CODE HERE TO MAKE INTERPOLATION TRIANGLES FOR ELEMENT FACES
+        '''
         
         # store results at nodes
         axials = []
@@ -1803,7 +1901,12 @@ class Results_File(object):
 
         # make a list of triangles, given by indices, looping anticlockwise
         triangles = []
-        for e in sel['elements']:
+        mylist = []
+        if len(sel['elements']) > 0:
+            mylist = sel['elements']
+        elif len(sel['faces']) > 0:
+            mylist = sel['faces']
+        for e in mylist:
             tris = e.get_tris()     # list of triangle nodes defined by node id
             for t in tris:
                 for ind, nid in enumerate(t):
@@ -2287,14 +2390,21 @@ class Model(Idobj):
         # returns text defining all elements
         res = []
         types = set([e.etype for e in elements])
+        eall_written = False
+        es = []
         for t in types:
             tname = t
             if len(types) == 1:
                 tname = 'Eall'
+                eall_written = True
             res.append('*ELEMENT, TYPE='+t+', ELSET='+tname)            
             eset = [e for e in elements if e.etype == t]
+            es += eset
             for e in eset:
                 res.append(e.ccx())
+        if eall_written == False:
+            tmp = s.get_eset('EALL', es)
+            res += tmp
         return res
     def get_ctxt(s, components):
         # returns text defining compnents of nodes or elements        
@@ -2321,7 +2431,7 @@ class Model(Idobj):
         # exports a calculix file ccx input file
         inp = []
         
-        # store what results we'll be outputting for eac type of analysis
+        # store what results we'll be outputting for each type of analysis
         out_el = {}
         out_el['struct'] = 'E,S' # strain, stress
         out_node = {}
@@ -2385,7 +2495,11 @@ class Model(Idobj):
                     inp.append(out_el[s.mtype])
                     inp.append('*NODE FILE')
                     inp.append(out_node[s.mtype])
-            
+        
+                    # make output dat file for integration point results 
+                    inp.append('*EL PRINT,ELSET=EALL')
+                    inp.append('S')
+
                     # end step
                     inp.append('*END STEP')
             
@@ -2416,7 +2530,7 @@ class Model(Idobj):
             s.p.select(list(s.parts))
 
 class FeaModel():
-    def __init__(s, fname):
+    def __init__(s, fname, ccx=None, cgx=None, gmsh=None):
         s.fname = fname
         s.points = Item_List()
         s.lines = Item_List()
@@ -2429,15 +2543,105 @@ class FeaModel():
         s.nodes = ID_List()
         s.elements = ID_List()
         s.faces = []
-        s.selected = None   # this selected set is what we'll plot
+        s.sel = {}   # this selected set is what we'll plot
         s.time = 1.0 # 0 is model set-up, 1 is first step, etc
         s.units = {}
-    def select(s, items):
+        s.select()
+        
+        # fix the paths to the needed programs, ccx, cgx, and gmsh
+        if ccx != None:
+            _ccx = ccx
+        if cgx != None:
+            _cgx = cgx
+        if gmsh != None:
+            _gmsh = gmsh
+        
+    def select(s, items = 'all', byfaces=True):
         # set the selected item to the passed item or list of elements
-        if isinstance(items, list):
-            s.selected = items
-        else:
-            s.selected = [items]
+        # if byfaces is set to true, only elements with faces selected will be
+        # shown
+
+        allsel = False
+        if isinstance(items, str):
+            if items == 'all':
+                allsel = True
+                s.sel['nodes'] = s.nodes
+                s.sel['elements'] = s.elements
+                s.sel['points'] = s.points
+                s.sel['lines'] = s.lines
+                s.sel['areas'] = s.areas
+                print('Selected all')                
+
+        items = s.listify(items)
+        s.sel['selected'] = items
+
+        if allsel == False:
+            # select children
+            mystr = [str(a) for a in items]
+            mystr = '+'.join(mystr)
+            print('Selected: '+mystr)
+            s.sel_children(byfaces)
+
+    def sel_children(s, byfaces=True):
+        # this selects the children of the selected items
+        types = ['nodes','elements','faces','points','lines','areas']
+        # zero out the selection dict
+        for t in types:
+            s.sel[t] = set()
+        for item in s.sel['selected']:
+            if isinstance(item, Node):
+                s.sel['nodes'].add(item)
+                
+            elif isinstance(item, Element):
+                s.sel['elements'].add(item)
+                child_nodes = item.nodes()
+                s.sel['nodes'].update( child_nodes )
+                
+            elif isinstance(item, Face):
+                s.sel['faces'].add(item)
+                
+            elif isinstance(item, Point):
+                s.sel['points'].add(item)
+                for n in item.nodes:
+                    s.sel['elements'].update(n.elements)
+                for e in s.sel['elements']:
+                    s.sel['nodes'].update( e.nodes() )
+                    
+            elif isinstance(item, Line) or isinstance(item, Arc):
+                s.sel['points'].update(item._points_)
+                s.sel['lines'].add(item)
+                s.sel['faces'].update(item.faces)
+                if byfaces:
+                    # add elements from face only
+                    for f in item.faces:
+                        s.sel['elements'].add(f.element)
+                        s.sel['nodes'].update( f.element.nodes() )
+                else:
+                    # add elements connected to selected nodes, add their nodes 
+                    s.sel['nodes'].update(item.nodes)
+                    for n in item.nodes:
+                        s.sel['elements'].update(n.elements)
+                    for e in s.sel['elements']:
+                        s.sel['nodes'].update( e.nodes() )
+                        
+            elif isinstance(item, Area):
+                pts = item.get_points()
+                s.sel['points'].update(pts)
+                s.sel['lines'].update(item.lines)
+                for l in item.lines:
+                    s.sel['faces'].update(l.faces)
+                s.sel['nodes'].update(item.nodes)
+                s.sel['elements'].update(item.elements)
+                
+            elif isinstance(item, Part):
+                pts = item.get_points()
+                lines = item.get_lines()
+                s.sel['points'].update(pts)
+                s.sel['lines'].update(lines)
+                for l in lines:
+                    s.sel['faces'].update(l.faces)
+                s.sel['nodes'].update(item.nodes)
+                s.sel['elements'].update(item.elements)
 
     def set_units(s, dist='m', temp='K'):
         # sets the units that will be displayed when plotting
@@ -2521,15 +2725,18 @@ class FeaModel():
         s.models.append(m)
         return m    
 
-    def plot_elements(s, fname='', items=None, display=True):
+    def plot_elements(s, fname='', items=None, display=True, enum=False, nnum=False):
         # plots the elements in the part
 
         nodes = []
         elements = []
         if items == None:
             # use selected set
-            pass
+            items = s.sel['selected']
+            nodes = s.sel['nodes']
+            elements = s.sel['elements']
         else:
+            # used passed items
             items = s.listify(items)
             for i in items:
                 nodes += i.nodes
@@ -2554,6 +2761,19 @@ class FeaModel():
                 patches.append(polygon)
             p = PatchCollection(patches, facecolors=_fcolor, edgecolors=_ecolor)
             ax.add_collection(p)
+            
+            # add element numbers
+            if enum:
+                for e in elements:
+                    [ename, pax, prad] = [e.get_name(), e.center.y, e.center.x]
+                    ax.annotate(ename, (pax,prad))
+
+            # add element numbers
+            if nnum:
+                for n in nodes:
+                    [nname, pax, prad] = [n.get_name(), n.y, n.x]
+                    ax.annotate(nname, (pax,prad))
+
             
             # set units
             [d_unit] = s.get_units('dist')            
@@ -2594,8 +2814,11 @@ class FeaModel():
         elements = []
         if items == None:
             # use selected set
-            pass
+            items = s.sel['selected']
+            nodes = s.sel['nodes']
+            elements = s.sel['elements']
         else:
+            # use passed item
             items = s.listify(items)
             for i in items:
                 nodes += i.nodes
@@ -2636,7 +2859,11 @@ class FeaModel():
             # check min and max bounds
             pmin = min(pressures)
             pmax = max(pressures)
-            mult = face_len/abs(pmin)    # mult to go from pressure to length
+            mult = 1
+            if pmin == 0:
+                mult = 1
+            else:
+                mult = face_len/abs(pmin)    # mult to go from pressure to length
             
             # make tick list for later plot, and color map
             tick_list = [pmin]  # default to plot one val
@@ -2654,7 +2881,11 @@ class FeaModel():
             # make arrows
             for [face, pval] in plist:
                 [p1, unit] = face.get_mnorm()
-                pdelta = unit*(mult*abs(pval))
+                pdelta = None
+                if pmin == 0:
+                    pdelta = unit*face_len
+                else:
+                    pdelta = unit*(mult*abs(pval))
                 p2 = p1 + pdelta
                 
                 # assuming positive pressure, arrow points to face p2->p1
@@ -2723,6 +2954,152 @@ class FeaModel():
             res += 'Try meshing it with model.mesh(1)' 
             print(res)
 
+    def plot_constraints(s, fname='', items = None, display=True):
+        # this plots the constraints on the passed part or selected items
+
+        nodes = []
+        elements = []
+        if items == None:
+            # use selected set
+            items = s.sel['selected']
+            nodes = s.sel['nodes']
+            elements = s.sel['elements']
+        else:
+            # use passed item
+            items = s.listify(items)
+            for i in items:
+                nodes += i.nodes
+                elements += i.elements
+        
+        # plot all elements
+        if len(elements) > 0:
+            
+            # get axials and radials for bounds
+            radials = [p.x for p in nodes]
+            axials = [p.y for p in nodes]
+            
+            # plotting elements
+            fig = plt.figure()
+            ax = fig.add_subplot(111,aspect='equal')
+
+            patches = []
+            face_len = []            
+            for e in elements:
+                face_len.append( e.face[1].length() )                
+                xycoords = e.get_corner_nodes()
+                polygon = Polygon(xycoords, closed=True)
+                patches.append(polygon)
+            p = PatchCollection(patches, edgecolors=_ecolor, facecolors=_fcolor)
+            ax.add_collection(p)
+
+            # average face length is min arrow length
+            face_len = sum(face_len)/len(face_len)
+
+            # store displacements we'll plot
+            # this is a list of lists [node, dict ux,uy,uz]
+            ulist = []
+            vals = []
+            for load in s.loads[s.time]:
+                if load.ltype in  ['ux','uy','uz']:
+                    ulist += load.get_list()
+                    # still need to filter out items not in our selection set
+                    for udisp in ulist:
+                        vals += list( udisp[1].values() )
+
+            # check min and max bounds
+            pmin = min(vals)
+            pmax = max(vals)
+            
+            # make tick list for later plot, and color map
+            tick_list = [pmin]  # default to plot one val
+            cmap = colors.ListedColormap(['b', 'b']) # default to plot one val
+            if pmax != pmin:
+                # we have a range of values we're plotting
+                tick_list = frange(pmin,pmax,(pmax-pmin)/8)
+                cmap = plt.cm.jet
+                        
+            # set color contours for arrows
+            cNorm  = colors.Normalize(vmin=pmin, vmax=pmax)
+            scalarMap = cmx.ScalarMappable(norm=cNorm,cmap=cmap)            
+            scalarMap._A = [] # need to set this for it to work
+            
+            # make arrows for displacements
+            pvect= {'ux':Point(1,0,0),'uy':Point(0,1,0),'uz':Point(0,0,1)}
+            for [node, udict] in ulist:
+                arrows = [] #[[pstart, pend], [etc
+                for (k, v) in udict.items():
+                    delta = pvect[k]
+                    pstart = Point(node.x, node.y, node.z)
+                    pend = pstart + delta*v
+                    hw = face_len*0.4
+                    hl = hw
+                    if v == 0:
+                        pend = Point(node.x, node.y, node.z)
+                        pstart = pend - delta*(hl*2)
+                        #radials.append(pstart.x)
+                        #axials.append(pstart.y)
+                    else:
+                        #radials.append(pend.x)
+                        #axials.append(pend.y)
+                        pass
+                
+                    delta = pend - pstart
+                    colorVal = scalarMap.to_rgba(v)
+                    plt.arrow(pstart.y,  #x1
+                              pstart.x,  # y1
+                              delta.y, # x2 - x1
+                              delta.x, # y2 - y1
+                              color=colorVal, head_width=hw, head_length=hl,
+                              length_includes_head=True)                
+                            
+            # set the horizontal and vertical axes
+            vert = max(radials) - min(radials)
+            horiz = max(axials) - min(axials)
+            vadder = (vert)/5
+            hadder = (horiz)/5    
+            (vmax,vmin) = (max(radials)+vadder, min(radials)-vadder)
+            (hmax,hmin) = (max(axials)+hadder, min(axials)-hadder)
+
+            # set units
+            [d_unit, t_unit] = s.get_units('dist', 'time')
+
+            # set plot axes
+            iname = s.get_cname(items)
+            tstr = '%s constraints %s\nTime=%f%s' % (iname, d_unit, s.time,
+                                                 t_unit)
+            plt.title(tstr)
+            plt.xlabel('axial, y'+d_unit)
+            plt.ylabel('radial, x'+d_unit)
+
+            # set min and max vertical and axial limits
+            plt.xlim(hmin, hmax)
+            plt.ylim(vmin, vmax)            
+            
+            # set the colorbar
+            cbar = plt.colorbar(scalarMap, orientation='vertical', ticks=tick_list)
+            
+            if fname != '':
+                # save the image
+                fname += '.png'
+                if _dpi != None:
+                    plt.savefig(fname, dpi=_dpi, bbox_inches='tight')
+                else:
+                    plt.savefig(fname, bbox_inches='tight')
+            
+            if display:
+                plt.tight_layout()
+                plt.show()        
+
+            # remove all figures
+            plt.close()
+
+        else:
+            # part has not been meshed yet
+            res = 'Part: %s does not have any elements! ' % (s)
+            res += 'Try meshing it with model.mesh(1)' 
+            print(res)
+
+
     def plot_geometry(s, fname='', items = None, display=True):
         # this method plots the part
         # check out: http://nickcharlton.net/posts/drawing-animating-shapes-matplotlib.html
@@ -2732,7 +3109,10 @@ class FeaModel():
         areas = []
         if items == None:
             # use selected set
-            pass
+            items = s.sel['selected']
+            points = s.sel['points']
+            lines = s.sel['lines']
+            areas = s.sel['areas']
         else:
             items = s.listify(items)
             if isinstance(items[0], Part):
@@ -2826,7 +3206,10 @@ class FeaModel():
         # this returns a component name prefix, for labeling lists of items
         cname = ''
         if len(items) == 1:
-            cname = items[0].get_name()
+            if items[0] == 'all':
+                cname = 'all'
+            else:
+                cname = items[0].get_name()
         else:
             cname = items[0].get_name()+'-'+items[-1].get_name()
         return cname
@@ -3271,6 +3654,8 @@ class FeaModel():
                     enum = L[0]
                     nlist = [N.idget(a) for a in L[1:]]
                     e = Element(enum, etype, nlist)
+                    for n in nlist:
+                        n.add_element(e)
                     faces = e.faces()
                     E.append(e)
                     F += faces
@@ -3354,9 +3739,25 @@ class FeaModel():
         #-----------------------------------
         # assign elements + nodes to parts
         s.elements = E
-        s.nodes = N
         s.faces = F
         
+        # remove arc center ndoes from imported node set
+        for line in s.lines:
+            if isinstance(line, Arc):                
+                pt = line.actr
+                ndist = []
+                for n in N:
+                    p_tmp = Point(n.x, n.y)
+                    p_tmp = pt - p_tmp
+                    dist = p_tmp.length()
+                    ndist.append( {'dist':dist,'node':n} )
+                # sort the list by dist, sorts low to high
+                ndist = sorted(ndist, key=lambda k: k['dist'])
+                match_node = ndist[0]['node']
+                N.remove( match_node )
+        
+        s.nodes = N
+                
         for part in s.parts:
             # assign part element and node sets
             pname = part.get_name()
@@ -3367,8 +3768,8 @@ class FeaModel():
             for area in s.areas:
                 aname = area.get_name()
                 # change the element to the right type based on python type
-                for ind in range(len(sets['E'][aname])):
-                    sets['E'][aname][ind].set_etype( area.etype )
+                for e in sets['E'][aname]:
+                    e.set_etype( area.etype )
                 area.elements = sets['E'][aname]
                 area.nodes = sets['N'][aname]
             
@@ -3401,7 +3802,7 @@ class FeaModel():
                 line.faces = faces
                 
         print('Done reading Calculix/Abaqus .inp file')
-
+        s.select() # select all, adds nodes and eleemnts to the selected set
 
     def mesh_cgx(s, fine):
         # meshes the parts using calculix preprocessor

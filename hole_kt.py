@@ -1,6 +1,7 @@
 from pycalculix import FeaModel, frange
 import matplotlib.pyplot as plt
 import math
+import numpy as np
 
 # Stress and geometry constants
 stress_val = 1000
@@ -9,10 +10,8 @@ thickness = 0.01
 disp = False # sets whether or not to display images
 
 # Make a list of geometry ratios, diam_hole/width_plate
-ratios = []
-ratios += frange(.5,.05,-.05)
-ratios.append(.001)
-ratios.reverse()     # list from low to high
+ratios = np.arange(0,.5,.05)
+ratios[0] = .001
 
 # store results
 (ktg_res, ktg_pet, err) = ([],[],[])
@@ -49,7 +48,7 @@ for ratio in ratios:
     b.draw_line_ax(-bot)
     # b.plot_geometry('hole_kt_prechunk', display=disp) # view the geometry, points, lines, and areas
     b.chunk()
-    b.plot_geometry('hole_kt_chunked', display=disp) # view the geometry, points, lines, and areas
+    a.plot_geometry('hole_kt_chunked', display=disp) # view the geometry, points, lines, and areas
     
     # set loads and constraints
     a.set_load('press',b.top,-1*stress_val)
@@ -68,8 +67,8 @@ for ratio in ratios:
     a.set_eshape('tri', 2)
     a.set_etype(b, 'plstress', thickness)
     a.mesh(1, 'gmsh')               # mesh with 1.0 fineness, smaller is finer
-    b.plot_elements('hole_kt_elem_%.3f' % (ratio), display=disp)   # plot the part elements
-    b.plot_pressures('hole_kt_press', display=disp)
+    a.plot_elements('hole_kt_elem_%.3f' % (ratio), display=disp)   # plot the part elements
+    a.plot_pressures('hole_kt_press', display=disp)
 
     # make model and solve it
     mod = a.ModelMaker(b, 'struct') 

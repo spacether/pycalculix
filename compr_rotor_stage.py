@@ -56,7 +56,6 @@ for [drad, dax] in airfoil_loop:
     b.draw_line_delta(drad, dax)
 
 # fillets [[line1, line2, fillet_rad],[
-
 fillet_list = [[13,0,rad_disk_bot],[12,13,rad_disk_bot],
                [0,1,rad_disk_top],[11,12,rad_disk_top],
                [1,2,rad_web_bot],[10,11,rad_web_bot],
@@ -65,7 +64,7 @@ fillet_list = [[13,0,rad_disk_bot],[12,13,rad_disk_bot],
 for [i1, i2, rad] in fillet_list:
     b.fillet_lines( lines[i1], lines[i2], rad )
 
-b.plot_geometry(proj_name+'_geom') # view the geometry, points, lines, and areas
+a.plot_geometry(proj_name+'_geom') # view the geometry, points, lines, and areas
 
 # set loads and constraints
 a.set_rpm(10000, b)
@@ -80,14 +79,13 @@ a.set_matl(mat, b)
 a.set_eshape('quad', 2)
 a.set_etype(b, 'axisym')
 a.set_etype('A1', 'plstress', 0.1)
-'''
 a.get_item('L15').set_ediv(8)
 a.get_item('L6').set_ediv(8)
-'''
 a.get_item('L2').set_ediv(24)
 a.get_item('L10').set_ediv(24)
 a.mesh(1.0, 'gmsh') # mesh with 1.0 fineness, smaller is finer
-b.plot_elements(proj_name+'_elem')   # plot the part elements
+a.plot_elements(proj_name+'_elem')   # plot the part elements
+a.plot_constraints(proj_name+'_constr')
 
 # make and solve the model
 mod = a.ModelMaker(b, 'struct')

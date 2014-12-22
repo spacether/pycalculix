@@ -66,7 +66,7 @@ a.set_eshape('quad', 2)
 a.set_etype(b, 'plstrain', thickness)
 b.get_item('L8').set_ediv(2)
 a.mesh(0.5, 'gmsh')               # mesh with 1.0 fineness, smaller is finer
-a.plot_elements(proj_name+'_elem', b)   # plot the part elements
+a.plot_elements(proj_name+'_elem')   # plot the part elements
 
 # set loads and constraints
 a.set_load('press', air_lines, press_atm)
@@ -74,12 +74,18 @@ a.set_fluid_press(water_lines, dens_water, grav, water_ht_m, press_atm)
 a.set_gravity(grav, b)
 a.set_constr('fix', b.bottom, 'x')
 a.set_constr('fix', b.bottom, 'y')
-a.plot_pressures(proj_name+'_press', b)
+a.plot_pressures(proj_name+'_press_1')
+a.plot_constraints(proj_name+'_constr')
 
-'''
 a.set_time(2.0)
-a.set_load('press', water_lines, press_atm)
-'''
+# ambient pressure and gravity
+a.set_load('press', water_lines+air_lines, press_atm)
+a.plot_pressures(proj_name+'_press_2')
+
+a.set_time(3.0)
+# gravity only
+a.set_load('press', water_lines+air_lines, 0.0)
+a.plot_pressures(proj_name+'_press_3')
 
 # make model and solve it
 mod = a.ModelMaker(b, 'struct')
@@ -87,19 +93,14 @@ mod.solve()
 
 # query results and store them
 disp = False    # turn off display plotting
-mod.rfile.nplot('Seqv', proj_name+'_Seqv', display=disp)
-mod.rfile.nplot('Sx', proj_name+'_Sx', display=disp)
-mod.rfile.nplot('Sy', proj_name+'_Sy', display=disp)
-mod.rfile.nplot('Sz', proj_name+'_Sz', display=disp)
-mod.rfile.nplot('S1', proj_name+'_S1', display=disp)
-mod.rfile.nplot('S2', proj_name+'_S2', display=disp)
-mod.rfile.nplot('S3', proj_name+'_S3', display=disp)
-mod.rfile.nplot('ux', proj_name+'_ux', display=disp)
-mod.rfile.nplot('uy', proj_name+'_uy', display=disp)
-mod.rfile.nplot('utot', proj_name+'_utot', display=disp)
+fields = 'Seqv,Sx,Sy,Sz,S1,S2,S3,ux,uy,utot'    # store the fields to write
+fields = fields.split(',')
 
-mod.rfile.nplot('ux', proj_name+'_ux_levels', display=disp)
-mod.rfile.nplot('ux', proj_name+'_ux_gradient', display=disp, gradient=True)
+for time in mod.rfile.steps:
+    mod.rfile.set_time(time)    
+    for field in fields:
+        fname = '%s_%i_%s' % (proj_name, int(time), field)
+        mod.rfile.nplot(field, fname, display=disp)
 
 '''
 smax = mod.rfile.get_nmax('Seqv')
