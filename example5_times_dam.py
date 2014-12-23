@@ -1,11 +1,10 @@
-from pycalculix import FeaModel, frange
-import matplotlib.pyplot as plt
+from pycalculix import FeaModel
 import math
 
 # We'll be modeling a masonry gravity dam, the Beetaloo dam in Australia
-
+# This time, we'll include multiple time steps
 # Problem constants
-proj_name = 'dam'
+proj_name = 'example5_dam'
 grav = 9.81 # m/s^2
 dens_water = 1000 #kg/m^3
 press_atm = 101325 # Pascals = N/m^2 = kg/(m-s^2)
@@ -54,7 +53,7 @@ for [x,y] in pts_ft_other:
     [L1,p1,p2] = b.draw_line_to(x, y)
     air_lines.append(L1)
 b.draw_line_to(0, 0)
-a.plot_geometry(proj_name+'_geom', b) # view the geometry, points, lines, and areas
+a.plot_geometry(proj_name+'_geom', b) # view the points, lines, and areas
 
 # set part material
 mat = a.MatlMaker('concrete')
@@ -65,7 +64,7 @@ a.set_matl(mat, b)
 a.set_eshape('quad', 2)
 a.set_etype(b, 'plstrain', thickness)
 b.get_item('L8').set_ediv(2)
-a.mesh(0.5, 'gmsh')               # mesh with 1.0 fineness, smaller is finer
+a.mesh(0.5, 'gmsh')          # mesh with 1.0 or less fineness, smaller is finer
 a.plot_elements(proj_name+'_elem')   # plot the part elements
 
 # set loads and constraints
@@ -77,13 +76,13 @@ a.set_constr('fix', b.bottom, 'y')
 a.plot_pressures(proj_name+'_press_1')
 a.plot_constraints(proj_name+'_constr')
 
+# Time = 2, ambient pressure and gravity
 a.set_time(2.0)
-# ambient pressure and gravity
 a.set_load('press', water_lines+air_lines, press_atm)
 a.plot_pressures(proj_name+'_press_2')
 
+# Time = 3, gravity only
 a.set_time(3.0)
-# gravity only
 a.set_load('press', water_lines+air_lines, 0.0)
 a.plot_pressures(proj_name+'_press_3')
 
@@ -101,10 +100,8 @@ for time in mod.rfile.steps:
     for field in fields:
         fname = '%s_%i_%s' % (proj_name, int(time), field)
         mod.rfile.nplot(field, fname, display=disp)
-
-'''
-smax = mod.rfile.get_nmax('Seqv')
-[fx, fy, fz] = mod.rfile.get_fsum(a.get_item('L9'))
-print('Seqv_max= %3.2f' % (smax))
-print('Reaction forces (fx,fy,fz) = (%12.10f, %12.10f, %12.10f)' % (fx, fy, fz)) 
-'''
+    smax = mod.rfile.get_nmax('Seqv')
+    [fx, fy, fz] = mod.rfile.get_fsum(a.get_item('L9'))
+    print('Seqv_max= %3.2f' % (smax))
+    print('Reaction forces (fx,fy,fz) = (%12.10f, %12.10f, %12.10f)' % (fx, fy, fz)) 
+    

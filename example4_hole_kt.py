@@ -1,4 +1,4 @@
-from pycalculix import FeaModel, frange
+from pycalculix import FeaModel
 import matplotlib.pyplot as plt
 import math
 import numpy as np
@@ -34,7 +34,8 @@ for ratio in ratios:
     left = right - rad
 
     # vertical hole in plate model, make model
-    a = FeaModel('hole_kt')
+    proj_name = 'example4_hole_kt'
+    a = FeaModel(proj_name)
     a.set_units('m')    # this sets dist units to meters, labels our consistent units
     
     # make part, coordinates are x, y = radial, axial
@@ -48,7 +49,7 @@ for ratio in ratios:
     b.draw_line_ax(-bot)
     # b.plot_geometry('hole_kt_prechunk', display=disp) # view the geometry, points, lines, and areas
     b.chunk()
-    a.plot_geometry('hole_kt_chunked', display=disp) # view the geometry, points, lines, and areas
+    a.plot_geometry(proj_name+'_chunked', display=disp) # view the geometry, points, lines, and areas
     
     # set loads and constraints
     a.set_load('press',b.top,-1*stress_val)
@@ -66,9 +67,9 @@ for ratio in ratios:
     
     a.set_eshape('tri', 2)
     a.set_etype(b, 'plstress', thickness)
-    a.mesh(1, 'gmsh')               # mesh with 1.0 fineness, smaller is finer
-    a.plot_elements('hole_kt_elem_%.3f' % (ratio), display=disp)   # plot the part elements
-    a.plot_pressures('hole_kt_press', display=disp)
+    a.mesh(1.0, 'gmsh')               # mesh with 1.0 fineness, smaller is finer
+    a.plot_elements('%s_elem_%.3f' % (proj_name, ratio), display=disp)
+    a.plot_pressures('%s_press' % (proj_name), display=disp)
 
     # make model and solve it
     mod = a.ModelMaker(b, 'struct') 

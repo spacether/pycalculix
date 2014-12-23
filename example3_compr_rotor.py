@@ -3,9 +3,8 @@ import matplotlib.pyplot as plt
 import math
 
 # We'll be modeling a rotating jet engine part
-
 # Problem constants
-proj_name = 'compr_rotor_stage'
+proj_name = 'example3_compr_rotor'
 
 # problem + geometry constants
 rpm = 1000     # rotor speed in rpm
@@ -94,14 +93,8 @@ mod.solve()
 # view the results
 disp = False    # turn off display plotting
 g = 0.0         # turn off adding results displacement to the model
-mod.rfile.nplot('Sx', proj_name+'_Sx', display=disp, gmult=g)
-mod.rfile.nplot('Sy', proj_name+'_Sy', display=disp, gmult=g)
-mod.rfile.nplot('Sz', proj_name+'_Sz', display=disp, gmult=g)
-mod.rfile.nplot('S1', proj_name+'_S1', display=disp, gmult=g)
-mod.rfile.nplot('S2', proj_name+'_S2', display=disp, gmult=g)
-mod.rfile.nplot('S3', proj_name+'_S3', display=disp, gmult=g)
-mod.rfile.nplot('Seqv', proj_name+'_Seqv', display=disp, gmult=g)
-mod.rfile.nplot('ux', proj_name+'_ux', display=disp, gmult=g)
-mod.rfile.nplot('uy', proj_name+'_uy', display=disp, gmult=g)
-mod.rfile.nplot('uz', proj_name+'_uz', display=disp, gmult=g)
-mod.rfile.nplot('utot', proj_name+'_utot', display=disp, gmult=g)
+fields = 'Sx,Sy,Sz,S1,S2,S3,Seqv,ux,uy,uz,utot'    # store the fields to plot
+fields = fields.split(',')
+for field in fields:
+    fname = proj_name+'_'+field
+    mod.rfile.nplot(field, fname, display=disp, gmult=g)

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-calculix.py
+pycalculix.py
 Description:
 This module provides a python interface to the calculix FEA preprocessor and
 solver. Simplicity is emphasized.

@@ -1,7 +1,7 @@
 from pycalculix import FeaModel
 
 # Vertical hole in plate model, make model
-proj_name = 'hole_model'
+proj_name = 'example2_hole_in_plate'
 a = FeaModel(proj_name)
 a.set_units('m')    # this sets dist units to meters, labels our consistent units
 
@@ -38,7 +38,7 @@ a.set_constr('fix',b.bottom,'x')
 
 # set part material
 mat = a.MatlMaker('steel')
-mat.set_mech_props(7800, 210000, 0.3)
+mat.set_mech_props(7800, 210*(10**9), 0.3)
 a.set_matl(mat, b)
 
 # set the element type and mesh database
@@ -62,13 +62,9 @@ print('Reaction forces (fx,fy,fz) = (%12.10f, %12.10f, %12.10f)' % (fx, fy, fz))
 
 # Plot results
 disp = False
-mod.rfile.nplot('Sx', proj_name+'_Sx', display=disp)
-mod.rfile.nplot('Sy', proj_name+'_Sy', display=disp)
-mod.rfile.nplot('S1', proj_name+'_S1', display=disp)
-mod.rfile.nplot('S2', proj_name+'_S2', display=disp)
-mod.rfile.nplot('S3', proj_name+'_S3', display=disp)
-mod.rfile.nplot('Seqv', proj_name+'_Seqv', display=disp)
-mod.rfile.nplot('ux', proj_name+'_ux', display=disp)
-mod.rfile.nplot('uy', proj_name+'_uy', display=disp)
-mod.rfile.nplot('utot', proj_name+'_utot', display=disp)
+fields = 'Sx,Sy,S1,S2,S3,Seqv,ux,uy,utot'    # store the fields to plot
+fields = fields.split(',')
+for field in fields:
+    fname = proj_name+'_'+field
+    mod.rfile.nplot(field, fname, display=disp)
 
