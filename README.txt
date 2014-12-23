@@ -12,8 +12,7 @@ Usefull applications of Pycalculix:
 Notes:
 I build a chunker in python which tries to cut big areas (> 5 sides) which
 cgx can't mesh into smaller areas (<= 5 sides) which are meshable in cgx.
-The chunker may not always work. I'd like to integrate gmsh in the future
-so mesh quality can be more controllable, and less error prone.
+The chunker may not always be able to cut areas correctly.
 
 License:
 See LICENSE.txt (GPL v2)
