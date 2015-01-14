@@ -1,0 +1,774 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pycalculix.part &mdash; pycalculix  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pycalculix  documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pycalculix.part</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">base_classes</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">geometry</span> <span class="c">#point, line, area</span>
+
+<span class="c">#accuracy for small numbers in math below</span>
+<span class="n">_acc</span> <span class="o">=</span> <span class="o">.</span><span class="mo">00001</span>
+
+<div class="viewcode-block" id="Part"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part">[docs]</a><span class="k">class</span> <span class="nc">Part</span><span class="p">(</span><span class="n">base_classes</span><span class="o">.</span><span class="n">Idobj</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This makes a part.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      parent: parent FeaModel</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">      p (FeaModel): parent FeaModel</span>
+<span class="sd">      cursor (Point): location of a cursor drawing the part</span>
+<span class="sd">      matl (Matl): the part material</span>
+<span class="sd">      thickness (float): the part thickness if applicable</span>
+<span class="sd">        this is only applicable if th epart is plane strain or plane stress</span>
+<span class="sd">      areas (list): list of Area that make up the part</span>
+<span class="sd">      left (list): list the parts leftmost lines, they must be vertical</span>
+<span class="sd">      right (list): list the parts rightmost lines, they must be vertical</span>
+<span class="sd">      top (list): list the parts top lines, they must be horizontal</span>
+<span class="sd">      bottom (list): list the parts bottom lines, they must be horizontal</span>
+<span class="sd">      nodes (list): list of part&#39;s nodes</span>
+<span class="sd">      elements (list): list of part&#39;s elements</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">parent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">matl</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">thickness</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">areas</span> <span class="o">=</span> <span class="p">[]</span> <span class="c"># top area is the buffer</span>
+        <span class="c"># make the buffer</span>
+        <span class="n">area</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">areas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[])</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">areas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">area</span><span class="p">)</span>
+        <span class="n">base_classes</span><span class="o">.</span><span class="n">Idobj</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>             
+        <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">top</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottom</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="o">=</span> <span class="p">[]</span>
+        
+<div class="viewcode-block" id="Part.get_item"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.get_item">[docs]</a>    <span class="k">def</span> <span class="nf">get_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;&quot;Returns the part&#39;s item(s) requested by the passed string.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          item (str): string requesting item(s)</span>
+<span class="sd">            Valid examples: &#39;P0&#39;, &#39;L0&#39;, &#39;left&#39;, &#39;A0&#39;</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          item(s) or None:</span>
+<span class="sd">            If items are found they are returned</span>
+<span class="sd">              If there is only one item it is returned</span>
+<span class="sd">              If there are multiple items, they are returned as a list</span>
+<span class="sd">            If no items are found None is returned</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">item</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;left&#39;</span><span class="p">,</span><span class="s">&#39;right&#39;</span><span class="p">,</span><span class="s">&#39;top&#39;</span><span class="p">,</span><span class="s">&#39;bottom&#39;</span><span class="p">]:</span>
+            <span class="n">items</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">items</span>
+        <span class="k">elif</span> <span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;P&#39;</span><span class="p">:</span>
+            <span class="c"># get point</span>
+            <span class="n">items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_points</span><span class="p">()</span>
+            <span class="n">num</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">items</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">num</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;L&#39;</span><span class="p">:</span>
+            <span class="c"># get line</span>
+            <span class="n">items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_lines</span><span class="p">()</span>
+            <span class="n">num</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="n">items</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">items</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">num</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;A&#39;</span><span class="p">:</span>
+            <span class="c"># get area</span>
+            <span class="n">items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">areas</span>
+            <span class="n">num</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="n">items</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">items</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">num</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Unknown item! Please pass the name of a point, line or area!&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="Part.get_name"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.get_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the part name based on id number.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s">&#39;PART&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Part.set_side"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.set_side">[docs]</a>    <span class="k">def</span> <span class="nf">set_side</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loc</span><span class="p">,</span> <span class="n">ind</span><span class="p">,</span> <span class="n">axis</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the part.side to a list of side lines. side=Left,Right,Top,Bottom.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          loc (string): &#39;left&#39;, &#39;right&#39;, &#39;top&#39;,&#39;bottom&#39;</span>
+<span class="sd">          ind (int): 0 for low, 1 for high</span>
+<span class="sd">          axis (string): axies to use, &#39;x&#39; or &#39;y&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># loc = &#39;left&#39;, ind = 0, axis = &#39;y&#39;</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_points</span><span class="p">()</span>
+        <span class="c"># sort the points low to high</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">pt</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">axis</span><span class="p">))</span>
+        <span class="c"># store the value</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="n">ind</span><span class="p">],</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_lines</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Line</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="n">axis</span><span class="p">)</span> <span class="o">==</span> <span class="n">val</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span><span class="n">axis</span><span class="p">)</span> <span class="o">==</span> <span class="n">val</span><span class="p">:</span>
+                    <span class="c"># line is on the left side</span>
+                    <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loc</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="Part.goto"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.goto">[docs]</a>    <span class="k">def</span> <span class="nf">goto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Moves the part cursor to a location.</span>
+<span class="sd">        </span>
+<span class="sd">        If that location has a point at it, use it.</span>
+<span class="sd">        If not, make a new point at that location.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          x (float): x-coordinate of the point to go to</span>
+<span class="sd">          y (float): y-coordinate of the point to go to</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          self.cursor (Point): returns the updated cursor point</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="p">[</span><span class="n">pnew</span><span class="p">,</span> <span class="n">already_exists</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_get_pt</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">already_exists</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">areas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">closed</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="c"># make a new area if the old area is already closed and we&#39;re</span>
+                <span class="c"># goint to an existing point</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">areas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[])</span> <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">areas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">a</span> <span class="p">)</span>
+        
+        <span class="c"># return cursor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span> <span class="o">=</span> <span class="n">pnew</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span>
+</div>
+<div class="viewcode-block" id="Part.make_get_pt"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.make_get_pt">[docs]</a>    <span class="k">def</span> <span class="nf">make_get_pt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets a point if it exists, makes it if it doesn&#39;t. Returns the point.</span>
+<span class="sd">        </span>
+<span class="sd">        Use this when you need a point made in the part, and you want to</span>
+<span class="sd">        use an extant point if one is available.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          x (float): point x-coordinat</span>
+<span class="sd">          y (float): point y-coordinate</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          list:</span>
+<span class="sd">            list[0]: Point</span>
+<span class="sd">            list[1]: boolean, True = the point already existed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pnew</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_points</span><span class="p">()</span>
+        <span class="n">pexists</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pts</span><span class="p">:</span>
+            <span class="n">dist</span> <span class="o">=</span> <span class="n">p</span> <span class="o">-</span> <span class="n">pnew</span>
+            <span class="n">dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">dist</span> <span class="o">&lt;</span> <span class="n">_acc</span><span class="p">:</span>
+                <span class="c"># point already exists in part, use it</span>
+                <span class="n">pexists</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="n">pnew</span> <span class="o">=</span> <span class="n">p</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># fired when we haven&#39;t broken out of the loop, the point is new</span>
+            <span class="n">pnew</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">pnew</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">pnew</span><span class="p">,</span> <span class="n">pexists</span><span class="p">]</span>
+    </div>
+<div class="viewcode-block" id="Part.make_get_line"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.make_get_line">[docs]</a>    <span class="k">def</span> <span class="nf">make_get_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lnew</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets a line if it exists, makes it if it doesn&#39;t. Returns the line.</span>
+<span class="sd">        </span>
+<span class="sd">        Use this when you need a point line in the part, and you want to</span>
+<span class="sd">        use an extant line if one is available.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          lnew (Line or Arc): line to make</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          list:</span>
+<span class="sd">            list[0]: Line or Arc</span>
+<span class="sd">            list[1]: boolean, True = the line already existed</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="n">lnew_pset</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">lnew</span><span class="o">.</span><span class="n">_points_</span><span class="p">])</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_lines</span><span class="p">()</span>
+        <span class="n">lexists</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+            <span class="n">l_pset</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">l</span><span class="o">.</span><span class="n">_points_</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">lnew</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">and</span> <span class="n">lnew_pset</span> <span class="o">==</span> <span class="n">l_pset</span><span class="p">:</span>
+                <span class="c"># the lines are the same type and have the same points in them</span>
+                <span class="n">lexists</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">if</span> <span class="n">l</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">lnew</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+                    <span class="c"># they are the same orientation</span>
+                    <span class="n">lnew</span> <span class="o">=</span> <span class="n">l</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c"># l needs to be flipped</span>
+                    <span class="n">lnew</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># fired when we haven&#39;t broken out of the loop, the line is new</span>
+            <span class="n">lnew</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">lnew</span> <span class="p">)</span>        
+        <span class="k">return</span> <span class="p">[</span><span class="n">lnew</span><span class="p">,</span> <span class="n">lexists</span><span class="p">]</span>            
+</div>
+<div class="viewcode-block" id="Part.draw_arc"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.draw_arc">[docs]</a>    <span class="k">def</span> <span class="nf">draw_arc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">xc</span><span class="p">,</span> <span class="n">yc</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Makes an arc and adds it to the part.</span>
+
+<span class="sd">        Current point is the first arc point.</span>
+<span class="sd">        (x2,y2) is the end point</span>
+<span class="sd">        (xc,yc) is the arc center</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          x2 (float): arc end point x-coordinate</span>
+<span class="sd">          y2 (float): arc end point y-coordinate</span>
+<span class="sd">          xc (float): arc center point x-coordinate</span>
+<span class="sd">          yc (float): arc center point y-coordinate</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          list: [arc, arc_start_point, arc_end_point]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span>
+        <span class="c"># make arc center point</span>
+        <span class="n">ctr</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="n">xc</span><span class="p">,</span><span class="n">yc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ctr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">points</span><span class="p">:</span>
+            <span class="n">ctr</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">points</span> <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="n">ctr</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">ctr</span> <span class="p">)</span>
+        <span class="c"># make arc end point</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span><span class="n">y2</span><span class="p">)</span> <span class="p">)</span>
+        <span class="c"># make arc</span>
+        <span class="n">arc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Arc</span><span class="p">(</span><span class="n">pold</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="p">,</span> <span class="n">ctr</span><span class="p">)</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">areas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">arc</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">arc</span><span class="p">,</span> <span class="n">pold</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Part.draw_line_delta"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.draw_line_delta">[docs]</a>    <span class="k">def</span> <span class="nf">draw_line_delta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws a line a relative distance, and adds it to the part.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          dx (float): x-axis delta distance to draw the line</span>
+<span class="sd">          dy (float): y-axis delta distance to draw the line</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          list: [line, point_start, point_end]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">dx</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">dy</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">draw_line_to</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Part.draw_line_rad"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.draw_line_rad">[docs]</a>    <span class="k">def</span> <span class="nf">draw_line_rad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dx_rad</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws a line a relative radial distance, and adds it to the part.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          dx_rad (float): x-axis delta distance to draw the line</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          list: [line, point_start, point_end]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">draw_line_delta</span><span class="p">(</span><span class="n">dx_rad</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Part.draw_line_ax"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.draw_line_ax">[docs]</a>    <span class="k">def</span> <span class="nf">draw_line_ax</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dy_ax</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws a line a relative axial distance, and adds it to the part.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          dy_ax (float): y-axis delta distance to draw the line</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          list: [line, point_start, point_end]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">draw_line_delta</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dy_ax</span><span class="p">)</span>    
+</div>
+<div class="viewcode-block" id="Part.draw_line_to"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.draw_line_to">[docs]</a>    <span class="k">def</span> <span class="nf">draw_line_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws a line to the given location, and adds it to the part.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          x (float): x-axis coordinate of the end point</span>
+<span class="sd">          y (float): y-axis coordinate of the end point</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          list: [line, point_start, point_end]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span>
+        <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="p">,</span> <span class="n">p_already_exists</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_get_pt</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+        <span class="p">[</span><span class="n">line</span><span class="p">,</span> <span class="n">l_already_exists</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_get_line</span><span class="p">(</span> 
+            <span class="n">geometry</span><span class="o">.</span><span class="n">Line</span><span class="p">(</span><span class="n">pold</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="p">)</span> <span class="p">)</span>
+        
+        <span class="c"># add the line to the area</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">areas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        
+        <span class="c"># check for closure of the area</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">areas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_side</span><span class="p">(</span><span class="s">&#39;left&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_side</span><span class="p">(</span><span class="s">&#39;right&#39;</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_side</span><span class="p">(</span><span class="s">&#39;top&#39;</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_side</span><span class="p">(</span><span class="s">&#39;bottom&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">line</span><span class="p">,</span> <span class="n">pold</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Part.get_lines"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.get_lines">[docs]</a>    <span class="k">def</span> <span class="nf">get_lines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of all lines in the part.&quot;&quot;&quot;</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">area</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">areas</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">area</span><span class="o">.</span><span class="n">lines</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">line</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+                    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">lines</span>
+    </div>
+<div class="viewcode-block" id="Part.get_points"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.get_points">[docs]</a>    <span class="k">def</span> <span class="nf">get_points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of all points in the part.&quot;&quot;&quot;</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">area</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">areas</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">area</span><span class="o">.</span><span class="n">lines</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">_points_</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">pt</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">points</span><span class="p">:</span>
+                        <span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">points</span>
+    </div>
+<div class="viewcode-block" id="Part.get_maxlength"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.get_maxlength">[docs]</a>    <span class="k">def</span> <span class="nf">get_maxlength</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the max distance between points in the part.&quot;&quot;&quot;</span>
+        <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_points</span><span class="p">()</span>
+        <span class="n">maxlen</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="c"># loop through points checking dist to next point</span>
+        <span class="k">for</span> <span class="n">ind</span><span class="p">,</span> <span class="n">p1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pts</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">p2</span> <span class="ow">in</span> <span class="n">pts</span><span class="p">[</span><span class="n">ind</span><span class="p">:]:</span>
+                <span class="n">vect</span> <span class="o">=</span> <span class="n">p1</span> <span class="o">-</span> <span class="n">p2</span>
+                <span class="n">dist</span> <span class="o">=</span> <span class="n">vect</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">dist</span> <span class="o">&gt;</span> <span class="n">maxlen</span><span class="p">:</span>
+                    <span class="n">maxlen</span> <span class="o">=</span> <span class="n">dist</span>
+        <span class="k">return</span> <span class="n">maxlen</span>
+</div>
+<div class="viewcode-block" id="Part.area_from_pt"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.area_from_pt">[docs]</a>    <span class="k">def</span> <span class="nf">area_from_pt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pt</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the area that the point is inside.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          pt (Point): the point we are asking about</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          Area or None:</span>
+<span class="sd">            Area is the found area</span>
+<span class="sd">            None is returned if the point is not in one of this part&#39;s areas</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">area</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">areas</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">area</span><span class="o">.</span><span class="n">pt_inside</span><span class="p">(</span><span class="n">pt</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">area</span>
+        <span class="k">return</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="Part.fillet_lines"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.fillet_lines">[docs]</a>    <span class="k">def</span> <span class="nf">fillet_lines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">,</span> <span class="n">radius</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fillets the given lines in the part.</span>
+<span class="sd">        </span>
+<span class="sd">        This inserts an arc in the part tangent to the two given lines.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          l1 (Line): line that the arc starts on, arc is tangent to the line</span>
+<span class="sd">          l2 (Line): line that the ar ends on, arc is tangent to the line</span>
+<span class="sd">          radius (float): arc radius size        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># this function fillets lines in a part</span>
+        <span class="c"># check if the lines are touching</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span>
+        
+        <span class="k">if</span> <span class="n">l1</span><span class="o">.</span><span class="n">touches</span><span class="p">(</span><span class="n">l2</span><span class="p">):</span>
+            <span class="c"># offset the lines, assuming area is being traced clockwise</span>
+            <span class="c"># get the intersection point</span>
+            <span class="n">magnitude</span> <span class="o">=</span> <span class="n">radius</span>
+            <span class="n">l1_off</span> <span class="o">=</span> <span class="n">l1</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">magnitude</span><span class="p">)</span>
+            <span class="n">l2_off</span> <span class="o">=</span> <span class="n">l2</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">magnitude</span><span class="p">)</span>
+            <span class="n">ctrpt</span> <span class="o">=</span> <span class="n">l1_off</span><span class="o">.</span><span class="n">intersects</span><span class="p">(</span><span class="n">l2_off</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">ctrpt</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="bp">None</span><span class="p">):</span>
+                <span class="c"># flip the offset deirection if lines don&#39;t intersect</span>
+                <span class="n">magnitude</span> <span class="o">=</span> <span class="o">-</span><span class="n">radius</span>
+                <span class="n">l1_off</span> <span class="o">=</span> <span class="n">l1</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">magnitude</span><span class="p">)</span>
+                <span class="n">l2_off</span> <span class="o">=</span> <span class="n">l2</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">magnitude</span><span class="p">)</span>
+                <span class="n">ctrpt</span> <span class="o">=</span> <span class="n">l1_off</span><span class="o">.</span><span class="n">intersects</span><span class="p">(</span><span class="n">l2_off</span><span class="p">)</span>  
+                
+            <span class="c"># now we have an intersecting point</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Arc center pt is: &#39;</span><span class="p">,</span><span class="n">ctrpt</span><span class="p">)</span>
+            <span class="n">p1_new</span> <span class="o">=</span> <span class="n">l1</span><span class="o">.</span><span class="n">arc_tang_intersection</span><span class="p">(</span><span class="n">ctrpt</span><span class="p">,</span> <span class="n">magnitude</span><span class="p">)</span>
+            <span class="n">p2_new</span> <span class="o">=</span> <span class="n">l2</span><span class="o">.</span><span class="n">arc_tang_intersection</span><span class="p">(</span><span class="n">ctrpt</span><span class="p">,</span> <span class="n">magnitude</span><span class="p">)</span>
+            <span class="n">rempt</span> <span class="o">=</span> <span class="n">l1</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            
+            <span class="c"># del old pt, store new points for the arc</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">points</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">rempt</span><span class="p">)</span>
+            <span class="p">[</span><span class="n">p1_new</span><span class="p">,</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_get_pt</span><span class="p">(</span> <span class="n">p1_new</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">p1_new</span><span class="o">.</span><span class="n">y</span> <span class="p">)</span>
+            <span class="p">[</span><span class="n">ctrpt</span><span class="p">,</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_get_pt</span><span class="p">(</span> <span class="n">ctrpt</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">ctrpt</span><span class="o">.</span><span class="n">y</span> <span class="p">)</span>
+            <span class="p">[</span><span class="n">p2_new</span><span class="p">,</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_get_pt</span><span class="p">(</span> <span class="n">p2_new</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">p2_new</span><span class="o">.</span><span class="n">y</span> <span class="p">)</span>
+            
+            <span class="c"># make the new arc</span>
+            <span class="n">arc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Arc</span><span class="p">(</span><span class="n">p1_new</span><span class="p">,</span> <span class="n">p2_new</span><span class="p">,</span> <span class="n">ctrpt</span><span class="p">)</span> <span class="p">)</span>
+                        
+            <span class="c"># edit the adjacent lines to replace the removed pt</span>
+            <span class="n">l1</span><span class="o">.</span><span class="n">set_pt</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">arc</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+            <span class="n">l2</span><span class="o">.</span><span class="n">set_pt</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">arc</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            
+            <span class="c"># put the arc in the right location in the area</span>
+            <span class="k">for</span> <span class="n">area</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">areas</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">l1</span> <span class="ow">in</span> <span class="n">area</span><span class="o">.</span><span class="n">lines</span><span class="p">:</span>
+                    <span class="n">area</span><span class="o">.</span><span class="n">line_insert</span><span class="p">(</span><span class="n">l1</span><span class="p">,</span> <span class="n">arc</span><span class="p">)</span>
+                    <span class="k">print</span> <span class="p">(</span><span class="s">&#39;Arc inserted into area </span><span class="si">%i</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">area</span><span class="o">.</span><span class="n">id</span><span class="p">,))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">sel_children</span><span class="p">()</span>
+                        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span> <span class="p">(</span><span class="s">&#39;Cannot fillet! Lines must touch!&#39;</span><span class="p">)</span>
+        <span class="c"># reset the cursor to where it should be</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span> <span class="o">=</span> <span class="n">tmp</span>
+        </div>
+<div class="viewcode-block" id="Part.point_parents"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.point_parents">[docs]</a>    <span class="k">def</span> <span class="nf">point_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pt</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns lines that contain pt as their start or end point.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          pt (Point): the point we are asking about</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          res (list): list of lines that contain pt</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_lines</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">_points_</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span>
+    </div>
+<div class="viewcode-block" id="Part.point_line"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.point_line">[docs]</a>    <span class="k">def</span> <span class="nf">point_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pt</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the line that point pt is on. pt is not a start/end point.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          pt (Point): the point we are asking about</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          None or Line or Arc:</span>
+<span class="sd">            None: if the point is not on one of the lines</span>
+<span class="sd">            Line or Arc: the line or arc is returned if the pt is on it</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_lines</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">coincident</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">line</span>
+        <span class="k">return</span> <span class="n">res</span>
+    </div>
+<div class="viewcode-block" id="Part.line_parents"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.line_parents">[docs]</a>    <span class="k">def</span> <span class="nf">line_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the area parents of the passed line.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          line (Line or Arc): the line you are asking about</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          res (list of Area): the areas that contain the line are returned in a</span>
+<span class="sd">            list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">area</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">areas</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">area</span><span class="o">.</span><span class="n">lines</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">area</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span>
+    </div>
+<div class="viewcode-block" id="Part.cut_line"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.cut_line">[docs]</a>    <span class="k">def</span> <span class="nf">cut_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pt</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cuts the passed line at the passed point pt.</span>
+<span class="sd">        </span>
+<span class="sd">        The passed line is cut into two lines. All areas that included the</span>
+<span class="sd">        original line are updated.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          line (Line): the line to cut</span>
+<span class="sd">          pt (Point): the location on the line that we will cut it</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          list: [pnew, lnew]</span>
+<span class="sd">            pnew: the new point we created to cut the original line</span>
+<span class="sd">            lnew: the new line we created, the end half of the orignal line</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">x</span><span class="p">,</span><span class="n">pt</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">pnew</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">points</span><span class="p">:</span>
+            <span class="n">pnew</span> <span class="o">=</span> <span class="p">[</span><span class="n">pt</span> <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">points</span> <span class="k">if</span> <span class="n">pt</span> <span class="o">==</span> <span class="n">p</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pnew</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">p</span> <span class="p">)</span>
+        <span class="c"># below is code to split line, requires defined point and </span>
+        <span class="n">pend</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">line</span><span class="o">.</span><span class="n">set_pt</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">pnew</span><span class="p">)</span>
+        <span class="n">lnew</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Line</span><span class="p">(</span><span class="n">pnew</span><span class="p">,</span> <span class="n">pend</span><span class="p">)</span> <span class="p">)</span> 
+        <span class="n">areas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_parents</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="c"># insert the new line into existing areas</span>
+        <span class="k">for</span> <span class="n">area</span> <span class="ow">in</span> <span class="n">areas</span><span class="p">:</span>
+            <span class="n">area</span><span class="o">.</span><span class="n">line_insert</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">lnew</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">pnew</span><span class="p">,</span> <span class="n">lnew</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Part.cut"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.cut">[docs]</a>    <span class="k">def</span> <span class="nf">cut</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pt</span><span class="p">,</span> <span class="n">cvect</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cuts the part at point pt using cvect as a cutting vector.</span>
+
+<span class="sd">        This function doesn&#39;t return anything.</span>
+<span class="sd">        Instead, it updates all part areas, lines etc after cutting.</span>
+<span class="sd">        So if you cut one area into two pieces, after calling this function</span>
+<span class="sd">        the part will have two areas.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          pt (Point): the locatin we are cutting from</span>
+<span class="sd">          cvect (Point): the vector direction of the cut from pt</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># this cuts the part, through one or more areas</span>
+        <span class="n">cvect</span><span class="o">.</span><span class="n">make_unit</span><span class="p">()</span>
+        
+        <span class="c"># is the point an end point of a line?</span>
+        <span class="n">lines_excluded</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_parents</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+        
+        <span class="c"># if the pt is on an existing line, add that line to the excl list</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines_excluded</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">L1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_line</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">L1</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">lines_excluded</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">L1</span><span class="p">)</span>
+
+        <span class="c"># this stores the list of points to make cut new lines</span>
+        <span class="n">linepts</span> <span class="o">=</span> <span class="p">[</span><span class="n">pt</span><span class="p">]</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines_excluded</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;The given point is not on any lines, all lines will be checked for intersections!&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines_excluded</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Cut or the origin line required&#39;</span><span class="p">)</span>
+            <span class="c"># add the new point and split the origin line</span>
+            <span class="n">line_origin</span> <span class="o">=</span> <span class="n">lines_excluded</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">[</span><span class="n">pnew</span><span class="p">,</span> <span class="n">lnew</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cut_line</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">line_origin</span><span class="p">)</span>
+            <span class="c"># set the first point of our cut line to be this actual point</span>
+            <span class="n">linepts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">pnew</span>
+        
+        <span class="c"># make the tool cut line</span>
+        <span class="n">vsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_maxlength</span><span class="p">()</span>
+        <span class="n">endpt</span> <span class="o">=</span> <span class="n">pt</span> <span class="o">+</span> <span class="n">cvect</span><span class="o">*</span><span class="n">vsize</span>
+        <span class="n">cutline</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Line</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span><span class="n">endpt</span><span class="p">)</span>
+        
+        <span class="c"># find the intersections</span>
+        <span class="n">overlaps</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_lines</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">l</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lines_excluded</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Line</span><span class="p">):</span>
+                    <span class="n">newpt</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">intersects</span><span class="p">(</span><span class="n">cutline</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">newpt</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">):</span>
+                        <span class="n">areas</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">line_parents</span><span class="p">(</span><span class="n">l</span><span class="p">))</span>
+                        
+                        <span class="c"># check if new point already exists</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">newpt</span> <span class="o">-</span> <span class="n">l</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">_acc</span><span class="p">:</span>
+                            <span class="n">newpt</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                            <span class="n">l</span> <span class="o">=</span> <span class="bp">None</span>
+                        <span class="k">elif</span> <span class="p">(</span><span class="n">newpt</span> <span class="o">-</span> <span class="n">l</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">_acc</span><span class="p">:</span>
+                            <span class="n">newpt</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                            <span class="n">l</span> <span class="o">=</span> <span class="bp">None</span>
+
+                        <span class="n">dist</span> <span class="o">=</span> <span class="n">newpt</span> <span class="o">-</span> <span class="n">pt</span>
+                        <span class="n">dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>
+
+                        <span class="c"># store itersections</span>
+                        <span class="c"># pt, line, distance, numareas</span>
+                        <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;pt&#39;</span><span class="p">:</span><span class="n">newpt</span><span class="p">,</span><span class="s">&#39;line&#39;</span><span class="p">:</span><span class="n">l</span><span class="p">,</span><span class="s">&#39;dist&#39;</span><span class="p">:</span><span class="n">dist</span><span class="p">,</span><span class="s">&#39;areas&#39;</span><span class="p">:</span><span class="n">areas</span><span class="p">}</span>
+                        <span class="n">overlaps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        
+        <span class="c"># sort cuts by distance</span>
+        <span class="n">overlaps</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">overlaps</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">k</span><span class="p">[</span><span class="s">&#39;dist&#39;</span><span class="p">])</span>
+        
+        <span class="c"># loop through them drawing the cut line</span>
+        <span class="c"># and closing the old and new areas</span>
+        <span class="k">for</span> <span class="n">cut</span> <span class="ow">in</span> <span class="n">overlaps</span><span class="p">:</span>
+            <span class="c"># splits the line to be cut, updates all parent areas</span>
+            <span class="n">pnew</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">if</span> <span class="n">cut</span><span class="p">[</span><span class="s">&#39;line&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="c"># don&#39;t need to cut a line at the end</span>
+                <span class="n">pnew</span> <span class="o">=</span> <span class="n">cut</span><span class="p">[</span><span class="s">&#39;pt&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="p">[</span><span class="n">pnew</span><span class="p">,</span> <span class="n">lnew</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cut_line</span><span class="p">(</span><span class="n">cut</span><span class="p">[</span><span class="s">&#39;pt&#39;</span><span class="p">],</span> <span class="n">cut</span><span class="p">[</span><span class="s">&#39;line&#39;</span><span class="p">])</span>
+            <span class="c"># adds the intersection point to the list of cut line points</span>
+            <span class="n">linepts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pnew</span><span class="p">)</span>
+            <span class="n">p1</span> <span class="o">=</span> <span class="n">linepts</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">p2</span> <span class="o">=</span> <span class="n">linepts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">pav</span> <span class="o">=</span> <span class="n">p1</span><span class="o">+</span><span class="n">p2</span>
+            <span class="n">pav</span> <span class="o">=</span> <span class="n">pav</span><span class="o">*</span><span class="mf">0.5</span>
+            
+            <span class="c"># get area to cut</span>
+            <span class="n">area</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_from_pt</span><span class="p">(</span><span class="n">pav</span><span class="p">)</span>
+            <span class="c"># make the cut line</span>
+            <span class="n">cut_line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Line</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">cut1</span> <span class="o">=</span> <span class="n">cut2</span> <span class="o">=</span> <span class="n">cut_line</span>
+            <span class="n">lpre1</span> <span class="o">=</span> <span class="n">area</span><span class="o">.</span><span class="n">line_from_startpt</span><span class="p">(</span><span class="n">p1</span><span class="p">)</span>
+            <span class="n">lpre2</span> <span class="o">=</span> <span class="n">area</span><span class="o">.</span><span class="n">line_from_startpt</span><span class="p">(</span><span class="n">p2</span><span class="p">)</span>
+            
+            <span class="c"># select the line portions that define the areas</span>
+            <span class="n">lind1</span> <span class="o">=</span> <span class="n">area</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">lpre1</span><span class="p">)</span> 
+            <span class="n">lind2</span> <span class="o">=</span> <span class="n">area</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">lpre2</span><span class="p">)</span>
+            <span class="n">low</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">lind1</span><span class="p">,</span> <span class="n">lind2</span><span class="p">)</span>
+            <span class="n">high</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">lind1</span><span class="p">,</span> <span class="n">lind2</span><span class="p">)</span>
+            
+            <span class="c"># lists of lines for areas</span>
+            <span class="n">beg</span> <span class="o">=</span> <span class="n">area</span><span class="o">.</span><span class="n">lines</span><span class="p">[:</span><span class="n">low</span><span class="p">]</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">area</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="n">high</span><span class="p">:]</span>
+            <span class="n">mid</span> <span class="o">=</span> <span class="n">area</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="n">low</span><span class="p">:</span><span class="n">high</span><span class="p">]</span>
+            
+            <span class="c"># reverse lines if needed</span>
+            <span class="n">p1</span> <span class="o">=</span> <span class="n">beg</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cut1</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">!=</span> <span class="n">p1</span><span class="p">:</span>
+                <span class="n">cut1</span> <span class="o">=</span> <span class="n">cut1</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+            <span class="n">p1</span> <span class="o">=</span> <span class="n">mid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cut2</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">!=</span> <span class="n">p1</span><span class="p">:</span>
+                <span class="n">cut2</span> <span class="o">=</span> <span class="n">cut2</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+            
+            <span class="n">alist_curr</span> <span class="o">=</span> <span class="n">beg</span> <span class="o">+</span> <span class="p">[</span><span class="n">cut1</span><span class="p">]</span> <span class="o">+</span> <span class="n">end</span>
+            <span class="n">alist_other</span> <span class="o">=</span> <span class="n">mid</span> <span class="o">+</span> <span class="p">[</span><span class="n">cut2</span><span class="p">]</span>
+            
+            <span class="n">area</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">alist_curr</span><span class="p">)</span>
+            <span class="n">anew</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">areas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alist_other</span><span class="p">)</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">areas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">anew</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">cut</span><span class="p">[</span><span class="s">&#39;areas&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c"># break out of for loop, we hit a part edge</span>
+                <span class="k">break</span>
+        </div>
+<div class="viewcode-block" id="Part.chunk_area"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.chunk_area">[docs]</a>    <span class="k">def</span> <span class="nf">chunk_area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">area</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cuts the passed area into regular smaller areas.</span>
+<span class="sd">        </span>
+<span class="sd">        The cgx mesher only accepts areas which are 3-5 sides</span>
+<span class="sd">        so one may need to call this before using that mesher.</span>
+<span class="sd">        Cuts are made perpendicular to tangent points or at</span>
+<span class="sd">        internal corners.</span>
+<span class="sd">        At internal corners two perpendicular cuts are made.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          area (Area): the area to cut into smaller areas</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># store the cuts first, then cut after</span>
+        <span class="n">cuts</span> <span class="o">=</span> <span class="p">[]</span> <span class="c"># each item is a dict with a pt and vect in it</span>
+        <span class="k">for</span> <span class="n">ind</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">area</span><span class="o">.</span><span class="n">lines</span><span class="p">):</span>
+            <span class="n">L1</span> <span class="o">=</span> <span class="n">area</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="n">ind</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">L2</span> <span class="o">=</span> <span class="n">line</span>
+            <span class="n">pt</span> <span class="o">=</span> <span class="n">L1</span><span class="o">.</span><span class="n">pt</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">v1</span> <span class="o">=</span> <span class="n">L1</span><span class="o">.</span><span class="n">get_perp_vec</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+            <span class="n">v2</span> <span class="o">=</span> <span class="n">L2</span><span class="o">.</span><span class="n">get_perp_vec</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+            <span class="c"># flip these vectors later to make them cut the area(s)</span>
+            <span class="n">ang</span> <span class="o">=</span> <span class="n">v1</span><span class="o">.</span><span class="n">ang_bet_deg</span><span class="p">(</span><span class="n">v2</span><span class="p">)</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">ang</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="c"># tangent</span>
+                <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;pt&#39;</span><span class="p">:</span><span class="n">pt</span><span class="p">,</span> <span class="s">&#39;vect&#39;</span><span class="p">:</span><span class="n">v1</span><span class="o">*-</span><span class="mi">1</span><span class="p">}</span>
+                <span class="n">cuts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">ang</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c"># internal corner</span>
+                <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;pt&#39;</span><span class="p">:</span><span class="n">pt</span><span class="p">,</span> <span class="s">&#39;vect&#39;</span><span class="p">:</span><span class="n">v1</span><span class="o">*-</span><span class="mi">1</span><span class="p">}</span>
+                <span class="n">cuts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+                <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;pt&#39;</span><span class="p">:</span><span class="n">pt</span><span class="p">,</span> <span class="s">&#39;vect&#39;</span><span class="p">:</span><span class="n">v2</span><span class="o">*-</span><span class="mi">1</span><span class="p">}</span>
+                <span class="n">cuts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">ang</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c"># external corner</span>
+                <span class="c"># do not split these</span>
+                <span class="k">pass</span>
+        
+        <span class="c"># do the cuts</span>
+        <span class="k">for</span> <span class="n">cut</span> <span class="ow">in</span> <span class="n">cuts</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;--------------------&#39;</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Cut pt:&#39;</span><span class="p">,</span><span class="n">cut</span><span class="p">[</span><span class="s">&#39;pt&#39;</span><span class="p">])</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Cut vect: &#39;</span><span class="p">,</span><span class="n">cut</span><span class="p">[</span><span class="s">&#39;vect&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cut</span><span class="p">(</span><span class="n">cut</span><span class="p">[</span><span class="s">&#39;pt&#39;</span><span class="p">],</span> <span class="n">cut</span><span class="p">[</span><span class="s">&#39;vect&#39;</span><span class="p">])</span>
+            </div>
+<div class="viewcode-block" id="Part.chunk"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.chunk">[docs]</a>    <span class="k">def</span> <span class="nf">chunk</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Chunks all areas in the part.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">area</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">areas</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">area</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">area</span><span class="o">.</span><span class="n">lines</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
+                    <span class="c"># we need to chunk this area, it has too many lines to mesh</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">chunk_area</span><span class="p">(</span><span class="n">area</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Area </span><span class="si">%i</span><span class="s"> was not chunked because it had &lt; 6 sides.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">area</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+        <span class="c"># store the left, right, top, and bottom lines        </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_side</span><span class="p">(</span><span class="s">&#39;left&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_side</span><span class="p">(</span><span class="s">&#39;right&#39;</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_side</span><span class="p">(</span><span class="s">&#39;top&#39;</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_side</span><span class="p">(</span><span class="s">&#39;bottom&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="Part.set_matl"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.set_matl">[docs]</a>    <span class="k">def</span> <span class="nf">set_matl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mat</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the part material.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          matl (Matl): the material assigned to the part</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">matl</span> <span class="o">=</span> <span class="n">mat</span>
+            </div>
+<div class="viewcode-block" id="Part.__str__"><a class="viewcode-back" href="../../pycalculix.part.html#pycalculix.part.Part.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns string listing object type, id number and name.&quot;&quot;&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="s">&#39;Part, id=</span><span class="si">%i</span><span class="s"> name=</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_name</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">val</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,748 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pycalculix.results_file &mdash; pycalculix  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pycalculix  documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pycalculix.results_file</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">re</span> <span class="c"># used to get info from frd file</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">roots</span><span class="p">,</span> <span class="n">linspace</span> <span class="c"># need to find S1-S3, and to make contours</span>
+<span class="kn">import</span> <span class="nn">os</span> <span class="c">#need to check if results file exists</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.colors</span> <span class="kn">as</span> <span class="nn">colors</span>
+<span class="kn">import</span> <span class="nn">matplotlib.cm</span> <span class="kn">as</span> <span class="nn">cmx</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">environment</span> <span class="c"># needed for DPI</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">base_classes</span> <span class="c"># needed for RESFIELDS</span>
+
+<div class="viewcode-block" id="Results_File"><a class="viewcode-back" href="../../pycalculix.results_file.html#pycalculix.results_file.Results_File">[docs]</a><span class="k">class</span> <span class="nc">Results_File</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes a results file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">    solved_model (Model): parent model</span>
+<span class="sd">    fname (str): project/results file prefix</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">    p (Model): parent model</span>
+<span class="sd">    fname (str): results file prefix</span>
+<span class="sd">    steps (list): a list of float time steps</span>
+<span class="sd">    results (dict): a dict sotring the results file.</span>
+<span class="sd">      results[step][&#39;node&#39;][nnum][field] --&gt; value</span>
+<span class="sd">      results[step][&#39;element&#39;][enum][field] --&gt; value</span>
+<span class="sd">      field = &#39;ux&#39; or &#39;Seqv&#39; or &#39;ey&#39; etc.</span>
+<span class="sd">    time (float): current time we are looking at, defaults to -1</span>
+<span class="sd">      When a file is loaded in, the first time step is loaded.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">solved_model</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">solved_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fname</span> <span class="o">=</span> <span class="n">fname</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">steps</span> <span class="o">=</span> <span class="p">[]</span> <span class="c"># this stores a list of time steps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># stores results, nested dicts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_frd</span><span class="p">()</span> <span class="c"># read nodal results</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_dat</span><span class="p">()</span> <span class="c"># read element integration pt results</span>
+
+<div class="viewcode-block" id="Results_File.nplot"><a class="viewcode-back" href="../../pycalculix.results_file.html#pycalculix.results_file.Results_File.nplot">[docs]</a>    <span class="k">def</span> <span class="nf">nplot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="mi">21</span><span class="p">,</span> <span class="n">gradient</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">gmult</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="c"># plot the results in the given field for the selected object</span>
+
+        <span class="c"># store the selected nodes and elements</span>
+        <span class="n">sel</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">sel</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">sel</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">]</span>
+        <span class="n">sel</span><span class="p">[</span><span class="s">&#39;elements&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">sel</span><span class="p">[</span><span class="s">&#39;elements&#39;</span><span class="p">]</span>
+        <span class="n">sel</span><span class="p">[</span><span class="s">&#39;faces&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">sel</span><span class="p">[</span><span class="s">&#39;faces&#39;</span><span class="p">]</span>
+        
+        <span class="c"># sort nodes low to high so index is correct</span>
+        <span class="c"># we have index to id below so showing subsets works</span>
+        <span class="n">sel</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sel</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">])</span>
+        <span class="n">sel</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">sel</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">k</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        faceplot = False</span>
+<span class="sd">        if len(sel[&#39;elements&#39;]) == 0 and len(sel[&#39;faces&#39;]) &gt; 0</span>
+<span class="sd">        NEED TO ADD CODE HERE TO MAKE INTERPOLATION TRIANGLES FOR ELEMENT FACES</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        
+        <span class="c"># store results at nodes</span>
+        <span class="n">axials</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">radials</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">zs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">id_to_ind</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">sel</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">]:</span>
+            <span class="n">id_to_ind</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">axials</span><span class="p">)</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">gmult</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;node&#39;</span><span class="p">][</span><span class="n">n</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s">&#39;uy&#39;</span><span class="p">]</span>
+            <span class="n">rad</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">gmult</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;node&#39;</span><span class="p">][</span><span class="n">n</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s">&#39;ux&#39;</span><span class="p">]</span>
+            <span class="n">axials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+            <span class="n">radials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rad</span><span class="p">)</span>
+            <span class="n">zs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;node&#39;</span><span class="p">][</span><span class="n">n</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="n">field</span><span class="p">])</span>
+
+        <span class="c"># make a list of triangles, given by indices, looping anticlockwise</span>
+        <span class="n">triangles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mylist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel</span><span class="p">[</span><span class="s">&#39;elements&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">mylist</span> <span class="o">=</span> <span class="n">sel</span><span class="p">[</span><span class="s">&#39;elements&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel</span><span class="p">[</span><span class="s">&#39;faces&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">mylist</span> <span class="o">=</span> <span class="n">sel</span><span class="p">[</span><span class="s">&#39;faces&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">mylist</span><span class="p">:</span>
+            <span class="n">tris</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">get_tris</span><span class="p">()</span>     <span class="c"># list of triangle nodes defined by node id</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tris</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">ind</span><span class="p">,</span> <span class="n">nid</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+                    <span class="n">t</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">id_to_ind</span><span class="p">[</span><span class="n">nid</span><span class="p">]</span>     <span class="c"># convert id to index</span>
+            <span class="n">triangles</span> <span class="o">+=</span> <span class="n">tris</span>
+        
+        <span class="c"># check to see if selected nodes and elements are</span>
+        <span class="c"># in the parent model&#39;s nodes and elements</span>
+        
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+        
+        <span class="c"># need to set tick list here</span>
+        <span class="n">vmin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span>
+        <span class="n">vmax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span>
+        <span class="n">tick_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">vmin</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">vmax</span> <span class="o">!=</span> <span class="n">vmin</span><span class="p">:</span>
+            <span class="c"># we have a range of values we&#39;re plotting</span>
+            <span class="n">tick_list</span> <span class="o">=</span> <span class="n">linspace</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span><span class="n">vmax</span><span class="p">,</span><span class="n">levels</span><span class="p">)</span>        
+        
+        <span class="c"># plot using a gradient(shaded) or levels</span>
+        <span class="k">if</span> <span class="n">gradient</span><span class="p">:</span>
+            <span class="c"># This one is shaded</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">tripcolor</span><span class="p">(</span><span class="n">axials</span><span class="p">,</span> <span class="n">radials</span><span class="p">,</span> <span class="n">triangles</span><span class="p">,</span> <span class="n">zs</span><span class="p">,</span> <span class="n">shading</span><span class="o">=</span><span class="s">&#39;gouraud&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># this one is not shaded</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">tricontourf</span><span class="p">(</span><span class="n">axials</span><span class="p">,</span> <span class="n">radials</span><span class="p">,</span> <span class="n">triangles</span><span class="p">,</span> <span class="n">zs</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="n">tick_list</span><span class="p">)</span>
+
+        <span class="c"># code required for the colorbar</span>
+        <span class="n">cNorm</span>  <span class="o">=</span> <span class="n">colors</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">)</span>
+        <span class="n">cmap</span> <span class="o">=</span> <span class="n">colors</span><span class="o">.</span><span class="n">ListedColormap</span><span class="p">([</span><span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">])</span> <span class="c"># default to plot one val</span>
+        <span class="k">if</span> <span class="n">vmax</span> <span class="o">!=</span> <span class="n">vmin</span><span class="p">:</span>
+            <span class="c"># we have a range of values we&#39;re plotting</span>
+            <span class="k">if</span> <span class="n">gradient</span><span class="p">:</span>
+                <span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">jet</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s">&#39;jet&#39;</span><span class="p">,</span> <span class="n">levels</span><span class="p">)</span>
+        <span class="n">scalarMap</span> <span class="o">=</span> <span class="n">cmx</span><span class="o">.</span><span class="n">ScalarMappable</span><span class="p">(</span><span class="n">norm</span><span class="o">=</span><span class="n">cNorm</span><span class="p">,</span><span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>            
+        <span class="n">scalarMap</span><span class="o">.</span><span class="n">_A</span> <span class="o">=</span> <span class="p">[]</span> <span class="c"># need to set this for it to work</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">scalarMap</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s">&#39;vertical&#39;</span><span class="p">,</span> <span class="n">ticks</span><span class="o">=</span><span class="n">tick_list</span><span class="p">)</span>
+            
+        <span class="c"># set the horizontal and vertical axes</span>
+        <span class="n">vert</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">radials</span><span class="p">)</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">radials</span><span class="p">)</span>
+        <span class="n">horiz</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">axials</span><span class="p">)</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">axials</span><span class="p">)</span>
+        <span class="n">vadder</span> <span class="o">=</span> <span class="p">(</span><span class="n">vert</span><span class="p">)</span><span class="o">/</span><span class="mi">5</span>
+        <span class="n">hadder</span> <span class="o">=</span> <span class="p">(</span><span class="n">horiz</span><span class="p">)</span><span class="o">/</span><span class="mi">5</span>    
+        <span class="p">(</span><span class="n">vmax</span><span class="p">,</span><span class="n">vmin</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">radials</span><span class="p">)</span><span class="o">+</span><span class="n">vadder</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">radials</span><span class="p">)</span><span class="o">-</span><span class="n">vadder</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">hmax</span><span class="p">,</span><span class="n">hmin</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">axials</span><span class="p">)</span><span class="o">+</span><span class="n">hadder</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">axials</span><span class="p">)</span><span class="o">-</span><span class="n">hadder</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">hmin</span><span class="p">,</span> <span class="n">hmax</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">)</span>
+        
+        <span class="c"># set units</span>
+        <span class="p">[</span><span class="n">f_unit</span><span class="p">,</span> <span class="n">d_unit</span><span class="p">,</span> <span class="n">t_unit</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">get_units</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="s">&#39;dist&#39;</span><span class="p">,</span> <span class="s">&#39;time&#39;</span><span class="p">)</span>
+
+        <span class="c"># set plot axes</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;Node </span><span class="si">%s%s</span><span class="se">\n</span><span class="s">Time=</span><span class="si">%f%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">f_unit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="n">t_unit</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;axial, y&#39;</span><span class="o">+</span><span class="n">d_unit</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;radial, x&#39;</span><span class="o">+</span><span class="n">d_unit</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s">&#39;equal&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">gmult</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticklabels</span><span class="p">([])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticklabels</span><span class="p">([])</span>
+
+        <span class="k">if</span> <span class="n">fname</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="c"># save the image</span>
+            <span class="n">fname</span> <span class="o">+=</span> <span class="s">&#39;.png&#39;</span>
+            <span class="k">if</span> <span class="n">environment</span><span class="o">.</span><span class="n">DPI</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="n">environment</span><span class="o">.</span><span class="n">DPI</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s">&#39;tight&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s">&#39;tight&#39;</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;File </span><span class="si">%s</span><span class="s"> was saved&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fname</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">display</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            
+        <span class="c"># remove all figures</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Results_File.eplot"><a class="viewcode-back" href="../../pycalculix.results_file.html#pycalculix.results_file.Results_File.eplot">[docs]</a>    <span class="k">def</span> <span class="nf">eplot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="mi">21</span><span class="p">,</span> <span class="n">gradient</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">gmult</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="c"># plot the results in the given field for the selected object</span>
+
+        <span class="c"># store the selected nodes and elements</span>
+        <span class="n">sel</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">sel</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">sel</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">]</span>
+        <span class="n">sel</span><span class="p">[</span><span class="s">&#39;elements&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">sel</span><span class="p">[</span><span class="s">&#39;elements&#39;</span><span class="p">]</span>
+        <span class="n">sel</span><span class="p">[</span><span class="s">&#39;faces&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">sel</span><span class="p">[</span><span class="s">&#39;faces&#39;</span><span class="p">]</span>
+        
+        <span class="c"># sort nodes low to high so index is correct</span>
+        <span class="c"># we have index to id below so showing subsets works</span>
+        <span class="n">sel</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sel</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">])</span>
+        <span class="n">sel</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">sel</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">k</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        faceplot = False</span>
+<span class="sd">        if len(sel[&#39;elements&#39;]) == 0 and len(sel[&#39;faces&#39;]) &gt; 0</span>
+<span class="sd">        NEED TO ADD CODE HERE TO MAKE INTERPOLATION TRIANGLES FOR ELEMENT FACES</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        
+        <span class="c"># store results at nodes</span>
+        <span class="n">axials</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">radials</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">zs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">id_to_ind</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">sel</span><span class="p">[</span><span class="s">&#39;nodes&#39;</span><span class="p">]:</span>
+            <span class="n">id_to_ind</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">axials</span><span class="p">)</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">gmult</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;node&#39;</span><span class="p">][</span><span class="n">n</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s">&#39;uy&#39;</span><span class="p">]</span>
+            <span class="n">rad</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">gmult</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;node&#39;</span><span class="p">][</span><span class="n">n</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s">&#39;ux&#39;</span><span class="p">]</span>
+            <span class="n">axials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+            <span class="n">radials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rad</span><span class="p">)</span>
+
+        <span class="c"># make a list of triangles, given by indices, looping anticlockwise</span>
+        <span class="n">triangles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mylist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel</span><span class="p">[</span><span class="s">&#39;elements&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">mylist</span> <span class="o">=</span> <span class="n">sel</span><span class="p">[</span><span class="s">&#39;elements&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel</span><span class="p">[</span><span class="s">&#39;faces&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">mylist</span> <span class="o">=</span> <span class="n">sel</span><span class="p">[</span><span class="s">&#39;faces&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">mylist</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;element&#39;</span><span class="p">][</span><span class="n">e</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="n">field</span><span class="p">]</span>
+            <span class="n">tris</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">get_tris</span><span class="p">()</span>     <span class="c"># list of triangle nodes defined by node id</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tris</span><span class="p">:</span>
+                <span class="n">zs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">ind</span><span class="p">,</span> <span class="n">nid</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+                    <span class="n">t</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">id_to_ind</span><span class="p">[</span><span class="n">nid</span><span class="p">]</span>     <span class="c"># convert id to index</span>
+            <span class="n">triangles</span> <span class="o">+=</span> <span class="n">tris</span>
+        
+        <span class="c"># check to see if selected nodes and elements are</span>
+        <span class="c"># in the parent model&#39;s nodes and elements</span>
+        
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+        
+        <span class="c"># need to set tick list here</span>
+        <span class="n">vmin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span>
+        <span class="n">vmax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span>
+        <span class="n">tick_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">vmin</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">vmax</span> <span class="o">!=</span> <span class="n">vmin</span><span class="p">:</span>
+            <span class="c"># we have a range of values we&#39;re plotting</span>
+            <span class="n">tick_list</span> <span class="o">=</span> <span class="n">linspace</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span><span class="n">vmax</span><span class="p">,</span><span class="n">levels</span><span class="p">)</span>        
+        
+        <span class="c"># plot using levels</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tripcolor</span><span class="p">(</span><span class="n">axials</span><span class="p">,</span> <span class="n">radials</span><span class="p">,</span> <span class="n">triangles</span><span class="p">,</span> <span class="n">zs</span><span class="p">,</span> <span class="n">shading</span><span class="o">=</span><span class="s">&#39;flat&#39;</span><span class="p">)</span>
+
+        <span class="c"># code required for the colorbar</span>
+        <span class="n">cNorm</span>  <span class="o">=</span> <span class="n">colors</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">)</span>
+        <span class="n">cmap</span> <span class="o">=</span> <span class="n">colors</span><span class="o">.</span><span class="n">ListedColormap</span><span class="p">([</span><span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">])</span> <span class="c"># default to plot one val</span>
+        <span class="k">if</span> <span class="n">vmax</span> <span class="o">!=</span> <span class="n">vmin</span><span class="p">:</span>
+            <span class="c"># we have a range of values we&#39;re plotting</span>
+            <span class="k">if</span> <span class="n">gradient</span><span class="p">:</span>
+                <span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">jet</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s">&#39;jet&#39;</span><span class="p">,</span> <span class="n">levels</span><span class="p">)</span>
+        <span class="n">scalarMap</span> <span class="o">=</span> <span class="n">cmx</span><span class="o">.</span><span class="n">ScalarMappable</span><span class="p">(</span><span class="n">norm</span><span class="o">=</span><span class="n">cNorm</span><span class="p">,</span><span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>            
+        <span class="n">scalarMap</span><span class="o">.</span><span class="n">_A</span> <span class="o">=</span> <span class="p">[]</span> <span class="c"># need to set this for it to work</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">scalarMap</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s">&#39;vertical&#39;</span><span class="p">,</span> <span class="n">ticks</span><span class="o">=</span><span class="n">tick_list</span><span class="p">)</span>
+            
+        <span class="c"># set the horizontal and vertical axes</span>
+        <span class="n">vert</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">radials</span><span class="p">)</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">radials</span><span class="p">)</span>
+        <span class="n">horiz</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">axials</span><span class="p">)</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">axials</span><span class="p">)</span>
+        <span class="n">vadder</span> <span class="o">=</span> <span class="p">(</span><span class="n">vert</span><span class="p">)</span><span class="o">/</span><span class="mi">5</span>
+        <span class="n">hadder</span> <span class="o">=</span> <span class="p">(</span><span class="n">horiz</span><span class="p">)</span><span class="o">/</span><span class="mi">5</span>    
+        <span class="p">(</span><span class="n">vmax</span><span class="p">,</span><span class="n">vmin</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">radials</span><span class="p">)</span><span class="o">+</span><span class="n">vadder</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">radials</span><span class="p">)</span><span class="o">-</span><span class="n">vadder</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">hmax</span><span class="p">,</span><span class="n">hmin</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">axials</span><span class="p">)</span><span class="o">+</span><span class="n">hadder</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">axials</span><span class="p">)</span><span class="o">-</span><span class="n">hadder</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">hmin</span><span class="p">,</span> <span class="n">hmax</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">)</span>
+        
+        <span class="c"># set units</span>
+        <span class="p">[</span><span class="n">f_unit</span><span class="p">,</span> <span class="n">d_unit</span><span class="p">,</span> <span class="n">t_unit</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">get_units</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="s">&#39;dist&#39;</span><span class="p">,</span> <span class="s">&#39;time&#39;</span><span class="p">)</span>
+
+        <span class="c"># set plot axes</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;Element </span><span class="si">%s%s</span><span class="se">\n</span><span class="s">Time=</span><span class="si">%f%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                  <span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">f_unit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="n">t_unit</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;axial, y&#39;</span><span class="o">+</span><span class="n">d_unit</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;radial, x&#39;</span><span class="o">+</span><span class="n">d_unit</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s">&#39;equal&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">gmult</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticklabels</span><span class="p">([])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticklabels</span><span class="p">([])</span>
+
+        <span class="k">if</span> <span class="n">fname</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="c"># save the image</span>
+            <span class="n">fname</span> <span class="o">+=</span> <span class="s">&#39;.png&#39;</span>
+            <span class="k">if</span> <span class="n">environment</span><span class="o">.</span><span class="n">DPI</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="n">environment</span><span class="o">.</span><span class="n">DPI</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s">&#39;tight&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s">&#39;tight&#39;</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;File </span><span class="si">%s</span><span class="s"> was saved&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fname</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">display</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            
+        <span class="c"># remove all figures</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="Results_File.set_time"><a class="viewcode-back" href="../../pycalculix.results_file.html#pycalculix.results_file.Results_File.set_time">[docs]</a>    <span class="k">def</span> <span class="nf">set_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="c"># sets the current time to time val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;Results file time set to: </span><span class="si">%f</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Results_File.utot"><a class="viewcode-back" href="../../pycalculix.results_file.html#pycalculix.results_file.Results_File.utot">[docs]</a>    <span class="k">def</span> <span class="nf">utot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
+        <span class="c"># computes sum of the squares</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">]</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">(</span> <span class="nb">sum</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
+        <span class="k">return</span> <span class="n">res</span>
+    </div>
+<div class="viewcode-block" id="Results_File.seqv"><a class="viewcode-back" href="../../pycalculix.results_file.html#pycalculix.results_file.Results_File.seqv">[docs]</a>    <span class="k">def</span> <span class="nf">seqv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
+        <span class="c"># calculates the equivalent stress</span>
+        <span class="p">[</span><span class="n">s11</span><span class="p">,</span><span class="n">s22</span><span class="p">,</span><span class="n">s33</span><span class="p">,</span><span class="n">s12</span><span class="p">,</span><span class="n">s13</span><span class="p">,</span><span class="n">s23</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">s11</span> <span class="o">-</span> <span class="n">s22</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">s22</span> <span class="o">-</span> <span class="n">s33</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">s33</span> <span class="o">-</span> <span class="n">s11</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">s12</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">s23</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span><span class="n">s13</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">a</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">b</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">c</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span><span class="mi">6</span><span class="o">*</span><span class="n">d</span><span class="p">))</span><span class="o">**</span><span class="mf">0.5</span>
+        <span class="k">return</span> <span class="n">res</span>
+</div>
+<div class="viewcode-block" id="Results_File.principals"><a class="viewcode-back" href="../../pycalculix.results_file.html#pycalculix.results_file.Results_File.principals">[docs]</a>    <span class="k">def</span> <span class="nf">principals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
+        <span class="c"># calculates and returns principal stresses, S1, S2, S3</span>
+        <span class="p">[</span><span class="n">s11</span><span class="p">,</span><span class="n">s22</span><span class="p">,</span><span class="n">s33</span><span class="p">,</span><span class="n">s12</span><span class="p">,</span><span class="n">s13</span><span class="p">,</span><span class="n">s23</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="n">s11</span> <span class="o">+</span> <span class="n">s22</span> <span class="o">+</span> <span class="n">s33</span><span class="p">)</span><span class="o">*-</span><span class="mf">1.0</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="p">(</span><span class="n">s11</span><span class="o">*</span><span class="n">s22</span> <span class="o">+</span> <span class="n">s11</span><span class="o">*</span><span class="n">s33</span> <span class="o">+</span> <span class="n">s22</span><span class="o">*</span><span class="n">s33</span> <span class="o">-</span> <span class="n">s12</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">s13</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">s23</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">(</span><span class="n">s11</span><span class="o">*</span><span class="n">s22</span><span class="o">*</span><span class="n">s33</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">s12</span><span class="o">*</span><span class="n">s13</span><span class="o">*</span><span class="n">s23</span> <span class="o">-</span> <span class="n">s11</span><span class="o">*</span><span class="p">(</span><span class="n">s23</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">s22</span><span class="o">*</span><span class="p">(</span><span class="n">s13</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">s33</span><span class="o">*</span><span class="p">(</span><span class="n">s12</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">*-</span><span class="mf">1.0</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">roots</span><span class="p">([</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="p">]))</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>        
+        <span class="k">return</span> <span class="n">res</span>
+    </div>
+<div class="viewcode-block" id="Results_File.get_nmax"><a class="viewcode-back" href="../../pycalculix.results_file.html#pycalculix.results_file.Results_File.get_nmax">[docs]</a>    <span class="k">def</span> <span class="nf">get_nmax</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="c"># returns the max value of a given results field</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[</span> <span class="n">ndict</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="k">for</span> <span class="n">ndict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;node&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="p">]</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Results_File.get_nmin"><a class="viewcode-back" href="../../pycalculix.results_file.html#pycalculix.results_file.Results_File.get_nmin">[docs]</a>    <span class="k">def</span> <span class="nf">get_nmin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="c"># returns the min value of a given results field</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[</span> <span class="n">ndict</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="k">for</span> <span class="n">ndict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;node&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="p">]</span>
+        <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Results_File.get_fsum"><a class="viewcode-back" href="../../pycalculix.results_file.html#pycalculix.results_file.Results_File.get_fsum">[docs]</a>    <span class="k">def</span> <span class="nf">get_fsum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="c"># returns fsum on nodes under given item (point or line)</span>
+        <span class="p">(</span><span class="n">fx</span><span class="p">,</span><span class="n">fy</span><span class="p">,</span><span class="n">fz</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span> <span class="p">[],[],[]</span> <span class="p">)</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">nodes</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;node&#39;</span><span class="p">][</span><span class="n">n</span><span class="p">][</span><span class="s">&#39;fx&#39;</span><span class="p">]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;node&#39;</span><span class="p">][</span><span class="n">n</span><span class="p">][</span><span class="s">&#39;fy&#39;</span><span class="p">]</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;node&#39;</span><span class="p">][</span><span class="n">n</span><span class="p">][</span><span class="s">&#39;fz&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">y</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">z</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c">#print(&#39;Node %i, (fx, fy, fz) = (%12.11f,%12.11f,%12.11f)&#39; % (n, x, y, z))</span>
+                <span class="n">fx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">fy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+                <span class="n">fz</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+        <span class="n">fx</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">fx</span><span class="p">)</span>
+        <span class="n">fy</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">fy</span><span class="p">)</span>
+        <span class="n">fz</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">fz</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">fx</span><span class="p">,</span> <span class="n">fy</span><span class="p">,</span> <span class="n">fz</span><span class="p">]</span>
+    </div>
+<div class="viewcode-block" id="Results_File.get_emax"><a class="viewcode-back" href="../../pycalculix.results_file.html#pycalculix.results_file.Results_File.get_emax">[docs]</a>    <span class="k">def</span> <span class="nf">get_emax</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stype</span><span class="p">):</span>
+        <span class="c"># returns the max stress of given type</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">enum</span><span class="p">,</span> <span class="n">edict</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">step</span><span class="p">][</span><span class="s">&#39;element&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">ipnum</span><span class="p">,</span> <span class="n">ipdict</span><span class="p">)</span> <span class="ow">in</span> <span class="n">edict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">ipdict</span><span class="p">[</span><span class="n">stype</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">res</span><span class="p">:</span>
+                        <span class="n">res</span> <span class="o">=</span> <span class="n">ipdict</span><span class="p">[</span><span class="n">stype</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">res</span>
+</div>
+<div class="viewcode-block" id="Results_File.get_vals"><a class="viewcode-back" href="../../pycalculix.results_file.html#pycalculix.results_file.Results_File.get_vals">[docs]</a>    <span class="k">def</span> <span class="nf">get_vals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fstr</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="c"># this returns a list of items based on an input format string</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">fstr</span> <span class="o">=</span> <span class="n">fstr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">fstr</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;&#39;&quot;</span><span class="p">:</span>
+                <span class="c"># strip off the char quaotes</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="c"># this is a string entry, grab the val out of the line</span>
+                <span class="n">ind</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="n">fwd</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="n">ind</span><span class="p">]</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="n">ind</span><span class="p">:]</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fwd</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># format is: 1X, A66, 5E12.5, I12</span>
+                <span class="c"># 1X is number of spaces                </span>
+                <span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="n">c</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+                <span class="n">m_pat</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;^\d+&#39;</span><span class="p">)</span> <span class="c"># find multiplier</span>
+                <span class="n">c_pat</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;[XIEA]&#39;</span><span class="p">)</span> <span class="c"># find character</span>
+                <span class="k">if</span> <span class="n">m_pat</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="o">!=</span> <span class="p">[]:</span>
+                    <span class="n">m</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">m_pat</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">item</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">c_pat</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">item</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">c</span> <span class="o">==</span> <span class="s">&#39;X&#39;</span><span class="p">:</span>
+                    <span class="c"># we are dealing with spaces, just reduce the line size</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="n">m</span><span class="p">:]</span>
+                <span class="k">elif</span> <span class="n">c</span> <span class="o">==</span> <span class="s">&#39;A&#39;</span><span class="p">:</span>
+                    <span class="c"># character string only, add it to results</span>
+                    <span class="n">fwd</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="n">m</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="n">m</span><span class="p">:]</span>
+                    <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fwd</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c"># IE, split line into m pieces</span>
+                    <span class="n">w_pat</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;[IE](\d+)&#39;</span><span class="p">)</span> <span class="c"># find the num after char</span>
+                    <span class="n">w</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">w_pat</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">item</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+                        <span class="c"># only add items if we have enough line to look at</span>
+                        <span class="k">if</span> <span class="n">w</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+                            <span class="n">substr</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="n">w</span><span class="p">]</span>
+                            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="n">w</span><span class="p">:]</span>
+                            <span class="n">substr</span> <span class="o">=</span> <span class="n">substr</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="c"># remove space padding</span>
+                            <span class="k">if</span> <span class="n">c</span> <span class="o">==</span> <span class="s">&#39;I&#39;</span><span class="p">:</span>
+                                <span class="n">substr</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">substr</span><span class="p">)</span>
+                            <span class="k">elif</span> <span class="n">c</span> <span class="o">==</span> <span class="s">&#39;E&#39;</span><span class="p">:</span>
+                                <span class="n">substr</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">substr</span><span class="p">)</span>
+                            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">substr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span>
+                </div>
+<div class="viewcode-block" id="Results_File.read_frd"><a class="viewcode-back" href="../../pycalculix.results_file.html#pycalculix.results_file.Results_File.read_frd">[docs]</a>    <span class="k">def</span> <span class="nf">read_frd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># this reads a ccx frd results file which contains nodal results</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fname</span><span class="o">+</span><span class="s">&#39;.frd&#39;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+            
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Reading results file: &#39;</span><span class="o">+</span><span class="n">fname</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+            <span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;off&#39;</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">FORMAT</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">rfstr</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+            <span class="n">node_ids</span> <span class="o">=</span> <span class="p">[]</span>            
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="k">break</span>
+                
+                <span class="c">#-------------</span>
+                <span class="c"># set the modes</span>
+                <span class="c">#--------------</span>
+                <span class="k">if</span> <span class="s">&#39;2C&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="c"># we are in nodal definition</span>
+                    <span class="n">fstr</span> <span class="o">=</span> <span class="s">&quot;1X,&#39;   2&#39;,&#39;C&#39;,18X,I12,37X,I1&quot;</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_vals</span><span class="p">(</span><span class="n">fstr</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                    <span class="p">[</span><span class="n">KEY</span><span class="p">,</span><span class="n">CODE</span><span class="p">,</span><span class="n">NUMNOD</span><span class="p">,</span><span class="n">FORMAT</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+
+                    <span class="c"># set results format to short, long or binary</span>
+                    <span class="c"># only short and long are parsed so far</span>
+                    <span class="k">if</span> <span class="n">FORMAT</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="c"># short format</span>
+                        <span class="n">rfstr</span> <span class="o">=</span> <span class="s">&quot;1X,&#39;-1&#39;,I5,3E12.5&quot;</span>
+                    <span class="k">elif</span> <span class="n">FORMAT</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="c"># long format</span>
+                        <span class="n">rfstr</span> <span class="o">=</span> <span class="s">&quot;1X,&#39;-1&#39;,I10,3E12.5&quot;</span>
+                    <span class="k">elif</span> <span class="n">format</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="c"># binary</span>
+                        <span class="k">pass</span>
+                    
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                    <span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;nodes&#39;</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Reading &#39;</span><span class="o">+</span><span class="n">mode</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="s">&#39;1PSTEP&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="c"># we are in a results block</span>
+                    
+                    <span class="c"># next line has the time in it</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                    <span class="n">fstr</span> <span class="o">=</span> <span class="s">&quot;1X,&#39; 100&#39;,&#39;C&#39;,6A1,E12.5,I12,20A1,I2,I5,10A1,I2&quot;</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_vals</span><span class="p">(</span><span class="n">fstr</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                    <span class="p">[</span><span class="n">KEY</span><span class="p">,</span><span class="n">CODE</span><span class="p">,</span><span class="n">SETNAME</span><span class="p">,</span><span class="n">VALUE</span><span class="p">,</span><span class="n">NUMNOD</span><span class="p">,</span><span class="n">TEXT</span><span class="p">,</span><span class="n">ICTYPE</span><span class="p">,</span><span class="n">NUMSTP</span><span class="p">,</span><span class="n">ANALYS</span><span class="p">,</span><span class="n">FORMAT</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+
+                    <span class="c"># set results format to short, long or binary</span>
+                    <span class="c"># only short and long are parsed so far</span>
+                    <span class="k">if</span> <span class="n">FORMAT</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="c"># short format</span>
+                        <span class="n">rfstr</span> <span class="o">=</span> <span class="s">&quot;1X,I2,I5,6E12.5&quot;</span>
+                    <span class="k">elif</span> <span class="n">FORMAT</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="c"># long format</span>
+                        <span class="n">rfstr</span> <span class="o">=</span> <span class="s">&quot;1X,I2,I10,6E12.5&quot;</span>
+                    <span class="k">elif</span> <span class="n">format</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="c"># binary</span>
+                        <span class="k">pass</span>
+
+                    <span class="c"># set the time</span>
+                    <span class="n">time</span> <span class="o">=</span> <span class="n">VALUE</span>
+                    <span class="k">if</span> <span class="n">time</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">time</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">time</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;node&#39;</span><span class="p">:{},</span><span class="s">&#39;element&#39;</span><span class="p">:{}}</span>
+                        <span class="k">for</span> <span class="n">nid</span> <span class="ow">in</span> <span class="n">node_ids</span><span class="p">:</span>
+                            <span class="c"># make dict for each node</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;node&#39;</span><span class="p">][</span><span class="n">nid</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                        
+                    <span class="c"># get the name to determine if stress or displ</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                    <span class="n">fstr</span> <span class="o">=</span> <span class="s">&quot;1X,I2,2X,8A1,2I5&quot;</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_vals</span><span class="p">(</span><span class="n">fstr</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                    <span class="p">[</span><span class="n">KEY</span><span class="p">,</span> <span class="n">NAME</span><span class="p">,</span><span class="n">NCOMPS</span><span class="p">,</span><span class="n">IRTYPE</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+                    
+                    <span class="k">if</span> <span class="n">NAME</span> <span class="o">==</span> <span class="s">&#39;DISPR&#39;</span><span class="p">:</span>
+                        <span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;displ&#39;</span>
+                        <span class="c"># read 4 lines to get to data</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+                            <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                    <span class="k">elif</span> <span class="n">NAME</span> <span class="o">==</span> <span class="s">&#39;STRESSR&#39;</span><span class="p">:</span>
+                        <span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;stress&#39;</span>
+                        <span class="c"># read 6 lines to get to data</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+                            <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                    <span class="k">elif</span> <span class="n">NAME</span> <span class="o">==</span> <span class="s">&#39;TOSTRAIR&#39;</span><span class="p">:</span>
+                        <span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;strain&#39;</span>
+                        <span class="c"># read 6 lines to get to data</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+                            <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                    <span class="k">elif</span> <span class="n">NAME</span> <span class="o">==</span> <span class="s">&#39;FORCR&#39;</span><span class="p">:</span>
+                        <span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;force&#39;</span>
+                        <span class="c"># read 4 lines to get to data</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+                            <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                            
+                    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Reading &#39;</span><span class="o">+</span><span class="n">mode</span><span class="o">+</span><span class="s">&#39; storing: &#39;</span><span class="o">+</span>
+                          <span class="s">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_classes</span><span class="o">.</span><span class="n">RESFIELDS</span><span class="p">[</span><span class="n">mode</span><span class="p">]))</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                
+                <span class="c">#----------------------------</span>
+                <span class="c"># Store results</span>
+                <span class="c">#----------------------------</span>
+                
+                <span class="c"># reset the read mode if we hit an end of record</span>
+                <span class="k">if</span> <span class="n">line</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39; -3&#39;</span><span class="p">:</span>
+                    <span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;off&#39;</span>
+                
+                <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;nodes&#39;</span><span class="p">:</span>
+                    <span class="c"># node definition, store node numbers only</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_vals</span><span class="p">(</span><span class="n">rfstr</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                    <span class="p">[</span><span class="n">KEY</span><span class="p">,</span> <span class="n">NODE</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+                    <span class="n">node_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">NODE</span><span class="p">)</span>
+                    
+                <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;displ&#39;</span><span class="p">:</span>  
+                    <span class="c"># displacements</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_vals</span><span class="p">(</span><span class="n">rfstr</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                    <span class="p">[</span><span class="n">KEY</span><span class="p">,</span> <span class="n">NODE</span><span class="p">,</span> <span class="n">ux</span><span class="p">,</span> <span class="n">uy</span><span class="p">,</span> <span class="n">uz</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>                    
+                    <span class="n">labs</span> <span class="o">=</span> <span class="n">base_classes</span><span class="o">.</span><span class="n">RESFIELDS</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span>
+                    <span class="n">vals</span> <span class="o">=</span> <span class="p">[</span><span class="n">ux</span><span class="p">,</span> <span class="n">uy</span><span class="p">,</span> <span class="n">uz</span><span class="p">]</span>
+                    <span class="n">utot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">utot</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+                    <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">utot</span><span class="p">)</span>
+                    <span class="c">#print(vals)</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;node&#39;</span><span class="p">][</span><span class="n">NODE</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">labs</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
+                        <span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+                <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;stress&#39;</span><span class="p">:</span>
+                    <span class="c"># stresses</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_vals</span><span class="p">(</span><span class="n">rfstr</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                    <span class="p">[</span><span class="n">KEY</span><span class="p">,</span> <span class="n">NODE</span><span class="p">,</span> <span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">sz</span><span class="p">,</span> <span class="n">sxy</span><span class="p">,</span> <span class="n">syz</span><span class="p">,</span> <span class="n">szx</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+                    <span class="n">labs</span> <span class="o">=</span> <span class="n">base_classes</span><span class="o">.</span><span class="n">RESFIELDS</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span>
+                    <span class="n">vals</span> <span class="o">=</span> <span class="p">[</span><span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">sz</span><span class="p">,</span> <span class="n">sxy</span><span class="p">,</span> <span class="n">syz</span><span class="p">,</span> <span class="n">szx</span><span class="p">]</span>
+                    <span class="n">seqv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seqv</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+                    <span class="p">[</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">principals</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+                    <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">seqv</span><span class="p">)</span>
+                    <span class="n">vals</span> <span class="o">+=</span> <span class="p">[</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span><span class="p">]</span>
+                    <span class="c">#print(vals)</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;node&#39;</span><span class="p">][</span><span class="n">NODE</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">labs</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
+                        <span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+                <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;strain&#39;</span><span class="p">:</span>
+                    <span class="c"># strains</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_vals</span><span class="p">(</span><span class="n">rfstr</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                    <span class="p">[</span><span class="n">KEY</span><span class="p">,</span> <span class="n">NODE</span><span class="p">,</span> <span class="n">ex</span><span class="p">,</span> <span class="n">ey</span><span class="p">,</span> <span class="n">ez</span><span class="p">,</span> <span class="n">exy</span><span class="p">,</span> <span class="n">eyz</span><span class="p">,</span> <span class="n">ezx</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+                    <span class="n">labs</span> <span class="o">=</span> <span class="n">base_classes</span><span class="o">.</span><span class="n">RESFIELDS</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span>
+                    <span class="n">vals</span> <span class="o">=</span> <span class="p">[</span><span class="n">ex</span><span class="p">,</span> <span class="n">ey</span><span class="p">,</span> <span class="n">ez</span><span class="p">,</span> <span class="n">exy</span><span class="p">,</span> <span class="n">eyz</span><span class="p">,</span> <span class="n">ezx</span><span class="p">]</span>
+                    <span class="n">eeqv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seqv</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+                    <span class="p">[</span><span class="n">e1</span><span class="p">,</span> <span class="n">e2</span><span class="p">,</span> <span class="n">e3</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">principals</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+                    <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eeqv</span><span class="p">)</span>
+                    <span class="n">vals</span> <span class="o">+=</span> <span class="p">[</span><span class="n">e1</span><span class="p">,</span> <span class="n">e2</span><span class="p">,</span> <span class="n">e3</span><span class="p">]</span>
+                    <span class="c">#print(vals)</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;node&#39;</span><span class="p">][</span><span class="n">NODE</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">labs</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
+                        <span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+                
+                <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;force&#39;</span><span class="p">:</span>
+                    <span class="c"># reaction forces</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_vals</span><span class="p">(</span><span class="n">rfstr</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                    <span class="p">[</span><span class="n">KEY</span><span class="p">,</span> <span class="n">NODE</span><span class="p">,</span> <span class="n">fx</span><span class="p">,</span> <span class="n">fy</span><span class="p">,</span> <span class="n">fz</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+                    <span class="n">labs</span> <span class="o">=</span> <span class="n">base_classes</span><span class="o">.</span><span class="n">RESFIELDS</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span>
+                    <span class="n">vals</span> <span class="o">=</span> <span class="p">[</span><span class="n">fx</span><span class="p">,</span> <span class="n">fy</span><span class="p">,</span> <span class="n">fz</span><span class="p">]</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;node&#39;</span><span class="p">][</span><span class="n">NODE</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">labs</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
+                        <span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>                    
+
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;The following times have been read: &#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Done reading file: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fname</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Show an error</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Error: </span><span class="si">%s</span><span class="s"> file not found&quot;</span> <span class="o">%</span> <span class="n">fname</span><span class="p">)</span>        
+</div>
+<div class="viewcode-block" id="Results_File.read_dat"><a class="viewcode-back" href="../../pycalculix.results_file.html#pycalculix.results_file.Results_File.read_dat">[docs]</a>    <span class="k">def</span> <span class="nf">read_dat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># reads the element results file</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fname</span><span class="o">+</span><span class="s">&#39;.dat&#39;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+            
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+            <span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;off&#39;</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                
+                <span class="c"># check for read flags for displ or stress</span>
+                <span class="k">if</span> <span class="s">&#39;stress&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="n">words</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    <span class="c"># add time if not present</span>
+                    <span class="n">time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">words</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="n">time</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">time</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">time</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;node&#39;</span><span class="p">:{},</span><span class="s">&#39;element&#39;</span><span class="p">:{}}</span>
+                    <span class="c"># set mode</span>
+                    <span class="k">if</span> <span class="s">&#39;stress&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                        <span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;stress&#39;</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                
+                <span class="c"># reset the read type if we hit a blank line</span>
+                <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+                    <span class="n">mode</span> <span class="o">=</span> <span class="s">&#39;off&#39;</span>
+                
+                <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;stress&#39;</span><span class="p">:</span>
+                    <span class="c"># store stress results</span>
+                    <span class="n">w</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    <span class="n">labs</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Sx&#39;</span><span class="p">,</span> <span class="s">&#39;Sy&#39;</span><span class="p">,</span> <span class="s">&#39;Sz&#39;</span><span class="p">,</span> <span class="s">&#39;Sxy&#39;</span><span class="p">,</span> <span class="s">&#39;Sxz&#39;</span><span class="p">,</span> <span class="s">&#39;Syz&#39;</span><span class="p">,</span> <span class="s">&#39;Seqv&#39;</span><span class="p">]</span>
+                    <span class="n">vals</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">w</span><span class="p">[</span><span class="mi">2</span><span class="p">:]]</span>
+                    <span class="n">seqv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seqv</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+                    <span class="p">[</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">principals</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+                    <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">seqv</span><span class="p">)</span>
+                    <span class="n">vals</span> <span class="o">+=</span> <span class="p">[</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span><span class="p">]</span>
+                    <span class="c">#print(vals)</span>
+                    <span class="n">enum</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">ipnum</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="c"># integration point number</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">for</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">labs</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
+                        <span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+                    <span class="k">if</span> <span class="n">enum</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;element&#39;</span><span class="p">]:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;element&#39;</span><span class="p">][</span><span class="n">enum</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="c"># each line is an integration point result</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">time</span><span class="p">][</span><span class="s">&#39;element&#39;</span><span class="p">][</span><span class="n">enum</span><span class="p">][</span><span class="n">ipnum</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span>
+
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            
+            <span class="c"># loop over all element results, calculating avg element result</span>
+            <span class="c"># by averaging integration point vals</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">enum</span><span class="p">,</span> <span class="n">edict</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s">&#39;element&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">ipnums</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">edict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="nb">int</span><span class="p">)]</span>
+                    <span class="n">ipts</span> <span class="o">=</span> <span class="p">[</span><span class="n">edict</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ipnums</span><span class="p">]</span>
+                    
+                    <span class="n">labs</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Sx&#39;</span><span class="p">,</span> <span class="s">&#39;Sy&#39;</span><span class="p">,</span> <span class="s">&#39;Sz&#39;</span><span class="p">,</span> <span class="s">&#39;Sxy&#39;</span><span class="p">,</span> <span class="s">&#39;Sxz&#39;</span><span class="p">,</span> <span class="s">&#39;Syz&#39;</span><span class="p">]</span>
+                    <span class="n">vals</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">labs</span><span class="p">):</span>
+                        <span class="n">vlist</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ipts</span><span class="p">]</span>
+                        <span class="n">val</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">vlist</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">vlist</span><span class="p">)</span>
+                        <span class="n">edict</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+                        <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                    <span class="c"># for each element, caclulate Seqv, S1, S2, S3</span>
+                    <span class="n">seqv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seqv</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+                    <span class="p">[</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">principals</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+                    <span class="n">edict</span><span class="p">[</span><span class="s">&#39;Seqv&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">seqv</span>
+                    <span class="n">edict</span><span class="p">[</span><span class="s">&#39;S1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s1</span>
+                    <span class="n">edict</span><span class="p">[</span><span class="s">&#39;S2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s2</span>
+                    <span class="n">edict</span><span class="p">[</span><span class="s">&#39;S3&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s3</span>
+            
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;The following times have been read: &#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Results from file: </span><span class="si">%s</span><span class="s"> have been read.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fname</span><span class="p">))</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Show an error</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Error: </span><span class="si">%s</span><span class="s"> file not found&quot;</span> <span class="o">%</span> <span class="n">fname</span><span class="p">)</span>        </div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

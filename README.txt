@@ -9,7 +9,12 @@ Usefull applications of Pycalculix:
 -Quick Kt analysis of 2D geometry
 -Leaning finite element analyis (FEA) and Python
 
-Notes:
+Folder layout:
+The folders of this project are laid out to allow me to distribute it on pypi.
+Pypi link: https://pypi.python.org/pypi/pycalculix
+Note: the main body of pycalculix code is in pycalculix/__init__.py
+
+Notes, Cutting Areas:
 I build a chunker in python which tries to cut big areas (> 5 sides) which
 cgx can't mesh into smaller areas (<= 5 sides) which are meshable in cgx.
 The chunker may not always be able to cut areas correctly.
@@ -42,7 +47,7 @@ Displacement constraints are also supported.
 Loads are stored on geometry primitives (points lines etc) and can be applied before or after meshing.
 
 Getting Started:
-Please read through the documented example files below:
+Please read through the example files below:
 example1_dam.py
 example2_hole_in_plate.py
 example3_compr_rotor.py
@@ -60,42 +65,61 @@ Files Used:
 *.dat (Calculix ccx element results file, includes integration point results)
 
 Installation:
-Install the below required software.
-Then move pycalculix.py to the directory you want to work in.
-Any new models should be created in separate .py files. See the above example files in the 'Getting Started' section.
+pycalculix requires the below software:
+  Python3+
+  Numpy (S1,S2,S3 calculation)
+  Matplotlib (plotting)
+  Calculix (solving)
+  Gmsh (meshing)
 
-Required Software:
-Calculix:
-	Free and very full-featured preprocessor (cgx) and finite element analysis (FEA) solver (ccx)
-	http://www.calculix.de/
-		Linux Version: http://www.dhondt.de/
-		Windows Version: http://www.bconverged.com/download.php#calculix
-Gmsh: 
-	Free and full featured mesher
-	http://geuz.org/gmsh/#Download
+Easiest Installation:
+Install python 3+, then type
+pip install pycalculix
+Note: This installs the calculix and gmsh programs in sub-folders in the python
+      pycalculix folder.
+      Running these included binaries from pycalculix only works for windows.
+        Linux machines will need libraries to be installed for calculix to work.
+	They would also need the programs to be chmoded so they could be run as
+	executables.      
+
+Separate Installs:
+Install Python 3+: https://www.python.org/downloads/release/python-342/
+Install numpy: http://sourceforge.net/projects/numpy/files/NumPy/1.9.1/
+Install matplotlib: http://matplotlib.org/downloads.html
+Install Calculix: http://www.calculix.de/
+    Linux Version: http://www.dhondt.de/
+    Windows Version: http://www.bconverged.com/download.php#calculix
+Install Gmsh: http://geuz.org/gmsh/#Download
+pip install pycalculix
+Then pass locations to ccx, cgx, and gmsh per the example on the
+pycaculix site: http://justinablack.com/pycalculix/
 
 Anaconda:
 	An installation package that includes Python and many often used python libraries
 	Anaconda includes the below Python3+, Numpy, and Matplotlib.
 	If you are a Python beginner, I suggest downloading and installing it rather than the below separate installers.
 	Url:
-	http://continuum.io/downloads#py34
-	
-Python 3+:
-	https://www.python.org/downloads/release/python-342/
-Numpy: 
-	http://sourceforge.net/projects/numpy/files/NumPy/1.9.1/
-Matplotlib: 
-	http://matplotlib.org/downloads.html
+	http://continuum.io/downloads#py34	
 
 Optional Software:
 Suggested IDE (program to edit and run python programs):
 Wing IDE:
 	http://wingware.com/downloads/wingide-101
-	
+
+Version Updates:
+0.9.3
+  Element results plotting added: rfile.eplot()
+  All code separated into modules for clarity.
+  Docstrings added to all classes/functions.
+  
+
 Future Goals:
--Plotting
-  Add element results plotting
+-Add docstrings to:
+  Feamodel
+  Result_File
+-Check code in pylint
+-Make documentation with sphinx
+-Areas can be drawn in clockwise or counterclockwise direction
 -Add compression supports
 -Make lists for lines and signed lines (need to write a signed lines class)
 -Add struct-thermal and thermal support

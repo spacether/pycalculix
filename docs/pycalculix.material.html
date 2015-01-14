@@ -1,0 +1,251 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pycalculix.material module &mdash; pycalculix  documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pycalculix  documentation" href="index.html" />
+    <link rel="up" title="pycalculix package" href="pycalculix.html" />
+    <link rel="next" title="pycalculix.mesh module" href="pycalculix.mesh.html" />
+    <link rel="prev" title="pycalculix.loads module" href="pycalculix.loads.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.mesh.html" title="pycalculix.mesh module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.loads.html" title="pycalculix.loads module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="pycalculix.html" accesskey="U">pycalculix package</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-pycalculix.material">
+<span id="pycalculix-material-module"></span><h1>pycalculix.material module<a class="headerlink" href="#module-pycalculix.material" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="pycalculix.material.Material">
+<em class="property">class </em><tt class="descclassname">pycalculix.material.</tt><tt class="descname">Material</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pycalculix/material.html#Material"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.material.Material" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pycalculix.base_classes.html#pycalculix.base_classes.Idobj" title="pycalculix.base_classes.Idobj"><tt class="xref py py-class docutils literal"><span class="pre">pycalculix.base_classes.Idobj</span></tt></a></p>
+<p>Makes a linear elastic meterial.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) &#8211; a unique matl name</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="pycalculix.material.Material.id">
+<tt class="descname">id</tt><a class="headerlink" href="#pycalculix.material.Material.id" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em></p>
+<p>material id number</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.material.Material.density">
+<tt class="descname">density</tt><a class="headerlink" href="#pycalculix.material.Material.density" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>density in mass/volume units</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.material.Material.pratio">
+<tt class="descname">pratio</tt><a class="headerlink" href="#pycalculix.material.Material.pratio" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>poisson&#8217;s ratio (unitless)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.material.Material.youngs">
+<tt class="descname">youngs</tt><a class="headerlink" href="#pycalculix.material.Material.youngs" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>young&#8217;s modulus in Force/area = stress units</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.material.Material.conductivity">
+<tt class="descname">conductivity</tt><a class="headerlink" href="#pycalculix.material.Material.conductivity" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>Power / (distance-temp)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.material.Material.spec_heat">
+<tt class="descname">spec_heat</tt><a class="headerlink" href="#pycalculix.material.Material.spec_heat" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>specific heat (energy/(mass-temp)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.material.Material.thermal_exp">
+<tt class="descname">thermal_exp</tt><a class="headerlink" href="#pycalculix.material.Material.thermal_exp" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>dict</em></p>
+<p>a dict storing temperature dependent thermal
+expansion properties
+dict[&#8216;data&#8217;] = zip of (temp, thermal_expansion)</p>
+<blockquote>
+<div>Thermal expansion is in strain per temperature</div></blockquote>
+<p>dict[&#8216;tzero&#8217;] = the temperature zero point</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.material.Material.ccx">
+<tt class="descname">ccx</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/material.html#Material.ccx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.material.Material.ccx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of text strings for ccx defining the material.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.material.Material.set_mech_props">
+<tt class="descname">set_mech_props</tt><big>(</big><em>density</em>, <em>youngs</em>, <em>pratio</em><big>)</big><a class="reference internal" href="_modules/pycalculix/material.html#Material.set_mech_props"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.material.Material.set_mech_props" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the mechanical properties: density, youngs, poisson_ratio.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>density</strong> (<em>float</em>) &#8211; density in mass/volume units</li>
+<li><strong>pratio</strong> (<em>float</em>) &#8211; poisson&#8217;s ratio (unitless)</li>
+<li><strong>youngs</strong> (<em>float</em>) &#8211; young&#8217;s modulus in Force/area = stress units</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.material.Material.set_therm_expan">
+<tt class="descname">set_therm_expan</tt><big>(</big><em>temps</em>, <em>alphas</em>, <em>tzero</em><big>)</big><a class="reference internal" href="_modules/pycalculix/material.html#Material.set_therm_expan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.material.Material.set_therm_expan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the thermal expansion of the material.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>temps</strong> (<em>list</em>) &#8211; list of temperatures</li>
+<li><strong>alphas</strong> (<em>list</em>) &#8211; list of thermal expansion alphas
+length must be the same as the passed temps</li>
+<li><strong>tzero</strong> (<em>float</em>) &#8211; temperature zero point</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.material.Material.set_therm_props">
+<tt class="descname">set_therm_props</tt><big>(</big><em>conductivity</em>, <em>spec_heat</em><big>)</big><a class="reference internal" href="_modules/pycalculix/material.html#Material.set_therm_props"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.material.Material.set_therm_props" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the thermal properties: conductivity, specifc_heat.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>conductivity</strong> (<em>float</em>) &#8211; Power / (distance-temp)</li>
+<li><strong>spec_heat</strong> (<em>float</em>) &#8211; specific heat (energy/(mass-temp)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pycalculix.loads.html"
+                        title="previous chapter">pycalculix.loads module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pycalculix.mesh.html"
+                        title="next chapter">pycalculix.mesh module</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pycalculix.material.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.mesh.html" title="pycalculix.mesh module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.loads.html" title="pycalculix.loads module"
+             >previous</a> |</li>
+        <li><a href="index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="pycalculix.html" >pycalculix package</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

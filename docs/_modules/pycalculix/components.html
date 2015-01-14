@@ -1,0 +1,234 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pycalculix.components &mdash; pycalculix  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pycalculix  documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pycalculix.components</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">base_classes</span> 
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">geometry</span>
+
+<div class="viewcode-block" id="Component"><a class="viewcode-back" href="../../pycalculix.components.html#pycalculix.components.Component">[docs]</a><span class="k">class</span> <span class="nc">Component</span><span class="p">(</span><span class="n">base_classes</span><span class="o">.</span><span class="n">Idobj</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes a component to store loads, boundary conditions, matl, thickness.</span>
+
+<span class="sd">    A component must store a list of items where the type is identical for</span>
+<span class="sd">    all items.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">      item_list (list): list of items to store</span>
+<span class="sd">      ctype (str): type of component. Options:</span>
+<span class="sd">        &#39;nodes&#39;: all nodes (corner and midside)</span>
+<span class="sd">        &#39;n1&#39;: corner nodes (excludes midside nodes)</span>
+<span class="sd">        &#39;faces&#39;: faces</span>
+<span class="sd">        &#39;elements&#39;: elements</span>
+<span class="sd">      cname (str): component name</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_list</span><span class="p">,</span> <span class="n">ctype</span><span class="p">,</span> <span class="n">cname</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="n">item_list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctype</span> <span class="o">=</span> <span class="n">ctype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">cname</span><span class="o">+</span><span class="s">&#39;_&#39;</span><span class="o">+</span><span class="n">ctype</span>
+        <span class="n">base_classes</span><span class="o">.</span><span class="n">Idobj</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Component.set_name"><a class="viewcode-back" href="../../pycalculix.components.html#pycalculix.components.Component.set_name">[docs]</a>    <span class="k">def</span> <span class="nf">set_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the component name to the passed name.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          name (str): passed name, component name is changed to this</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+</div>
+<div class="viewcode-block" id="Component.get_name"><a class="viewcode-back" href="../../pycalculix.components.html#pycalculix.components.Component.get_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the component name created with its id number.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s">&#39;C&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Component.get_children"><a class="viewcode-back" href="../../pycalculix.components.html#pycalculix.components.Component.get_children">[docs]</a>    <span class="k">def</span> <span class="nf">get_children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list the child ctype items of the current component.&quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">L</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
+            <span class="n">children</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctype</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">res</span> <span class="o">+=</span> <span class="n">children</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">+=</span> <span class="p">[</span><span class="n">children</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">res</span>
+</div>
+<div class="viewcode-block" id="Component.ccx"><a class="viewcode-back" href="../../pycalculix.components.html#pycalculix.components.Component.ccx">[docs]</a>    <span class="k">def</span> <span class="nf">ccx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes a component for Calculix ccx solver.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns a list strings, where each item is a line to write</span>
+<span class="sd">        to a Calculix .inp text file.</span>
+<span class="sd">        </span>
+<span class="sd">        Note:</span>
+<span class="sd">          Only node and element components should use this.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">items_per_line</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="n">firstline</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctype</span> <span class="o">==</span> <span class="s">&#39;nodes&#39;</span><span class="p">:</span>
+            <span class="c"># node componenet</span>
+            <span class="n">firstline</span> <span class="o">=</span> <span class="s">&#39;*NSET,NSET=&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctype</span> <span class="o">==</span> <span class="s">&#39;elements&#39;</span><span class="p">:</span>
+            <span class="c"># element componet</span>
+            <span class="n">firstline</span> <span class="o">=</span> <span class="s">&#39;*ELSET,ELSET=&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">firstline</span><span class="p">)</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span>
+        <span class="n">grouped_items</span> <span class="o">=</span> <span class="n">base_classes</span><span class="o">.</span><span class="n">chunk_list</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">items_per_line</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">grouped_items</span><span class="p">:</span>
+            <span class="n">item_ids</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">group</span><span class="p">]</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">item_ids</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">group</span> <span class="o">!=</span> <span class="n">grouped_items</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">line</span> <span class="o">+=</span> <span class="s">&#39;,&#39;</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span>
+    </div>
+<div class="viewcode-block" id="Component.write_cgx"><a class="viewcode-back" href="../../pycalculix.components.html#pycalculix.components.Component.write_cgx">[docs]</a>    <span class="k">def</span> <span class="nf">write_cgx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes a component for Calculix cgx prerocessor.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns a list strings, where each item is a line to write</span>
+<span class="sd">        to a Calculix .fbd text file.</span>
+<span class="sd">        </span>
+<span class="sd">        Note:</span>
+<span class="sd">          Only line and point node components should use this.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="c"># set the type of component</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="s">&#39;l&#39;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Line</span><span class="p">)</span> <span class="ow">or</span> 
+            <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Arc</span><span class="p">)):</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="s">&#39;l&#39;</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">):</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="s">&#39;p&#39;</span>
+        
+        <span class="c"># pull the list of entities</span>
+        <span class="n">alist</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">a</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">])</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctype</span> <span class="o">==</span> <span class="s">&#39;n1&#39;</span><span class="p">:</span>
+            <span class="c"># write component of line element first order nodes</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;seta &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">+</span><span class="s">&#39; &#39;</span><span class="o">+</span><span class="n">parent</span><span class="o">+</span><span class="s">&#39; &#39;</span><span class="o">+</span><span class="n">alist</span><span class="p">)</span>                       
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctype</span> <span class="o">==</span> <span class="s">&#39;nodes&#39;</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;seta &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">+</span><span class="s">&#39; &#39;</span><span class="o">+</span><span class="n">parent</span><span class="o">+</span><span class="s">&#39; &#39;</span><span class="o">+</span><span class="n">alist</span><span class="p">)</span>                       
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;comp &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">+</span><span class="s">&#39; do&#39;</span><span class="p">)</span>                       
+            <span class="c"># write component of all line element nodes</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctype</span> <span class="o">==</span> <span class="s">&#39;f&#39;</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;seta &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">+</span><span class="s">&#39; &#39;</span><span class="o">+</span><span class="n">parent</span><span class="o">+</span><span class="s">&#39; &#39;</span><span class="o">+</span><span class="n">alist</span><span class="p">)</span>                       
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;comp &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">+</span><span class="s">&#39; do&#39;</span><span class="p">)</span>                       
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;comp &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">+</span><span class="s">&#39; do&#39;</span><span class="p">)</span>                       
+            <span class="c"># write component of line element faces</span>
+        <span class="k">return</span> <span class="n">res</span>
+</div>
+<div class="viewcode-block" id="Component.write_gmsh"><a class="viewcode-back" href="../../pycalculix.components.html#pycalculix.components.Component.write_gmsh">[docs]</a>    <span class="k">def</span> <span class="nf">write_gmsh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes a component for gmsh mesher.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns a list strings, where each item is a line to write</span>
+<span class="sd">        to a Calculix .geo text file.</span>
+<span class="sd">        </span>
+<span class="sd">        Note:</span>
+<span class="sd">          Only line and point node components should use this.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="c"># set the type of component</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="s">&#39;l&#39;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Line</span><span class="p">)</span> <span class="ow">or</span> 
+            <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Arc</span><span class="p">)):</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="s">&#39;l&#39;</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">):</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="s">&#39;p&#39;</span>
+        
+        <span class="c"># pull the list of entities</span>
+        <span class="n">alist</span> <span class="o">=</span> <span class="s">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">])</span>
+        
+        <span class="n">line</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">parent</span> <span class="o">==</span> <span class="s">&#39;l&#39;</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="s">&quot;Physical Line(&#39;&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">+</span><span class="s">&quot;&#39;) = {&quot;</span> <span class="o">+</span> <span class="n">alist</span> <span class="o">+</span> <span class="s">&#39;};&#39;</span>
+        <span class="k">elif</span> <span class="n">parent</span> <span class="o">==</span> <span class="s">&#39;p&#39;</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="s">&quot;Physical Point(&#39;&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">+</span><span class="s">&quot;&#39;) = {&quot;</span> <span class="o">+</span> <span class="n">alist</span> <span class="o">+</span> <span class="s">&#39;};&#39;</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

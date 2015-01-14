@@ -1,0 +1,484 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pycalculix.mesh &mdash; pycalculix  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pycalculix  documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pycalculix.mesh</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">geometry</span>
+
+<div class="viewcode-block" id="Element"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Element">[docs]</a><span class="k">class</span> <span class="nc">Element</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes a mesh element.</span>
+<span class="sd">    </span>
+<span class="sd">    Supports 4 noded quads, 8 noded quads, 3 noded tris, 6 noded tris.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">      enum (int): element id number</span>
+<span class="sd">      ccxtype (str): ccx element type string, 4 characters long</span>
+
+<span class="sd">        Description: element_shape + elemenet_order + element_type</span>
+<span class="sd">        element_shape = &#39;tri&#39; or &#39;quad&#39;</span>
+<span class="sd">        element_order = &#39;1&#39; or &#39;2&#39;</span>
+<span class="sd">          &#39;1&#39; = corner nodes only (3 or 4 noded element)</span>
+<span class="sd">          &#39;2&#39; = corner nodes and midside nodes (6 or 8 noded element)</span>
+<span class="sd">        element_shape = &#39;quad&#39; or &#39;tri&#39;</span>
+<span class="sd">          &#39;quad&#39; = quadrangle</span>
+<span class="sd">          &#39;tri&#39; = triangle</span>
+<span class="sd">        # axisym</span>
+<span class="sd">        &#39;CAX6&#39; : &#39;tri2axisym&#39;</span>
+<span class="sd">        &#39;CAX3&#39; : &#39;tri1axisym&#39;</span>
+<span class="sd">        &#39;CAX8&#39; : &#39;quad2axisym&#39;</span>
+<span class="sd">        &#39;CAX4&#39; : &#39;quad1axisym&#39;</span>
+<span class="sd">        # plane stress</span>
+<span class="sd">        &#39;CPS6&#39; : &#39;tri2plstress&#39;</span>
+<span class="sd">        &#39;CPS3&#39; : &#39;tri1plstress&#39;</span>
+<span class="sd">        &#39;CPS8&#39; : &#39;quad2plstress&#39;</span>
+<span class="sd">        &#39;CPS4&#39; : &#39;quad1plstress&#39;</span>
+<span class="sd">        # plane strain</span>
+<span class="sd">        &#39;CPE6&#39; : &#39;tri2plstrain&#39;</span>
+<span class="sd">        &#39;CPE3&#39; : &#39;tri1plstrain&#39;</span>
+<span class="sd">        &#39;CPE8&#39; : &#39;quad2plstrain&#39;</span>
+<span class="sd">        &#39;CPE4&#39; : &#39;quad1plstrain&#39;</span>
+<span class="sd">        </span>
+<span class="sd">      nlist (list): list of Node, the nodes that define the element</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">      id (int): element id numbder</span>
+<span class="sd">      ccxtype (str): ccx element type string, 4 characters long</span>
+<span class="sd">        ccx element type : Text description element_shape + elemenet_order + element_type</span>
+<span class="sd">          element_shape = &#39;tri&#39; or &#39;quad&#39;</span>
+<span class="sd">          element_order = &#39;1&#39; or &#39;2&#39;</span>
+<span class="sd">            &#39;1&#39; = corner nodes only (3 or 4 noded element)</span>
+<span class="sd">            &#39;2&#39; = corner nodes and midside nodes (6 or 8 noded element)</span>
+<span class="sd">          element_type = specifies plane stress, plane strain, or axisymmetric</span>
+<span class="sd">            &#39;plstress&#39; = plane stress</span>
+<span class="sd">            &#39;plstrain&#39; = plane strain</span>
+<span class="sd">            &#39;axisym&#39; = axisymmetric</span>
+<span class="sd">        # axisym</span>
+<span class="sd">        &#39;CAX6&#39; : &#39;tri2axisym&#39;</span>
+<span class="sd">        &#39;CAX3&#39; : &#39;tri1axisym&#39;</span>
+<span class="sd">        &#39;CAX8&#39; : &#39;quad2axisym&#39;</span>
+<span class="sd">        &#39;CAX4&#39; : &#39;quad1axisym&#39;</span>
+<span class="sd">        # plane stress</span>
+<span class="sd">        &#39;CPS6&#39; : &#39;tri2plstress&#39;</span>
+<span class="sd">        &#39;CPS3&#39; : &#39;tri1plstress&#39;</span>
+<span class="sd">        &#39;CPS8&#39; : &#39;quad2plstress&#39;</span>
+<span class="sd">        &#39;CPS4&#39; : &#39;quad1plstress&#39;</span>
+<span class="sd">        # plane strain</span>
+<span class="sd">        &#39;CPE6&#39; : &#39;tri2plstrain&#39;</span>
+<span class="sd">        &#39;CPE3&#39; : &#39;tri1plstrain&#39;</span>
+<span class="sd">        &#39;CPE8&#39; : &#39;quad2plstrain&#39;</span>
+<span class="sd">        &#39;CPE4&#39; : &#39;quad1plstrain&#39;</span>
+<span class="sd">      node (dict): dictionary of nodes, keys are int &gt;= 1</span>
+<span class="sd">      face (dict): dictionary of faces, keys are int &gt;= 1</span>
+<span class="sd">      center (Point): the center point of the element</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enum</span><span class="p">,</span> <span class="n">ccxtype</span><span class="p">,</span> <span class="n">nlist</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">enum</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ccxtype</span> <span class="o">=</span> <span class="n">ccxtype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">face</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c"># calculate the number of faces</span>
+        <span class="n">fnum</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nlist</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fnum</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">fnum</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fnum</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="c"># store nodes</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nlist</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">ind</span> <span class="o">&gt;=</span> <span class="n">fnum</span><span class="p">:</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">set_order</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">ind</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span>
+        
+        <span class="c"># store faces</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">nlist</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">fnum</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="n">nlist</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">fnum</span><span class="p">):</span>
+            <span class="n">n1</span> <span class="o">=</span> <span class="n">n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">n2</span> <span class="o">=</span> <span class="n">n</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">Face</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nlist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">fnum</span><span class="p">:</span>
+                <span class="c"># we have second order nodes</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">set_nmid</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="n">fnum</span><span class="p">]</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">face</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span>
+        
+        <span class="c"># set the element center</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_center</span><span class="p">()</span>
+    
+<div class="viewcode-block" id="Element.calc_center"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Element.calc_center">[docs]</a>    <span class="k">def</span> <span class="nf">calc_center</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the element center as a Point.&quot;&quot;&quot;</span>
+        <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_corner_nodes</span><span class="p">()</span>
+        <span class="n">axials</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pts</span><span class="p">]</span>
+        <span class="n">radials</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pts</span><span class="p">]</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">axials</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">axials</span><span class="p">)</span>
+        <span class="n">rad</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">radials</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">radials</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="n">rad</span><span class="p">,</span> <span class="n">ax</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="Element.get_tris"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Element.get_tris">[docs]</a>    <span class="k">def</span> <span class="nf">get_tris</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of triangles for plotting. Triangles are node ids.</span>
+
+<span class="sd">        Triangles are closed in a counter clockwise (CCW) direction.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">numnodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> 
+        <span class="k">if</span> <span class="n">numnodes</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="c"># triangle, first order = 1 triangle</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">numnodes</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="c"># quad, first order = 2 trianges</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">numnodes</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="c"># tri, second order = 4 triangles</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">numnodes</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
+            <span class="c"># quad, second order = 6 triangles</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span>
+    </div>
+<div class="viewcode-block" id="Element.get_area"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Element.get_area">[docs]</a>    <span class="k">def</span> <span class="nf">get_area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the element area.&quot;&quot;&quot;</span>
+        <span class="n">asum</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">faces</span><span class="p">():</span>
+            <span class="n">n1</span> <span class="o">=</span> <span class="n">face</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">n2</span> <span class="o">=</span> <span class="n">face</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">asum</span> <span class="o">+=</span> <span class="n">n2</span><span class="o">.</span><span class="n">y</span><span class="o">*</span><span class="n">n1</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">n2</span><span class="o">.</span><span class="n">x</span><span class="o">*</span><span class="n">n1</span><span class="o">.</span><span class="n">y</span>
+        <span class="n">asum</span> <span class="o">=</span> <span class="n">asum</span><span class="o">*</span><span class="mf">0.5</span>
+        <span class="k">return</span> <span class="n">asum</span>
+    </div>
+<div class="viewcode-block" id="Element.faces"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Element.faces">[docs]</a>    <span class="k">def</span> <span class="nf">faces</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of element faces.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">face</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="Element.nodes"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Element.nodes">[docs]</a>    <span class="k">def</span> <span class="nf">nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of element nodes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="Element.get_corner_nodes"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Element.get_corner_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">get_corner_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of element corner nodes. [[axial, radial],...]&quot;&quot;&quot;</span>
+        <span class="c"># this is used for plotting so return [axial, radial]</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">nnum</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">faces</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">nnum</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">x</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span>
+    </div>
+<div class="viewcode-block" id="Element.set_ccxtype"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Element.set_ccxtype">[docs]</a>    <span class="k">def</span> <span class="nf">set_ccxtype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">etype</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the etype to the ccx element type string.</span>
+
+<span class="sd">        Converts the human readable element type string into the ccx</span>
+<span class="sd">        element type string and assigns it to this.etype</span>
+<span class="sd">        </span>
+<span class="sd">        Input human readable etype Examples:</span>
+<span class="sd">        quad2axisym</span>
+<span class="sd">        tri1plstrain</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          etype (string): input string describing needed type, human readable</span>
+<span class="sd">            &#39;plstress&#39; = plane stress</span>
+<span class="sd">            &#39;plstrain&#39; = plane strain</span>
+<span class="sd">            &#39;axisym&#39; = axisymmetric</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fnum</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">faces</span><span class="p">())</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="s">&#39;tri&#39;</span>
+        <span class="k">if</span> <span class="n">fnum</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="s">&#39;quad&#39;</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="s">&#39;2&#39;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">==</span> <span class="n">fnum</span><span class="p">:</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="s">&#39;1&#39;</span>
+        <span class="n">estr</span> <span class="o">=</span> <span class="n">shape</span><span class="o">+</span><span class="n">order</span><span class="o">+</span><span class="n">etype</span>
+
+        <span class="c"># Calculix CCX elements</span>
+        <span class="c"># axisymmetric</span>
+        <span class="n">_ccx_elements</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">_ccx_elements</span><span class="p">[</span><span class="s">&#39;tri2axisym&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;CAX6&#39;</span>
+        <span class="n">_ccx_elements</span><span class="p">[</span><span class="s">&#39;tri1axisym&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;CAX3&#39;</span>
+        <span class="n">_ccx_elements</span><span class="p">[</span><span class="s">&#39;quad2axisym&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;CAX8&#39;</span>
+        <span class="n">_ccx_elements</span><span class="p">[</span><span class="s">&#39;quad1axisym&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;CAX4&#39;</span>
+        <span class="c"># plane stress</span>
+        <span class="n">_ccx_elements</span><span class="p">[</span><span class="s">&#39;tri2plstress&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;CPS6&#39;</span>
+        <span class="n">_ccx_elements</span><span class="p">[</span><span class="s">&#39;tri1plstress&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;CPS3&#39;</span>
+        <span class="n">_ccx_elements</span><span class="p">[</span><span class="s">&#39;quad2plstress&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;CPS8&#39;</span>
+        <span class="n">_ccx_elements</span><span class="p">[</span><span class="s">&#39;quad1plstress&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;CPS4&#39;</span>
+        <span class="c"># plane strain</span>
+        <span class="n">_ccx_elements</span><span class="p">[</span><span class="s">&#39;tri2plstrain&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;CPE6&#39;</span>
+        <span class="n">_ccx_elements</span><span class="p">[</span><span class="s">&#39;tri1plstrain&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;CPE3&#39;</span>
+        <span class="n">_ccx_elements</span><span class="p">[</span><span class="s">&#39;quad2plstrain&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;CPE8&#39;</span>
+        <span class="n">_ccx_elements</span><span class="p">[</span><span class="s">&#39;quad1plstrain&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;CPE4&#39;</span>
+                
+        <span class="bp">self</span><span class="o">.</span><span class="n">ccxtype</span> <span class="o">=</span> <span class="n">_ccx_elements</span><span class="p">[</span><span class="n">estr</span><span class="p">]</span>
+        </div>
+<div class="viewcode-block" id="Element.ccx"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Element.ccx">[docs]</a>    <span class="k">def</span> <span class="nf">ccx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns text string defining the element for a ccx input file.&quot;&quot;&quot;</span>
+        <span class="n">nids</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;, &#39;</span><span class="o">+</span><span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">nids</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">val</span>
+</div>
+<div class="viewcode-block" id="Element.get_name"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Element.get_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the element name based on id number.&quot;&quot;&quot;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s">&#39;E</span><span class="si">%i</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">name</span>
+    </div>
+<div class="viewcode-block" id="Element.__str__"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Element.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the element name.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s">&#39;E</span><span class="si">%i</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+
+</div></div>
+<div class="viewcode-block" id="Face"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Face">[docs]</a><span class="k">class</span> <span class="nc">Face</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes an element face.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">      fnum (int): element face number</span>
+<span class="sd">      n1 (Node): first node</span>
+<span class="sd">      n2 (Node): second node</span>
+<span class="sd">      element (Element): parent element</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">      id (int): element face number</span>
+<span class="sd">      nodes (list): list of nodes [n1, n2]</span>
+<span class="sd">      nmid (Node or None): midside node, defaults to None</span>
+<span class="sd">      element (Element): parent element</span>
+<span class="sd">      ext (bool): stores if face is external   </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fnum</span><span class="p">,</span> <span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">fnum</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n1</span><span class="p">,</span><span class="n">n2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nmid</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">element</span> <span class="o">=</span> <span class="n">element</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ext</span> <span class="o">=</span> <span class="bp">False</span>
+
+<div class="viewcode-block" id="Face.__hash__"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Face.__hash__">[docs]</a>    <span class="k">def</span> <span class="nf">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a hash = self.element.id*4, Lets us make sets of faces.&quot;&quot;&quot;</span>
+        <span class="c"># we assume the largest number of faces is 4, face id is 1-4, need 0-3</span>
+        <span class="n">hval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">id</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hval</span>
+</div>
+<div class="viewcode-block" id="Face.length"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Face.length">[docs]</a>    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the length of the face.&quot;&quot;&quot;</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>  <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">p1</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>  <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">vect</span> <span class="o">=</span> <span class="n">p1</span> <span class="o">-</span> <span class="n">p0</span>
+        <span class="k">return</span> <span class="n">vect</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Face.get_mnorm"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Face.get_mnorm">[docs]</a>    <span class="k">def</span> <span class="nf">get_mnorm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list: [midpoint, noarmal_vector]</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          midpoint (Point): face midpoint</span>
+<span class="sd">          norm_vect (Point): face normal vector, it is a unit vector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># return midpt, normal</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>  <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">p1</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>  <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">midpoint</span> <span class="o">=</span> <span class="n">p0</span> <span class="o">+</span> <span class="n">p1</span>
+        <span class="n">midpoint</span> <span class="o">=</span> <span class="n">midpoint</span><span class="o">*</span><span class="mf">0.5</span>
+        <span class="n">norm_vect</span> <span class="o">=</span> <span class="n">p1</span> <span class="o">-</span> <span class="n">p0</span>
+        <span class="n">norm_vect</span><span class="o">.</span><span class="n">rot_ccw_deg</span><span class="p">(</span><span class="mi">90</span><span class="p">)</span>
+        <span class="n">norm_vect</span><span class="o">.</span><span class="n">make_unit</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">midpoint</span><span class="p">,</span> <span class="n">norm_vect</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Face.set_ext"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Face.set_ext">[docs]</a>    <span class="k">def</span> <span class="nf">set_ext</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the ext boolean flag to True. Face is external.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ext</span> <span class="o">=</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="Face.set_nmid"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Face.set_nmid">[docs]</a>    <span class="k">def</span> <span class="nf">set_nmid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nmid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the face midside node, nmid.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          nmid (Point): passed node to set as the face midside node</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nmid</span> <span class="o">=</span> <span class="n">nmid</span>
+</div>
+<div class="viewcode-block" id="Face.__eq__"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Face.__eq__">[docs]</a>    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compare this face to other face. True if node sets equal.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          other (Face): the other face we are comparing</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          bool: True if face node sets are equal, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">my_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>
+        <span class="n">other_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">other</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span><span class="n">other</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">my_nodes</span> <span class="o">==</span> <span class="n">other_nodes</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="Face.__str__"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Face.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns string listing object type, id number and nodes.&quot;&quot;&quot;</span>
+        <span class="n">n1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span>
+        <span class="n">n2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">id</span>
+        <span class="n">fid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span>
+        <span class="n">eid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">id</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;Face </span><span class="si">%i</span><span class="s"> on element </span><span class="si">%i</span><span class="s"> with nodes [</span><span class="si">%i</span><span class="s">,</span><span class="si">%i</span><span class="s">]&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="n">eid</span><span class="p">,</span> <span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">s</span>
+
+</div></div>
+<div class="viewcode-block" id="Node"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Node">[docs]</a><span class="k">class</span> <span class="nc">Node</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes a mesh node.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">      node_num (int): node number</span>
+<span class="sd">      x (float): x-coordinate</span>
+<span class="sd">      y (float): y-coordinate</span>
+<span class="sd">      z (float): z-coordinate</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">      id (int): node number</span>
+<span class="sd">      x (float): x-coordinate</span>
+<span class="sd">      y (float): y-coordinate</span>
+<span class="sd">      z (float): z-coordinate</span>
+<span class="sd">      order (int): 1 or 2, 1 if it is a corner node, 2 if it is a midside node</span>
+<span class="sd">      elements (set): a set of elements that contain this node    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_num</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">node_num</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">z</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">elements</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Node.set_order"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Node.set_order">[docs]</a>    <span class="k">def</span> <span class="nf">set_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the node order, must be 1 or 2.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          order (int): node order, 1 is corner node, 2 is midside node</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">order</span>
+    </div>
+<div class="viewcode-block" id="Node.add_element"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Node.add_element">[docs]</a>    <span class="k">def</span> <span class="nf">add_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds an element to this node&#39;s set of elements.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          e (Element): element to add to set self.elements</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Node.__hash__"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Node.__hash__">[docs]</a>    <span class="k">def</span> <span class="nf">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the node id as the hash.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span>
+</div>
+<div class="viewcode-block" id="Node.__eq__"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Node.__eq__">[docs]</a>    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns boolean of id equality to other Node.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">          other (Node): the node to compare to this node.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">          boolean: True if ids are equal, False if they are not</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Node</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        </div>
+<div class="viewcode-block" id="Node.ccx"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Node.ccx">[docs]</a>    <span class="k">def</span> <span class="nf">ccx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a string defining the node for a ccx inp file.&quot;&quot;&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%i</span><span class="s">, </span><span class="si">%f</span><span class="s">, </span><span class="si">%f</span><span class="s">, </span><span class="si">%f</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">val</span>
+    </div>
+<div class="viewcode-block" id="Node.get_name"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Node.get_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the string node name.&quot;&quot;&quot;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s">&#39;N</span><span class="si">%i</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">name</span>
+</div>
+<div class="viewcode-block" id="Node.__str__"><a class="viewcode-back" href="../../pycalculix.mesh.html#pycalculix.mesh.Node.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns string listing object type, id number and (x,y) coords.&quot;&quot;&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="s">&#39;Node, id </span><span class="si">%i</span><span class="s">, (x,y)=(</span><span class="si">%f</span><span class="s">,</span><span class="si">%f</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">val</span>
+    </div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

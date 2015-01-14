@@ -1,0 +1,258 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pycalculix.base_classes module &mdash; pycalculix  documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pycalculix  documentation" href="index.html" />
+    <link rel="up" title="pycalculix package" href="pycalculix.html" />
+    <link rel="next" title="pycalculix.components module" href="pycalculix.components.html" />
+    <link rel="prev" title="pycalculix package" href="pycalculix.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.components.html" title="pycalculix.components module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.html" title="pycalculix package"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="pycalculix.html" accesskey="U">pycalculix package</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-pycalculix.base_classes">
+<span id="pycalculix-base-classes-module"></span><h1>pycalculix.base_classes module<a class="headerlink" href="#module-pycalculix.base_classes" title="Permalink to this headline">¶</a></h1>
+<p>This module sotres base classes and functions used by others.</p>
+<dl class="class">
+<dt id="pycalculix.base_classes.Idobj">
+<em class="property">class </em><tt class="descclassname">pycalculix.base_classes.</tt><tt class="descname">Idobj</tt><a class="reference internal" href="_modules/pycalculix/base_classes.html#Idobj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.base_classes.Idobj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<p>Makes an object that stores an id number for an object.</p>
+<p>This is a base class for nodes, lines, areas etc.</p>
+<dl class="docutils">
+<dt>Atributes:</dt>
+<dd>id (int): the unique id number for the item</dd>
+</dl>
+<dl class="method">
+<dt id="pycalculix.base_classes.Idobj.__hash__">
+<tt class="descname">__hash__</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/base_classes.html#Idobj.__hash__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.base_classes.Idobj.__hash__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the hash of the item to the id number.</p>
+<p>This allows one to make sets of these items.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.base_classes.Idobj.set_id">
+<tt class="descname">set_id</tt><big>(</big><em>id</em><big>)</big><a class="reference internal" href="_modules/pycalculix/base_classes.html#Idobj.set_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.base_classes.Idobj.set_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the id number</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pycalculix.base_classes.Itemlist">
+<em class="property">class </em><tt class="descclassname">pycalculix.base_classes.</tt><tt class="descname">Itemlist</tt><a class="reference internal" href="_modules/pycalculix/base_classes.html#Itemlist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.base_classes.Itemlist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.list</span></tt></p>
+<p>Makes a custom list used to store lists of non-mesh items.</p>
+<p>non-mesh items = Point, Line, Arc, Area, Part, Components, Loads
+This class allows us to automatically assign id numbers to items in the
+list. Thes id numbers are needed when we send geometry out for meshing.
+All instances of this class start as empty lists.</p>
+<dl class="method">
+<dt id="pycalculix.base_classes.Itemlist.append">
+<tt class="descname">append</tt><big>(</big><em>item</em><big>)</big><a class="reference internal" href="_modules/pycalculix/base_classes.html#Itemlist.append"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.base_classes.Itemlist.append" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an item to the list and sets the item&#8217;s id.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item</strong> (<em>Point or Line or Arc or Area or Part</em>) &#8211; item to add to the list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.base_classes.Itemlist.get_ids">
+<tt class="descname">get_ids</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/base_classes.html#Itemlist.get_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.base_classes.Itemlist.get_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of ids. Loops through all items in self.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.base_classes.Itemlist.get_next_id">
+<tt class="descname">get_next_id</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/base_classes.html#Itemlist.get_next_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.base_classes.Itemlist.get_next_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the next unused id.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pycalculix.base_classes.Meshlist">
+<em class="property">class </em><tt class="descclassname">pycalculix.base_classes.</tt><tt class="descname">Meshlist</tt><a class="reference internal" href="_modules/pycalculix/base_classes.html#Meshlist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.base_classes.Meshlist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.list</span></tt></p>
+<p>Makes a custom list used to store lists of nodes and elements.</p>
+<p>All instances of this class start as empty lists.</p>
+<dl class="method">
+<dt id="pycalculix.base_classes.Meshlist.get_maxid">
+<tt class="descname">get_maxid</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/base_classes.html#Meshlist.get_maxid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.base_classes.Meshlist.get_maxid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the max id number in the list.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.base_classes.Meshlist.get_minid">
+<tt class="descname">get_minid</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/base_classes.html#Meshlist.get_minid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.base_classes.Meshlist.get_minid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the min id number in the list.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.base_classes.Meshlist.idget">
+<tt class="descname">idget</tt><big>(</big><em>idnum</em><big>)</big><a class="reference internal" href="_modules/pycalculix/base_classes.html#Meshlist.idget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.base_classes.Meshlist.idget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an item with the passed id number.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>idnum</strong> (<em>int</em>) &#8211; passed id number, we want the item that has this</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">item or None: returns item if found, None if not found</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.base_classes.Meshlist.set_minid">
+<tt class="descname">set_minid</tt><big>(</big><em>val</em><big>)</big><a class="reference internal" href="_modules/pycalculix/base_classes.html#Meshlist.set_minid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.base_classes.Meshlist.set_minid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the min id to the passed val.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>val</strong> (<em>int</em>) &#8211; New min id number in the list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pycalculix.base_classes.chunk_list">
+<tt class="descclassname">pycalculix.base_classes.</tt><tt class="descname">chunk_list</tt><big>(</big><em>inlist</em>, <em>size</em><big>)</big><a class="reference internal" href="_modules/pycalculix/base_classes.html#chunk_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.base_classes.chunk_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of lists where each list &lt;= size length.</p>
+<p>Splits inlist into list of lists where each child list len &lt;= size.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>inlist</strong> (<em>list</em>) &#8211; list that we want cut into smaller lists</li>
+<li><strong>size</strong> (<em>int</em>) &#8211; max length of small lists returned</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>res</strong> &#8211;
+list of list where each child list &lt;= size length</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list of lists</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pycalculix.html"
+                        title="previous chapter">pycalculix package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pycalculix.components.html"
+                        title="next chapter">pycalculix.components module</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pycalculix.base_classes.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.components.html" title="pycalculix.components module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.html" title="pycalculix package"
+             >previous</a> |</li>
+        <li><a href="index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="pycalculix.html" >pycalculix package</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

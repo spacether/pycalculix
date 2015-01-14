@@ -1,0 +1,174 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pycalculix.material &mdash; pycalculix  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pycalculix  documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pycalculix.material</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">base_classes</span>
+
+<div class="viewcode-block" id="Material"><a class="viewcode-back" href="../../pycalculix.material.html#pycalculix.material.Material">[docs]</a><span class="k">class</span> <span class="nc">Material</span><span class="p">(</span><span class="n">base_classes</span><span class="o">.</span><span class="n">Idobj</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes a linear elastic meterial.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name (str): a unique matl name</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">      id (int): material id number</span>
+<span class="sd">      density (float): density in mass/volume units</span>
+<span class="sd">      pratio (float): poisson&#39;s ratio (unitless)</span>
+<span class="sd">      youngs (float): young&#39;s modulus in Force/area = stress units</span>
+<span class="sd">      conductivity (float): Power / (distance-temp)</span>
+<span class="sd">      spec_heat (float): specific heat (energy/(mass-temp)</span>
+<span class="sd">      thermal_exp (dict): a dict storing temperature dependent thermal</span>
+<span class="sd">        expansion properties</span>
+<span class="sd">        dict[&#39;data&#39;] = zip of (temp, thermal_expansion)</span>
+<span class="sd">          Thermal expansion is in strain per temperature</span>
+<span class="sd">        dict[&#39;tzero&#39;] = the temperature zero point</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="n">base_classes</span><span class="o">.</span><span class="n">Idobj</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>        
+
+<div class="viewcode-block" id="Material.set_mech_props"><a class="viewcode-back" href="../../pycalculix.material.html#pycalculix.material.Material.set_mech_props">[docs]</a>    <span class="k">def</span> <span class="nf">set_mech_props</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">youngs</span><span class="p">,</span> <span class="n">pratio</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the mechanical properties: density, youngs, poisson_ratio.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          density (float): density in mass/volume units</span>
+<span class="sd">          pratio (float): poisson&#39;s ratio (unitless)</span>
+<span class="sd">          youngs (float): young&#39;s modulus in Force/area = stress units</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">=</span> <span class="n">density</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">youngs</span> <span class="o">=</span> <span class="n">youngs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pratio</span> <span class="o">=</span> <span class="n">pratio</span>
+</div>
+<div class="viewcode-block" id="Material.set_therm_props"><a class="viewcode-back" href="../../pycalculix.material.html#pycalculix.material.Material.set_therm_props">[docs]</a>    <span class="k">def</span> <span class="nf">set_therm_props</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conductivity</span><span class="p">,</span> <span class="n">spec_heat</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the thermal properties: conductivity, specifc_heat.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          conductivity (float): Power / (distance-temp)</span>
+<span class="sd">          spec_heat (float): specific heat (energy/(mass-temp)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conductivity</span> <span class="o">=</span> <span class="n">conductivity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spec_heat</span> <span class="o">=</span> <span class="n">spec_heat</span>
+</div>
+<div class="viewcode-block" id="Material.set_therm_expan"><a class="viewcode-back" href="../../pycalculix.material.html#pycalculix.material.Material.set_therm_expan">[docs]</a>    <span class="k">def</span> <span class="nf">set_therm_expan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temps</span><span class="p">,</span> <span class="n">alphas</span><span class="p">,</span> <span class="n">tzero</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the thermal expansion of the material.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          temps (list): list of temperatures</span>
+<span class="sd">          alphas (list): list of thermal expansion alphas</span>
+<span class="sd">                         length must be the same as the passed temps</span>
+<span class="sd">          tzero (float): temperature zero point</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thermal_exp</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thermal_exp</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">alphas</span><span class="p">,</span> <span class="n">temps</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thermal_exp</span><span class="p">[</span><span class="s">&#39;tzero&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tzero</span>
+</div>
+<div class="viewcode-block" id="Material.ccx"><a class="viewcode-back" href="../../pycalculix.material.html#pycalculix.material.Material.ccx">[docs]</a>    <span class="k">def</span> <span class="nf">ccx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of text strings for ccx defining the material.&quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;*MATERIAL,NAME=&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="s">&#39;youngs&#39;</span><span class="p">):</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;*ELASTIC&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">youngs</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;,&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pratio</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;density&#39;</span><span class="p">):</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;*DENSITY&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;conductivity&#39;</span><span class="p">):</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;*CONDUCTIVITY&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conductivity</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;spec_heat&#39;</span><span class="p">):</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;*SPECIFIC HEAT&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spec_heat</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;thermal_exp&#39;</span><span class="p">):</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;*EXPANSION,ZERO=&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tzero</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_exp</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="s">&#39; &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">res</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

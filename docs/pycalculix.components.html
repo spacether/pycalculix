@@ -1,0 +1,207 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pycalculix.components module &mdash; pycalculix  documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pycalculix  documentation" href="index.html" />
+    <link rel="up" title="pycalculix package" href="pycalculix.html" />
+    <link rel="next" title="pycalculix.environment module" href="pycalculix.environment.html" />
+    <link rel="prev" title="pycalculix.base_classes module" href="pycalculix.base_classes.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.environment.html" title="pycalculix.environment module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.base_classes.html" title="pycalculix.base_classes module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="pycalculix.html" accesskey="U">pycalculix package</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-pycalculix.components">
+<span id="pycalculix-components-module"></span><h1>pycalculix.components module<a class="headerlink" href="#module-pycalculix.components" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="pycalculix.components.Component">
+<em class="property">class </em><tt class="descclassname">pycalculix.components.</tt><tt class="descname">Component</tt><big>(</big><em>item_list</em>, <em>ctype</em>, <em>cname=''</em><big>)</big><a class="reference internal" href="_modules/pycalculix/components.html#Component"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.components.Component" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pycalculix.base_classes.html#pycalculix.base_classes.Idobj" title="pycalculix.base_classes.Idobj"><tt class="xref py py-class docutils literal"><span class="pre">pycalculix.base_classes.Idobj</span></tt></a></p>
+<p>Makes a component to store loads, boundary conditions, matl, thickness.</p>
+<p>A component must store a list of items where the type is identical for
+all items.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>item_list</strong> (<em>list</em>) &#8211; list of items to store</li>
+<li><strong>ctype</strong> (<em>str</em>) &#8211; type of component. Options:
+&#8216;nodes&#8217;: all nodes (corner and midside)
+&#8216;n1&#8217;: corner nodes (excludes midside nodes)
+&#8216;faces&#8217;: faces
+&#8216;elements&#8217;: elements</li>
+<li><strong>cname</strong> (<em>str</em>) &#8211; component name</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pycalculix.components.Component.ccx">
+<tt class="descname">ccx</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/components.html#Component.ccx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.components.Component.ccx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes a component for Calculix ccx solver.</p>
+<p>Returns a list strings, where each item is a line to write
+to a Calculix .inp text file.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Only node and element components should use this.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.components.Component.get_children">
+<tt class="descname">get_children</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/components.html#Component.get_children"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.components.Component.get_children" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list the child ctype items of the current component.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.components.Component.get_name">
+<tt class="descname">get_name</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/components.html#Component.get_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.components.Component.get_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the component name created with its id number.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.components.Component.set_name">
+<tt class="descname">set_name</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pycalculix/components.html#Component.set_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.components.Component.set_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the component name to the passed name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) &#8211; passed name, component name is changed to this</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.components.Component.write_cgx">
+<tt class="descname">write_cgx</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/components.html#Component.write_cgx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.components.Component.write_cgx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes a component for Calculix cgx prerocessor.</p>
+<p>Returns a list strings, where each item is a line to write
+to a Calculix .fbd text file.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Only line and point node components should use this.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.components.Component.write_gmsh">
+<tt class="descname">write_gmsh</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/components.html#Component.write_gmsh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.components.Component.write_gmsh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes a component for gmsh mesher.</p>
+<p>Returns a list strings, where each item is a line to write
+to a Calculix .geo text file.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Only line and point node components should use this.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pycalculix.base_classes.html"
+                        title="previous chapter">pycalculix.base_classes module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pycalculix.environment.html"
+                        title="next chapter">pycalculix.environment module</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pycalculix.components.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.environment.html" title="pycalculix.environment module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.base_classes.html" title="pycalculix.base_classes module"
+             >previous</a> |</li>
+        <li><a href="index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="pycalculix.html" >pycalculix package</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

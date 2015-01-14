@@ -1,0 +1,27 @@
+pycalculix package
+==================
+
+Submodules
+----------
+
+.. toctree::
+
+   pycalculix.base_classes
+   pycalculix.components
+   pycalculix.environment
+   pycalculix.feamodel
+   pycalculix.geometry
+   pycalculix.loads
+   pycalculix.material
+   pycalculix.mesh
+   pycalculix.model
+   pycalculix.part
+   pycalculix.results_file
+
+Module contents
+---------------
+
+.. automodule:: pycalculix
+    :members:
+    :undoc-members:
+    :show-inheritance:

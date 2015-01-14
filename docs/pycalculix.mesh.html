@@ -1,0 +1,571 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pycalculix.mesh module &mdash; pycalculix  documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pycalculix  documentation" href="index.html" />
+    <link rel="up" title="pycalculix package" href="pycalculix.html" />
+    <link rel="next" title="pycalculix.model module" href="pycalculix.model.html" />
+    <link rel="prev" title="pycalculix.material module" href="pycalculix.material.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.model.html" title="pycalculix.model module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.material.html" title="pycalculix.material module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="pycalculix.html" accesskey="U">pycalculix package</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-pycalculix.mesh">
+<span id="pycalculix-mesh-module"></span><h1>pycalculix.mesh module<a class="headerlink" href="#module-pycalculix.mesh" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="pycalculix.mesh.Element">
+<em class="property">class </em><tt class="descclassname">pycalculix.mesh.</tt><tt class="descname">Element</tt><big>(</big><em>enum</em>, <em>ccxtype</em>, <em>nlist</em><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Element"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<p>Makes a mesh element.</p>
+<p>Supports 4 noded quads, 8 noded quads, 3 noded tris, 6 noded tris.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>enum</strong> (<em>int</em>) &#8211; element id number</li>
+<li><strong>ccxtype</strong> (<em>str</em>) &#8211; <p>ccx element type string, 4 characters long</p>
+<p>Description: element_shape + elemenet_order + element_type
+element_shape = &#8216;tri&#8217; or &#8216;quad&#8217;
+element_order = &#8216;1&#8217; or &#8216;2&#8217;</p>
+<blockquote>
+<div>&#8216;1&#8217; = corner nodes only (3 or 4 noded element)
+&#8216;2&#8217; = corner nodes and midside nodes (6 or 8 noded element)</div></blockquote>
+<dl class="docutils">
+<dt>element_shape = &#8216;quad&#8217; or &#8216;tri&#8217;</dt>
+<dd>&#8216;quad&#8217; = quadrangle
+&#8216;tri&#8217; = triangle</dd>
+</dl>
+<p># axisym
+&#8216;CAX6&#8217; : &#8216;tri2axisym&#8217;
+&#8216;CAX3&#8217; : &#8216;tri1axisym&#8217;
+&#8216;CAX8&#8217; : &#8216;quad2axisym&#8217;
+&#8216;CAX4&#8217; : &#8216;quad1axisym&#8217;
+# plane stress
+&#8216;CPS6&#8217; : &#8216;tri2plstress&#8217;
+&#8216;CPS3&#8217; : &#8216;tri1plstress&#8217;
+&#8216;CPS8&#8217; : &#8216;quad2plstress&#8217;
+&#8216;CPS4&#8217; : &#8216;quad1plstress&#8217;
+# plane strain
+&#8216;CPE6&#8217; : &#8216;tri2plstrain&#8217;
+&#8216;CPE3&#8217; : &#8216;tri1plstrain&#8217;
+&#8216;CPE8&#8217; : &#8216;quad2plstrain&#8217;
+&#8216;CPE4&#8217; : &#8216;quad1plstrain&#8217;</p>
+</li>
+<li><strong>nlist</strong> (<em>list</em>) &#8211; list of Node, the nodes that define the element</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="pycalculix.mesh.Element.id">
+<tt class="descname">id</tt><a class="headerlink" href="#pycalculix.mesh.Element.id" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em></p>
+<p>element id numbder</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.mesh.Element.ccxtype">
+<tt class="descname">ccxtype</tt><a class="headerlink" href="#pycalculix.mesh.Element.ccxtype" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em></p>
+<p>ccx element type string, 4 characters long
+ccx element type : Text description element_shape + elemenet_order + element_type</p>
+<blockquote>
+<div><p>element_shape = &#8216;tri&#8217; or &#8216;quad&#8217;
+element_order = &#8216;1&#8217; or &#8216;2&#8217;</p>
+<blockquote>
+<div>&#8216;1&#8217; = corner nodes only (3 or 4 noded element)
+&#8216;2&#8217; = corner nodes and midside nodes (6 or 8 noded element)</div></blockquote>
+<dl class="docutils">
+<dt>element_type = specifies plane stress, plane strain, or axisymmetric</dt>
+<dd>&#8216;plstress&#8217; = plane stress
+&#8216;plstrain&#8217; = plane strain
+&#8216;axisym&#8217; = axisymmetric</dd>
+</dl>
+</div></blockquote>
+<p># axisym
+&#8216;CAX6&#8217; : &#8216;tri2axisym&#8217;
+&#8216;CAX3&#8217; : &#8216;tri1axisym&#8217;
+&#8216;CAX8&#8217; : &#8216;quad2axisym&#8217;
+&#8216;CAX4&#8217; : &#8216;quad1axisym&#8217;
+# plane stress
+&#8216;CPS6&#8217; : &#8216;tri2plstress&#8217;
+&#8216;CPS3&#8217; : &#8216;tri1plstress&#8217;
+&#8216;CPS8&#8217; : &#8216;quad2plstress&#8217;
+&#8216;CPS4&#8217; : &#8216;quad1plstress&#8217;
+# plane strain
+&#8216;CPE6&#8217; : &#8216;tri2plstrain&#8217;
+&#8216;CPE3&#8217; : &#8216;tri1plstrain&#8217;
+&#8216;CPE8&#8217; : &#8216;quad2plstrain&#8217;
+&#8216;CPE4&#8217; : &#8216;quad1plstrain&#8217;</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.mesh.Element.node">
+<tt class="descname">node</tt><a class="headerlink" href="#pycalculix.mesh.Element.node" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>dict</em></p>
+<p>dictionary of nodes, keys are int &gt;= 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.mesh.Element.face">
+<tt class="descname">face</tt><a class="headerlink" href="#pycalculix.mesh.Element.face" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>dict</em></p>
+<p>dictionary of faces, keys are int &gt;= 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.mesh.Element.center">
+<tt class="descname">center</tt><a class="headerlink" href="#pycalculix.mesh.Element.center" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Point</em></p>
+<p>the center point of the element</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Element.__str__">
+<tt class="descname">__str__</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Element.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Element.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the element name.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Element.calc_center">
+<tt class="descname">calc_center</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Element.calc_center"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Element.calc_center" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the element center as a Point.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Element.ccx">
+<tt class="descname">ccx</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Element.ccx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Element.ccx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns text string defining the element for a ccx input file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Element.faces">
+<tt class="descname">faces</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Element.faces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Element.faces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of element faces.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Element.get_area">
+<tt class="descname">get_area</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Element.get_area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Element.get_area" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the element area.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Element.get_corner_nodes">
+<tt class="descname">get_corner_nodes</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Element.get_corner_nodes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Element.get_corner_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of element corner nodes. [[axial, radial],...]</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Element.get_name">
+<tt class="descname">get_name</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Element.get_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Element.get_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the element name based on id number.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Element.get_tris">
+<tt class="descname">get_tris</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Element.get_tris"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Element.get_tris" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of triangles for plotting. Triangles are node ids.</p>
+<p>Triangles are closed in a counter clockwise (CCW) direction.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Element.nodes">
+<tt class="descname">nodes</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Element.nodes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Element.nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of element nodes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Element.set_ccxtype">
+<tt class="descname">set_ccxtype</tt><big>(</big><em>etype</em><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Element.set_ccxtype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Element.set_ccxtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the etype to the ccx element type string.</p>
+<p>Converts the human readable element type string into the ccx
+element type string and assigns it to this.etype</p>
+<p>Input human readable etype Examples:
+quad2axisym
+tri1plstrain</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>etype</strong> (<em>string</em>) &#8211; input string describing needed type, human readable
+&#8216;plstress&#8217; = plane stress
+&#8216;plstrain&#8217; = plane strain
+&#8216;axisym&#8217; = axisymmetric</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pycalculix.mesh.Face">
+<em class="property">class </em><tt class="descclassname">pycalculix.mesh.</tt><tt class="descname">Face</tt><big>(</big><em>fnum</em>, <em>n1</em>, <em>n2</em>, <em>element</em><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Face"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Face" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<p>Makes an element face.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fnum</strong> (<em>int</em>) &#8211; element face number</li>
+<li><strong>n1</strong> (<em>Node</em>) &#8211; first node</li>
+<li><strong>n2</strong> (<em>Node</em>) &#8211; second node</li>
+<li><strong>element</strong> (<em>Element</em>) &#8211; parent element</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="pycalculix.mesh.Face.id">
+<tt class="descname">id</tt><a class="headerlink" href="#pycalculix.mesh.Face.id" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em></p>
+<p>element face number</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.mesh.Face.nodes">
+<tt class="descname">nodes</tt><a class="headerlink" href="#pycalculix.mesh.Face.nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list</em></p>
+<p>list of nodes [n1, n2]</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.mesh.Face.nmid">
+<tt class="descname">nmid</tt><a class="headerlink" href="#pycalculix.mesh.Face.nmid" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Node or None</em></p>
+<p>midside node, defaults to None</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.mesh.Face.element">
+<tt class="descname">element</tt><a class="headerlink" href="#pycalculix.mesh.Face.element" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Element</em></p>
+<p>parent element</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.mesh.Face.ext">
+<tt class="descname">ext</tt><a class="headerlink" href="#pycalculix.mesh.Face.ext" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em></p>
+<p>stores if face is external</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Face.__eq__">
+<tt class="descname">__eq__</tt><big>(</big><em>other</em><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Face.__eq__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Face.__eq__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compare this face to other face. True if node sets equal.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<em>Face</em>) &#8211; the other face we are comparing</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if face node sets are equal, False otherwise.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Face.__hash__">
+<tt class="descname">__hash__</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Face.__hash__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Face.__hash__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a hash = self.element.id*4, Lets us make sets of faces.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Face.__str__">
+<tt class="descname">__str__</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Face.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Face.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns string listing object type, id number and nodes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Face.get_mnorm">
+<tt class="descname">get_mnorm</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Face.get_mnorm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Face.get_mnorm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list: [midpoint, noarmal_vector]</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>midpoint</strong> &#8211;
+face midpoint
+norm_vect (Point): face normal vector, it is a unit vector</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">Point</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Face.length">
+<tt class="descname">length</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Face.length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Face.length" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the length of the face.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Face.set_ext">
+<tt class="descname">set_ext</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Face.set_ext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Face.set_ext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the ext boolean flag to True. Face is external.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Face.set_nmid">
+<tt class="descname">set_nmid</tt><big>(</big><em>nmid</em><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Face.set_nmid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Face.set_nmid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the face midside node, nmid.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nmid</strong> (<em>Point</em>) &#8211; passed node to set as the face midside node</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pycalculix.mesh.Node">
+<em class="property">class </em><tt class="descclassname">pycalculix.mesh.</tt><tt class="descname">Node</tt><big>(</big><em>node_num</em>, <em>x</em>, <em>y</em>, <em>z</em><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Node"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<p>Makes a mesh node.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>node_num</strong> (<em>int</em>) &#8211; node number</li>
+<li><strong>x</strong> (<em>float</em>) &#8211; x-coordinate</li>
+<li><strong>y</strong> (<em>float</em>) &#8211; y-coordinate</li>
+<li><strong>z</strong> (<em>float</em>) &#8211; z-coordinate</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="pycalculix.mesh.Node.id">
+<tt class="descname">id</tt><a class="headerlink" href="#pycalculix.mesh.Node.id" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em></p>
+<p>node number</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.mesh.Node.x">
+<tt class="descname">x</tt><a class="headerlink" href="#pycalculix.mesh.Node.x" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>x-coordinate</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.mesh.Node.y">
+<tt class="descname">y</tt><a class="headerlink" href="#pycalculix.mesh.Node.y" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>y-coordinate</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.mesh.Node.z">
+<tt class="descname">z</tt><a class="headerlink" href="#pycalculix.mesh.Node.z" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>z-coordinate</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.mesh.Node.order">
+<tt class="descname">order</tt><a class="headerlink" href="#pycalculix.mesh.Node.order" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em></p>
+<p>1 or 2, 1 if it is a corner node, 2 if it is a midside node</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pycalculix.mesh.Node.elements">
+<tt class="descname">elements</tt><a class="headerlink" href="#pycalculix.mesh.Node.elements" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>set</em></p>
+<p>a set of elements that contain this node</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Node.__eq__">
+<tt class="descname">__eq__</tt><big>(</big><em>other</em><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Node.__eq__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Node.__eq__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns boolean of id equality to other Node.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<em>Node</em>) &#8211; the node to compare to this node.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if ids are equal, False if they are not</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">boolean</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Node.__hash__">
+<tt class="descname">__hash__</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Node.__hash__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Node.__hash__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the node id as the hash.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Node.__str__">
+<tt class="descname">__str__</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Node.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Node.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns string listing object type, id number and (x,y) coords.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Node.add_element">
+<tt class="descname">add_element</tt><big>(</big><em>e</em><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Node.add_element"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Node.add_element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an element to this node&#8217;s set of elements.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>e</strong> (<em>Element</em>) &#8211; element to add to set self.elements</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Node.ccx">
+<tt class="descname">ccx</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Node.ccx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Node.ccx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string defining the node for a ccx inp file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Node.get_name">
+<tt class="descname">get_name</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Node.get_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Node.get_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the string node name.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycalculix.mesh.Node.set_order">
+<tt class="descname">set_order</tt><big>(</big><em>order</em><big>)</big><a class="reference internal" href="_modules/pycalculix/mesh.html#Node.set_order"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycalculix.mesh.Node.set_order" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the node order, must be 1 or 2.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>order</strong> (<em>int</em>) &#8211; node order, 1 is corner node, 2 is midside node</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pycalculix.material.html"
+                        title="previous chapter">pycalculix.material module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pycalculix.model.html"
+                        title="next chapter">pycalculix.model module</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pycalculix.mesh.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.model.html" title="pycalculix.model module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pycalculix.material.html" title="pycalculix.material module"
+             >previous</a> |</li>
+        <li><a href="index.html">pycalculix  documentation</a> &raquo;</li>
+          <li><a href="pycalculix.html" >pycalculix package</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Author.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
