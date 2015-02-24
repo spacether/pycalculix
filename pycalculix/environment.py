@@ -1,4 +1,12 @@
-"""This module sets the dpi and the paths to gmsh, ccx, and cgx."""
+"""This module sets the dpi and the paths to gmsh, ccx, and cgx.
+
+Attributes:
+    DPI (None or float): if high dpi windows 8 monitor value is set, otherwise
+        value is None.
+    CCX (str): path to Calculix ccx, the sovler.
+    CGX (str): path to Calculix cgx, the preprocessor/postprocessor/mesher.
+    GMSH (str): path to the Gmsh mesher.
+"""
 
 import sys # needed to check if 32 or 64 bit interpreter
 import os # used to delete files written by cgx
@@ -45,4 +53,4 @@ def get_paths():
     return [ccx, cgx, gmsh]
 
 DPI = get_dpi()
-[CCX, CGX, GMSH] = get_paths()
+CCX, CGX, GMSH = get_paths()

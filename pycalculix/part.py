@@ -1,73 +1,118 @@
+"""This module stores the Part class. It is used to make 2D parts.
+"""
+
 from . import base_classes
 from . import geometry #point, line, area
 
 #accuracy for small numbers in math below
-_acc = .00001
+ACC = .00001
 
 class Part(base_classes.Idobj):
     """This makes a part.
 
     Args:
-      parent: parent FeaModel
-    
+        parent: parent FeaModel
+
     Attributes:
-      p (FeaModel): parent FeaModel
-      cursor (Point): location of a cursor drawing the part
-      matl (Matl): the part material
-      thickness (float): the part thickness if applicable
-        this is only applicable if th epart is plane strain or plane stress
-      areas (list): list of Area that make up the part
-      left (list): list the parts leftmost lines, they must be vertical
-      right (list): list the parts rightmost lines, they must be vertical
-      top (list): list the parts top lines, they must be horizontal
-      bottom (list): list the parts bottom lines, they must be horizontal
-      nodes (list): list of part's nodes
-      elements (list): list of part's elements
+        __fea (FeaModel): parent FeaModel
+        points (list): list or part points, excludes arc centers
+        allpoints (list): list or part points, includes arc centers
+        lines (list): list of all Line and Arc that make the part
+        signlines (list): list of all SignLine and SignArc that make the part
+        __cursor (Point): location of a cursor drawing the part
+        __holemode (bool): if True, lines will be added to holes, otherwise,
+            they'll be added to areas
+        areas (list): list of Area that make up the part
+        left (list): list the parts leftmost lines, they must be vertical
+        right (list): list the parts rightmost lines, they must be vertical
+        top (list): list the parts top lines, they must be horizontal
+        bottom (list): list the parts bottom lines, they must be horizontal
+        nodes (list): list of part's nodes
+        elements (list): list of part's elements
     """
 
-    def __init__(self, parent):
-        self.p = parent
-        self.cursor = geometry.Point(0,0)
-        self.matl = None
-        thickness = None
+    def __init__(self, feamodel):
+        self.__fea = feamodel
+        self.__cursor = geometry.Point(0, 0)
         self.areas = [] # top area is the buffer
         # make the buffer
-        area = self.p.areas.append( geometry.Area(self, []) )
+        area = self.__fea.areas.append(geometry.Area(self, []))
         self.areas.append(area)
-        base_classes.Idobj.__init__(self)             
+        base_classes.Idobj.__init__(self)
         self.left = None
         self.right = None
         self.top = None
         self.bottom = None
         self.nodes = []
-        self.elements= []
-        
+        self.elements = []
+        self.__holemode = False
+        self.__fea.parts.append(self)
+
+    def __hash__(self):
+        """Returns the item's id as its hash."""
+        return self.id
+
+    @property
+    def lines(self):
+        """Returns list of part lines."""
+        lines = set()
+        for area in self.areas:
+            lines.update(area.lines)
+        return list(lines)
+
+    @property
+    def signlines(self):
+        """Returns list of part signline and signarc."""
+        lines = set()
+        for area in self.areas:
+            lines.update(area.signlines)
+        return list(lines)
+
+    @property
+    def points(self):
+        """Returns list of part points, excludes arc centers."""
+        points = set()
+        lines = self.lines
+        for line in lines:
+            points.update(line.points)
+        return list(points)
+
+    @property
+    def allpoints(self):
+        """Returns list of part points, includes arc centers."""
+        points = set()
+        lines = self.lines
+        for line in lines:
+            points.update(line.allpoints)
+        return list(points)
+
     def get_item(self, item):
         """"Returns the part's item(s) requested by the passed string.
-        
+
         Args:
-          item (str): string requesting item(s)
-            Valid examples: 'P0', 'L0', 'left', 'A0'
-        
+            item (str): string requesting item(s)
+
+                * Valid examples: 'P0', 'L0', 'left', 'A0'
+
         Returns:
-          item(s) or None:
-            If items are found they are returned
-              If there is only one item it is returned
-              If there are multiple items, they are returned as a list
-            If no items are found None is returned
+            item(s) or None: If items are found they are returned
+
+                * If there is only one item it is returned
+                * If there are multiple items, they are returned as a list
+                * If no items are found None is returned
         """
-        if item in ['left','right','top','bottom']:
+        if item in ['left', 'right', 'top', 'bottom']:
             items = getattr(self, item)
             return items
         elif item[0] == 'P':
             # get point
-            items = self.get_points()
+            items = self.points
             num = int(item[1:])
             res = [a for a in items if a.id == num]
             return res[0]
         elif item[0] == 'L':
             # get line
-            items = self.get_lines()
+            items = self.signlines
             num = int(item[1:])
             items = [a for a in items if a.id == num]
             return items[0]
@@ -85,597 +130,678 @@ class Part(base_classes.Idobj):
         """Returns the part name based on id number."""
         return 'PART'+str(self.id)
 
-    def set_side(self, loc, ind, axis):
-        """Sets the part.side to a list of side lines. side=Left,Right,Top,Bottom.
-        
+    def __set_side(self, side):
+        """Sets the part.side to a list of lines on that side of the part.
+
+        Used to set the part.left, part.right, part.top, part.bottom sides.
+
         Args:
-          loc (string): 'left', 'right', 'top','bottom'
-          ind (int): 0 for low, 1 for high
-          axis (string): axies to use, 'x' or 'y'
+            side (string): 'left', 'right', 'top','bottom'
         """
+        # set index and axis, ind=0 is low side, ind=-1 is high side
+        inds = {'left':0, 'right':-1, 'top':-1, 'bottom':0}
+        axes = {'left':'y', 'right':'y', 'top':'x', 'bottom':'x'}
+        ind = inds[side]
+        axis = axes[side]
+
         # loc = 'left', ind = 0, axis = 'y'
-        points = self.get_points()
+        points = self.points
         # sort the points low to high
         points = sorted(points, key=lambda pt: getattr(pt, axis))
         # store the value
         val = getattr(points[ind], axis)
         res = []
-        lines = self.get_lines()
-        for line in lines:
-            if isinstance(line, geometry.Line):
-                if getattr(line.pt(0),axis) == val and getattr(line.pt(1),axis) == val:
+        lines = self.signlines
+        for sline in lines:
+            if isinstance(sline, geometry.SignLine):
+                vals = [getattr(pt, axis) for pt in sline.points]
+                if vals == [val, val]:
                     # line is on the left side
-                    res.append(line)
-        setattr(self, loc, res)
-            
-    def goto(self, x, y):
+                    res.append(sline)
+        setattr(self, side, res)
+
+    def goto(self, x, y, holemode=False):
         """Moves the part cursor to a location.
-        
+
         If that location has a point at it, use it.
         If not, make a new point at that location.
-        
+
         Args:
-          x (float): x-coordinate of the point to go to
-          y (float): y-coordinate of the point to go to
-        
+            x (float): x-coordinate of the point to go to
+            y (float): y-coordinate of the point to go to
+            holemode (bool): if True, we start drawing a hole here, otherwise
+                we start drawing an area
+
         Returns:
-          self.cursor (Point): returns the updated cursor point
+            self.__cursor (Point): returns the updated cursor point
         """
-        [pnew, already_exists] = self.make_get_pt(x, y)
+        [pnew, already_exists] = self.__make_get_pt(x, y)
 
         if already_exists:
             if self.areas[-1].closed == True:
                 # make a new area if the old area is already closed and we're
-                # goint to an existing point
-                a = self.p.areas.append( geometry.Area(self, []) )
-                self.areas.append( a )
-        
-        # return cursor
-        self.cursor = pnew
-        return self.cursor
+                # going to an existing point
+                area = self.__fea.areas.append(geometry.Area(self, []))
+                self.areas.append(area)
 
-    def make_get_pt(self, x, y):
+        # return cursor
+        self.__cursor = pnew
+        self.__holemode = holemode
+        return self.__cursor
+
+    def __get_point(self, point):
+        """Returns point if found, None otherwise."""
+        points = self.allpoints
+        found_point = None
+        for apoint in points:
+            dist = point - apoint
+            dist = dist.length()
+            if dist < ACC:
+                # point already exists in part, use it
+                found_point = apoint
+                break
+        return found_point
+
+    def __make_get_pt(self, x, y):
         """Gets a point if it exists, makes it if it doesn't. Returns the point.
-        
+
         Use this when you need a point made in the part, and you want to
         use an extant point if one is available.
-        
+
         Args:
-          x (float): point x-coordinat
-          y (float): point y-coordinate
-        
+            x (float): point x-coordinate
+            y (float): point y-coordinate
+
         Returns:
-          list:
-            list[0]: Point
-            list[1]: boolean, True = the point already existed
+            list:
+                list[0]: Point
+                list[1]: boolean, True = the point already existed
         """
-        pnew = geometry.Point(x,y)
-        pts = self.get_points()
-        pexists = False
-        for p in pts:
-            dist = p - pnew
-            dist = dist.length()
-            if dist < _acc:
-                # point already exists in part, use it
-                pexists = True
-                pnew = p
-                break
-        else:
-            # fired when we haven't broken out of the loop, the point is new
-            pnew = self.p.points.append( pnew )
-        return [pnew, pexists]
-    
-    def make_get_line(self, lnew):
-        """Gets a line if it exists, makes it if it doesn't. Returns the line.
-        
-        Use this when you need a point line in the part, and you want to
-        use an extant line if one is available.
-        
+        thept = geometry.Point(x, y)
+        pfound = self.__get_point(thept)
+        pexists = True
+        if pfound == None:
+            pfound = self.__fea.points.append(thept)
+            pexists = False
+        return [pfound, pexists]
+
+    def __make_get_sline(self, lnew):
+        """Returns a signed line or arc, makes it if it needs to.
+
         Args:
-          lnew (Line or Arc): line to make
-        
+            lnew (Line or Arc or SignLine or SignArc): Line or Arc to make
+
         Returns:
-          list:
-            list[0]: Line or Arc
-            list[1]: boolean, True = the line already existed
-        """        
-        lnew_pset = set([p.id for p in lnew._points_])
-        lines = self.get_lines()
+            list:
+                list[0]: SignLine or SignArc
+                list[1]: boolean, True = the line already existed
+        """
+        lpos = lnew.signed_copy(1)
+        lneg = lnew.signed_copy(-1)
+        # get part's signed lines
+        lines = self.signlines
         lexists = False
-        for l in lines:
-            l_pset = set([p.id for p in l._points_])
-            if type(lnew) == type(l) and lnew_pset == l_pset:
-                # the lines are the same type and have the same points in them
+        for sline in lines:
+            if lpos == sline:
                 lexists = True
-                if l.pt(0) == lnew.pt(0):
-                    # they are the same orientation
-                    lnew = l
-                else:
-                    # l needs to be flipped
-                    lnew = l.reverse()
+                signline_new = sline
+                break
+            elif lneg == sline:
+                lexists = True
+                signline_new = sline.signed_copy(-1)
+                # set the edge property to False, we now have two slines here
+                signline_new.edge = False
+                signline_new = self.__fea.signlines.append(signline_new)
                 break
         else:
             # fired when we haven't broken out of the loop, the line is new
-            lnew = self.p.lines.append( lnew )        
-        return [lnew, lexists]            
+            saved_line = self.__fea.lines.append(lnew)
+            saved_line.save_to_points()
+            signline_new = saved_line.signed_copy(1)
+            signline_new = self.__fea.signlines.append(signline_new)
+        signline_new.set_parent(self.areas[-1])
+        signline_new.line.add_signline(signline_new)
+        return [signline_new, lexists]
 
-    def draw_arc(self, x2, y2, xc, yc):
+    def draw_hole(self, center_x, center_y, radius, num_arcs=4, filled=False):
+        """Makes a hole in the part.
+
+        Args:
+            center_x (float): x-axis hole center
+            center_y (float): y-axis hole center
+            radius (float): hole radius
+            num_arcs (int): number of arcs to use
+            filled (bool): whether to fill the hole
+
+                * True: makes a new area in the part
+
+        Returns:
+            hole_lines (list or None): list of hole SignLine or SignArc
+
+                * Returns None if hole was not made.
+        """
+        center = geometry.Point(center_x, center_y)
+        area = self.__area_from_pt(center)
+        if area == None:
+            print("You can't make a hole here until there's an area here!")
+            return None
+        else:
+            rvect = geometry.Point(0, radius)
+            pold = center + rvect
+            self.goto(pold.x, pold.y, holemode=True)
+            for ind in range(num_arcs):
+                rvect.rot_ccw_deg(360/num_arcs)
+                pnew = center + rvect
+                self.draw_arc(pnew.x, pnew.y, center.x, center.y)
+                pold = pnew
+            # make new area
+            if filled:
+                lines = list(area.holes[-1])
+                lines.reverse() #reverse the order
+                lines = [L.signed_copy(-1) for L in lines] #reverse orientation
+                # store them in the feamodel
+                lines = [self.__make_get_sline(line)[0] for line in lines]
+                anew = self.__fea.areas.append(geometry.Area(self, lines))
+                self.areas.append(anew)
+            return area.holes[-1]
+
+    def draw_arc_angle(self, degrees_ccw, center_x, center_y):
         """Makes an arc and adds it to the part.
 
-        Current point is the first arc point.
-        (x2,y2) is the end point
-        (xc,yc) is the arc center
-        
-        Args:
-          x2 (float): arc end point x-coordinate
-          y2 (float): arc end point y-coordinate
-          xc (float): arc center point x-coordinate
-          yc (float): arc center point y-coordinate
-        
-        Returns:
-          list: [arc, arc_start_point, arc_end_point]
-        """
-        pold = self.cursor
-        # make arc center point
-        ctr = geometry.Point(xc,yc)
-        if ctr in self.p.points:
-            ctr = next(x for x in self.p.points if x == ctr)
-        else:
-            self.p.points.append( ctr )
-        # make arc end point
-        self.cursor = self.p.points.append( geometry.Point(x2,y2) )
-        # make arc
-        arc = self.p.lines.append( geometry.Arc(pold, self.cursor, ctr) )
-        self.areas[-1].add(arc)
-        return [arc, pold, self.cursor]
+        | Current point is the first arc point.
+        | degrees_ccw is the swept angle in degrees, counterclockwise
+        | (center_x, center_y) is the arc center
 
-    def draw_line_delta(self, dx, dy):
+        | Degrees: Traversed angle of arc must be < 180 degrees
+
+        Args:
+            degrees_ccw (float): arc swept angle in degrees, counterclockwise
+            center_x (float): arc center point x-coordinate
+            center_y (float): arc center point y-coordinate
+
+        Returns:
+            list: [arc, arc_start_point, arc_end_point]
+        """
+        center = geometry.Point(center_x, center_y)
+        radius_vector = self.__cursor - center
+        radius_vector.rot_ccw_deg(degrees_ccw)
+        end = center + radius_vector
+        return self.draw_arc(end.x, end.y, center_x, center_y)
+
+    def draw_arc(self, end_x, end_y, center_x, center_y):
+        """Makes an arc and adds it to the part.
+
+        | Current point is the first arc point.
+        | (end_x, end_y) is the end point
+        | (center_x, center_y) is the arc center
+
+        | Degrees: Traversed angle of arc must be < 180 degrees
+        | Radians: Traversed angle of arc must be < Pi
+
+        Args:
+            end_x (float): arc end point x-coordinate
+            end_y (float): arc end point y-coordinate
+            center_x (float): arc center point x-coordinate
+            center_y (float): arc center point y-coordinate
+
+        Returns:
+            list: [arc, arc_start_point, arc_end_point]
+        """
+        pold = self.__cursor
+        # make arc center point
+        ctr = self.__make_get_pt(center_x, center_y)[0]
+        # make arc end point
+        self.__cursor = self.__make_get_pt(end_x, end_y)[0]
+
+        # make arc
+        arc = self.__make_get_sline(geometry.Arc(pold, self.__cursor, ctr))[0]
+
+        if self.__holemode:
+            area = self.__area_from_pt(self.__cursor)
+            if area != None:
+                closed = area.add_hole_sline(arc)
+                if closed:
+                    self.__holemode = False
+            else:
+                print('You must have a closed area here before making a hole!')
+        else:
+            self.areas[-1].add_sline(arc)
+        return [arc, pold, self.__cursor]
+
+    def draw_line_delta(self, delta_x, delta_y):
         """Draws a line a relative distance, and adds it to the part.
 
         Args:
-          dx (float): x-axis delta distance to draw the line
-          dy (float): y-axis delta distance to draw the line
-        
+            delta_x (float): x-axis delta distance to draw the line
+            delta_y (float): y-axis delta distance to draw the line
+
         Returns:
-          list: [line, point_start, point_end]
+            list: [line, point_start, point_end]
         """
-        x = self.cursor.x + dx
-        y = self.cursor.y + dy
+        x = self.__cursor.x + delta_x
+        y = self.__cursor.y + delta_y
         return self.draw_line_to(x, y)
-    
+
     def draw_line_rad(self, dx_rad):
         """Draws a line a relative radial distance, and adds it to the part.
 
         Args:
-          dx_rad (float): x-axis delta distance to draw the line
-        
+            dx_rad (float): x-axis delta distance to draw the line
+
         Returns:
-          list: [line, point_start, point_end]
+            list: [line, point_start, point_end]
         """
         return self.draw_line_delta(dx_rad, 0.0)
-    
+
     def draw_line_ax(self, dy_ax):
         """Draws a line a relative axial distance, and adds it to the part.
 
         Args:
-          dy_ax (float): y-axis delta distance to draw the line
-        
+            dy_ax (float): y-axis delta distance to draw the line
+
         Returns:
-          list: [line, point_start, point_end]
+            list: [line, point_start, point_end]
         """
-        return self.draw_line_delta(0.0, dy_ax)    
+        return self.draw_line_delta(0.0, dy_ax)
 
     def draw_line_to(self, x, y):
         """Draws a line to the given location, and adds it to the part.
 
         Args:
-          x (float): x-axis coordinate of the end point
-          y (float): y-axis coordinate of the end point
-        
+            x (float): x-axis coordinate of the end point
+            y (float): y-axis coordinate of the end point
+
         Returns:
-          list: [line, point_start, point_end]
+            list: [SignLine, point_start, point_end]
         """
-        pold = self.cursor
-        [self.cursor, p_already_exists] = self.make_get_pt(x,y)
-        [line, l_already_exists] = self.make_get_line( 
-            geometry.Line(pold, self.cursor) )
-        
-        # add the line to the area
-        self.areas[-1].add(line)
-        
-        # check for closure of the area
-        if self.areas[-1].closed:
-            self.set_side('left',0,'y')
-            self.set_side('right',-1,'y')
-            self.set_side('top',-1,'x')
-            self.set_side('bottom',0,'x')
-            self.p.select(self)
+        pold = self.__cursor
+        self.__cursor = self.__make_get_pt(x, y)[0]
+        sline = self.__make_get_sline(geometry.Line(pold, self.__cursor))[0]
 
-        return [line, pold, self.cursor]
+        if self.__holemode:
+            area = self.__area_from_pt(self.__cursor)
+            if area != None:
+                closed = area.add_hole_sline(sline)
+                if closed:
+                    self.__holemode = False
+            else:
+                print('You must have a closed area here before making a hole!')
+        else:
+            # drawing in last area
+            self.areas[-1].add_sline(sline)
+            # check for closure of the area
+            if self.areas[-1].closed:
+                self.__set_side('left')
+                self.__set_side('right')
+                self.__set_side('top')
+                self.__set_side('bottom')
+        return [sline, pold, self.__cursor]
 
-    def get_lines(self):
-        """Returns a list of all lines in the part."""
-        lines = []
-        for area in self.areas:
-            for line in area.lines:
-                if line not in lines:
-                    lines.append(line)
-        return lines
-    
-    def get_points(self):
-        """Returns a list of all points in the part."""
-        points = []
-        for area in self.areas:
-            for line in area.lines:
-                for pt in line._points_:
-                    if pt not in points:
-                        points.append(pt)
-        return points
-    
-    def get_maxlength(self):
+    def __get_maxlength(self):
         """Returns the max distance between points in the part."""
-        pts = self.get_points()
+        points = self.points
         maxlen = 0.0
         # loop through points checking dist to next point
-        for ind, p1 in enumerate(pts[:-1]):
-            for p2 in pts[ind:]:
-                vect = p1 - p2
+        for ind, point_1 in enumerate(points[:-1]):
+            for point_2 in points[ind:]:
+                vect = point_1 - point_2
                 dist = vect.length()
                 if dist > maxlen:
                     maxlen = dist
         return maxlen
 
-    def area_from_pt(self, pt):
+    def __area_from_pt(self, point):
         """Returns the area that the point is inside.
-        
+
         Args:
-          pt (Point): the point we are asking about
-        
+            point (Point): the point we are asking about
+
         Returns:
-          Area or None:
-            Area is the found area
-            None is returned if the point is not in one of this part's areas
+            Area or None:
+                Area is the found area
+                None is returned if the point is not in one of this part's areas
         """
         for area in self.areas:
-            if area.pt_inside(pt):
+            if area.contains_point(point):
                 return area
         return None
 
-    def fillet_lines(self, l1, l2, radius):
+    def fillet_lines(self, line1, line2, radius):
         """Fillets the given lines in the part.
-        
+
         This inserts an arc in the part tangent to the two given lines.
-        
+
         Args:
-          l1 (Line): line that the arc starts on, arc is tangent to the line
-          l2 (Line): line that the ar ends on, arc is tangent to the line
-          radius (float): arc radius size        
+            line1 (Line): line that the arc starts on, arc is tangent to the line
+            line2 (Line): line that the ar ends on, arc is tangent to the line
+            radius (float): arc radius size
+        
+        Returns:
+            list: [arc, start_point, end_point]
         """
         # this function fillets lines in a part
         # check if the lines are touching
-        tmp = self.cursor
-        
-        if l1.touches(l2):
+        tmp = self.__cursor
+
+        if line1.touches(line2):
             # offset the lines, assuming area is being traced clockwise
             # get the intersection point
             magnitude = radius
-            l1_off = l1.offset(magnitude)
-            l2_off = l2.offset(magnitude)
+            l1_off = line1.offset(magnitude)
+            l2_off = line2.offset(magnitude)
             ctrpt = l1_off.intersects(l2_off)
-            if type(ctrpt) == type(None):
-                # flip the offset deirection if lines don't intersect
+            if ctrpt == None:
+                # flip the offset direction if lines don't intersect
                 magnitude = -radius
-                l1_off = l1.offset(magnitude)
-                l2_off = l2.offset(magnitude)
-                ctrpt = l1_off.intersects(l2_off)  
-                
+                l1_off = line1.offset(magnitude)
+                l2_off = line2.offset(magnitude)
+                ctrpt = l1_off.intersects(l2_off)
+
             # now we have an intersecting point
-            print('Arc center pt is: ',ctrpt)
-            p1_new = l1.arc_tang_intersection(ctrpt, magnitude)
-            p2_new = l2.arc_tang_intersection(ctrpt, magnitude)
-            rempt = l1.pt(1)
-            
-            # del old pt, store new points for the arc
-            self.p.points.remove(rempt)
-            [p1_new,b] = self.make_get_pt( p1_new.x, p1_new.y )
-            [ctrpt,b] = self.make_get_pt( ctrpt.x, ctrpt.y )
-            [p2_new,b] = self.make_get_pt( p2_new.x, p2_new.y )
-            
+            print('Arc center pt is: ', ctrpt)
+            p1_new = line1.arc_tang_intersection(ctrpt, magnitude)
+            p2_new = line2.arc_tang_intersection(ctrpt, magnitude)
+            rempt = line1.pt(1)
+
+            p1_new = self.__make_get_pt(p1_new.x, p1_new.y)[0]
+            ctrpt = self.__make_get_pt(ctrpt.x, ctrpt.y)[0]
+            p2_new = self.__make_get_pt(p2_new.x, p2_new.y)[0]
+
             # make the new arc
-            arc = self.p.lines.append( geometry.Arc(p1_new, p2_new, ctrpt) )
-                        
+            arc = self.__make_get_sline(geometry.Arc(p1_new, p2_new, ctrpt))[0]
+
             # edit the adjacent lines to replace the removed pt
-            l1.set_pt(1,arc.pt(0))
-            l2.set_pt(0,arc.pt(1))
-            
+            line1.set_pt(1, arc.pt(0))
+            line2.set_pt(0, arc.pt(1))
+            # del old pt, store new points for the arc
+            self.__fea.points.remove(rempt)
+
             # put the arc in the right location in the area
             for area in self.areas:
-                if l1 in area.lines:
-                    area.line_insert(l1, arc)
-                    print ('Arc inserted into area %i' % (area.id,))
-            self.p.sel_children()
-                        
+                if line1 in area.signlines:
+                    area.line_insert(line1, arc)
+                    print('Arc inserted into area %i' % (area.id))
+                    return [arc, arc.pt(0), arc.pt(1)]
         else:
-            print ('Cannot fillet! Lines must touch!')
+            print('Cannot fillet! Lines must touch!')
         # reset the cursor to where it should be
-        self.cursor = tmp
-        
-    def point_parents(self, pt):
-        """Returns lines that contain pt as their start or end point.
-        
-        Args:
-          pt (Point): the point we are asking about
-        
-        Returns:
-          res (list): list of lines that contain pt
-        """
-        res = []
-        lines = self.get_lines()
-        for line in lines:
-            if pt in line._points_:
-                res.append(line)
-        return res
-    
-    def point_line(self, pt):
-        """Returns the line that point pt is on. pt is not a start/end point.
-        
-        Args:
-          pt (Point): the point we are asking about
-        
-        Returns:
-          None or Line or Arc:
-            None: if the point is not on one of the lines
-            Line or Arc: the line or arc is returned if the pt is on it
-        """
-        res = None
-        lines = self.get_lines()
-        for line in lines:
-            if line.coincident(pt) == True:
-                return line
-        return res
-    
-    def line_parents(self, line):
-        """Returns the area parents of the passed line.
-        
-        Args:
-          line (Line or Arc): the line you are asking about
-        
-        Returns:
-          res (list of Area): the areas that contain the line are returned in a
-            list
-        """
-        res = []
-        for area in self.areas:
-            if line in area.lines:
-                res.append(area)
-        return res
-    
-    def cut_line(self, pt, line):
-        """Cuts the passed line at the passed point pt.
-        
+        self.__cursor = tmp
+
+    def __cut_line(self, point, line):
+        """Cuts the passed line at the passed point.
+
         The passed line is cut into two lines. All areas that included the
         original line are updated.
-        
+
         Args:
-          line (Line): the line to cut
-          pt (Point): the location on the line that we will cut it
-        
+            line (Line): the line to cut
+            point (Point): the location on the line that we will cut it
+
         Returns:
-          list: [pnew, lnew]
-            pnew: the new point we created to cut the original line
-            lnew: the new line we created, the end half of the orignal line
+            list: [pnew, lnew]
+                pnew: the new point we created to cut the original line
+                lnew: the new line we created, the end half of the orignal line
         """
-        p = geometry.Point(pt.x,pt.y)
-        pnew = None
-        if p in self.p.points:
-            pnew = [pt for pt in self.p.points if pt == p][0]
-        else:
-            pnew = self.p.points.append( p )
-        # below is code to split line, requires defined point and 
+        pnew = self.__make_get_pt(point.x, point.y)[0]
         pend = line.pt(1)
         line.set_pt(1, pnew)
-        lnew = self.p.lines.append( geometry.Line(pnew, pend) ) 
-        areas = self.line_parents(line)
+        lnew = self.__make_get_sline(geometry.Line(pnew, pend))[0]
         # insert the new line into existing areas
+        areas = line.areas
         for area in areas:
-            area.line_insert(line, lnew)
+            area_line = [lin for lin in area.signlines if lin.line == line]
+            area_line = area_line[0]
+            if area_line.sign == 1:
+                # cutting line in clockwise area, where line is pos
+                area.line_insert(area_line, lnew)
+            elif area_line.sign == -1:
+                # cutting line in clockwise area, where line is neg
+                lnew_rev = self.__make_get_sline(lnew.signed_copy(-1))[0]
+                area.line_insert(area_line, lnew_rev, after=False)
         return [pnew, lnew]
 
-    def cut(self, pt, cvect):
-        """Cuts the part at point pt using cvect as a cutting vector.
+    def __cut_area(self, area, start_pt, end_pt):
+        """Cuts the part area from start_pt to end_pt."""
+        # select the line portions that define the areas
+        # list[:low] excludes low index
+        # list [high:] includes high index
+        #    we want the line which start with the point
+        lpre_start = area.line_from_startpt(start_pt)
+        lpre_end = area.line_from_startpt(end_pt)
+        istart = area.exlines.index(lpre_start)
+        iend = area.exlines.index(lpre_end)
+        low = min(istart, iend)
+        high = max(istart, iend)
+
+        # lists of lines for areas
+        beg = area.exlines[:low]
+        mid = area.exlines[low:high]
+        end = area.exlines[high:]
+
+        # make cut line for [beg + cut + end] area
+        start_pt = mid[0].pt(0)
+        end_pt = mid[-1].pt(1)
+        fwd = geometry.Line(start_pt, end_pt)
+        rev = geometry.Line(end_pt, start_pt)
+
+        # update existing area
+        cline = self.__make_get_sline(fwd)[0]
+        alist_curr = beg + [cline] + end
+        area.update(alist_curr)
+
+        # make new area
+        cline_rev = self.__make_get_sline(rev)[0]
+        alist_other = mid + [cline_rev]
+        anew = self.__fea.areas.append(geometry.Area(self, alist_other))
+        self.areas.append(anew)
+
+    def __merge_hole(self, area, start_pt, end_pt):
+        """Merges the hole at start_pt into the area."""
+        lpre_start = area.line_from_startpt(start_pt)
+        hole_line = area.line_from_startpt(end_pt)
+        ind = area.exlines.index(lpre_start)
+
+        # store sections of the area
+        beg = area.exlines[:ind]
+        end = area.exlines[ind:]
+        mid = []
+        for hole in area.holes:
+            for sline in hole:
+                if sline == hole_line:
+                    mid = hole
+                    break
+            if mid != []:
+                break
+
+        fwd = geometry.Line(start_pt, end_pt)
+        fwd_sline = self.__make_get_sline(fwd)[0]
+        rev_sline = fwd_sline.signed_copy(-1)
+        rev_sline = self.__fea.signlines.append(rev_sline)
+        rev_sline.line.add_signline(rev_sline)
+        alist_curr = beg + [fwd_sline] + mid + [rev_sline] + end
+        area.holes.remove(mid)
+        area.update(alist_curr)
+        print('Hole merged into area %s' % area)
+
+    def __cut_with_line(self, cutline):
+        """Cuts the part using the passed line."""
+        # find all intersections
+        lines = self.lines
+        points = set()
+        # add origin point if it is in the part
+        if cutline.pt(0) in self.points:
+            points.add(geometry.Point(cutline.pt(0).x, cutline.pt(0).y))
+        for line in lines:
+            newpt = line.intersects(cutline)
+            if newpt != None:
+                points.add(newpt)
+
+        # loop through intersection points, storing distance and lines to cut
+        points = list(points)
+        for (ind, point) in enumerate(points):
+            dist = point - cutline.pt(0)
+            dist = dist.length()
+            pdict = {'dist': dist}
+            realpt = self.__get_point(point)
+            if realpt == None:
+                # point does not exist, we will need to cut a line
+                realpt = point
+                for line in lines:
+                    if line.coincident(realpt):
+                        pdict['line'] = line
+                        break
+            pdict['point'] = realpt
+            points[ind] = pdict
+
+        # sort the points by dist, lowest to highest
+        points = sorted(points, key=lambda k: k['dist'])
+
+        # loop through the points cutting areas
+        for ind in range(len(points)):
+            pdict = points[ind]
+            start_pt = points[ind]['point']
+            print(start_pt)
+            if 'line' in pdict:
+                # cut the line and point to the real new point
+                pnew = self.__cut_line(start_pt, pdict['line'])[0]
+                points[ind]['point'] = pnew
+                start_pt = pnew
+            end_pt = None
+            pavg = None
+            area = None
+            if ind > 0:
+                # find the area we're working on
+                end_pt = points[ind-1]['point']
+                pavg = start_pt + end_pt
+                pavg = pavg*0.5
+                area = self.__area_from_pt(pavg)
+
+                start_hole = start_pt in area.holepoints
+                end_hole = end_pt in area.holepoints
+                if start_hole and end_hole and area == None:
+                    # stop cutting if we are trying to cut through a holes
+                    break
+                elif start_hole and end_hole and area != None:
+                    break
+                    # stop cutting if we are trying to join holes
+                if end_hole == True:
+                    self.__merge_hole(area, start_pt, end_pt)
+                else:
+                    self.__cut_area(area, start_pt, end_pt)
+
+    def __cut_with_vect(self, point, cvect):
+        """Cuts the part at the point using cvect as a cutting vector.
 
         This function doesn't return anything.
         Instead, it updates all part areas, lines etc after cutting.
         So if you cut one area into two pieces, after calling this function
         the part will have two areas.
-        
+
         Args:
-          pt (Point): the locatin we are cutting from
-          cvect (Point): the vector direction of the cut from pt
+            point (Point): the location we are cutting from
+            cvect (Point): the vector direction of the cut from pt
         """
-        # this cuts the part, through one or more areas
         cvect.make_unit()
-        
-        # is the point an end point of a line?
-        lines_excluded = self.point_parents(pt)
-        
-        # if the pt is on an existing line, add that line to the excl list
-        if len(lines_excluded) == 0:
-            L1 = self.point_line(pt)
-            if L1 != None:
-                lines_excluded.append(L1)
+        vsize = self.__get_maxlength()
+        endpt = point + cvect*vsize
+        cutline = geometry.Line(point, endpt)
+        self.__cut_with_line(cutline)
 
-        # this stores the list of points to make cut new lines
-        linepts = [pt]
-        
-        if len(lines_excluded) == 0:
-            print('The given point is not on any lines, all lines will be checked for intersections!')
-        elif len(lines_excluded) == 1:
-            print('Cut or the origin line required')
-            # add the new point and split the origin line
-            line_origin = lines_excluded[0]
-            [pnew, lnew] = self.cut_line(pt, line_origin)
-            # set the first point of our cut line to be this actual point
-            linepts[0] = pnew
-        
-        # make the tool cut line
-        vsize = self.get_maxlength()
-        endpt = pt + cvect*vsize
-        cutline = geometry.Line(pt,endpt)
-        
-        # find the intersections
-        overlaps = []
-        lines = self.get_lines()
-        for l in lines:
-            if l not in lines_excluded:
-                if isinstance(l, geometry.Line):
-                    newpt = l.intersects(cutline)
-                    if isinstance(newpt, geometry.Point):
-                        areas = len(self.line_parents(l))
-                        
-                        # check if new point already exists
-                        if (newpt - l.pt(0)).length() < _acc:
-                            newpt = l.pt(0)
-                            l = None
-                        elif (newpt - l.pt(1)).length() < _acc:
-                            newpt = l.pt(1)
-                            l = None
-
-                        dist = newpt - pt
-                        dist = dist.length()
-
-                        # store itersections
-                        # pt, line, distance, numareas
-                        d = {'pt':newpt,'line':l,'dist':dist,'areas':areas}
-                        overlaps.append(d)
-        
-        # sort cuts by distance
-        overlaps = sorted(overlaps, key=lambda k: k['dist'])
-        
-        # loop through them drawing the cut line
-        # and closing the old and new areas
-        for cut in overlaps:
-            # splits the line to be cut, updates all parent areas
-            pnew = None
-            if cut['line'] == None:
-                # don't need to cut a line at the end
-                pnew = cut['pt']
-            else:
-                [pnew, lnew] = self.cut_line(cut['pt'], cut['line'])
-            # adds the intersection point to the list of cut line points
-            linepts.append(pnew)
-            p1 = linepts[-2]
-            p2 = linepts[-1]
-            pav = p1+p2
-            pav = pav*0.5
-            
-            # get area to cut
-            area = self.area_from_pt(pav)
-            # make the cut line
-            cut_line = self.p.lines.append( geometry.Line(p1, p2) )
-            cut1 = cut2 = cut_line
-            lpre1 = area.line_from_startpt(p1)
-            lpre2 = area.line_from_startpt(p2)
-            
-            # select the line portions that define the areas
-            lind1 = area.lines.index(lpre1) 
-            lind2 = area.lines.index(lpre2)
-            low = min(lind1, lind2)
-            high = max(lind1, lind2)
-            
-            # lists of lines for areas
-            beg = area.lines[:low]
-            end = area.lines[high:]
-            mid = area.lines[low:high]
-            
-            # reverse lines if needed
-            p1 = beg[-1].pt(1)
-            if cut1.pt(0) != p1:
-                cut1 = cut1.reverse()
-            p1 = mid[-1].pt(1)
-            if cut2.pt(0) != p1:
-                cut2 = cut2.reverse()
-            
-            alist_curr = beg + [cut1] + end
-            alist_other = mid + [cut2]
-            
-            area.update(alist_curr)
-            anew = self.p.areas.append( geometry.Area(self, alist_other) )
-            self.areas.append(anew)
-
-            if cut['areas'] == 1:
-                # break out of for loop, we hit a part edge
-                break
-        
-    def chunk_area(self, area):
+    def __chunk_area(self, area, mode):
         """Cuts the passed area into regular smaller areas.
-        
+
         The cgx mesher only accepts areas which are 3-5 sides
         so one may need to call this before using that mesher.
         Cuts are made perpendicular to tangent points or at
         internal corners.
         At internal corners two perpendicular cuts are made.
-        
+
         Args:
-          area (Area): the area to cut into smaller areas
+            area (Area): the area to cut into smaller areas
+            mode (str): 'both', 'holes' or 'ext' chunks the area using the
+                points form this set. See part.chunk
         """
         # store the cuts first, then cut after
         cuts = [] # each item is a dict with a pt and vect in it
-        for ind, line in enumerate(area.lines):
-            L1 = area.lines[ind-1]
-            L2 = line
-            pt = L1.pt(1)
-            v1 = L1.get_perp_vec(pt)
-            v2 = L2.get_perp_vec(pt)
-            # flip these vectors later to make them cut the area(s)
-            ang = v1.ang_bet_deg(v2)
-            d = {}
-            if ang == 0.0:
-                # tangent
-                d = {'pt':pt, 'vect':v1*-1}
-                cuts.append(d)
-            elif ang > 0:
-                # internal corner
-                d = {'pt':pt, 'vect':v1*-1}
-                cuts.append(d)
-                d = {'pt':pt, 'vect':v2*-1}
-                cuts.append(d)
-            elif ang < 0:
-                # external corner
-                # do not split these
-                pass
-        
+        loops = []
+        if mode == 'holes':
+            loops = area.holes
+        elif mode == 'ext':
+            loops = [area.exlines]
+        elif mode == 'both':
+            loops = area.holes + [area.exlines]
+        for loop in loops:
+            for ind, line in enumerate(loop):
+                line_pre = loop[ind-1]
+                line_post = line
+                point = line_pre.pt(1)
+                perp1 = line_pre.get_perp_vec(point)
+                perp2 = line_post.get_perp_vec(point)
+                # flip these vectors later to make them cut the area(s)
+                ang = perp1.ang_bet_deg(perp2)
+                cut = {}
+                if ang == 0.0:
+                    # tangent
+                    cut = {'pt':point, 'vect':perp1*-1}
+                    cuts.append(cut)
+                elif ang > 0:
+                    # internal corner
+                    cut = {'pt':point, 'vect':perp1*-1}
+                    cuts.append(cut)
+                    cut = {'pt':point, 'vect':perp2*-1}
+                    cuts.append(cut)
+                elif ang < 0:
+                    # external corner
+                    # do not split these
+                    pass
+
         # do the cuts
         for cut in cuts:
             print('--------------------')
-            print('Cut pt:',cut['pt'])
-            print('Cut vect: ',cut['vect'])
-            self.cut(cut['pt'], cut['vect'])
-            
-    def chunk(self):
-        """Chunks all areas in the part."""
+            print('Cut pt:', cut['pt'])
+            print('Cut vect: ', cut['vect'])
+            self.__cut_with_vect(cut['pt'], cut['vect'])
+
+    def chunk(self, mode='both'):
+        """Chunks all areas in the part.
+
+        Args:
+            mode (str): area chunking mode
+
+                - 'both': cuts areas using holes and exterior points
+                - 'holes': cut areas using holes points only
+                - 'ext': cut areas using exterior points only
+        """
         for area in self.areas:
             if area.closed:
-                if len(area.lines) > 5:
-                    # we need to chunk this area, it has too many lines to mesh
-                    self.chunk_area(area)
+                min_sides = 5
+                has_holes = len(area.holes) > 0
+                ext_gr = len(area.exlines) > min_sides
+                both_false = (has_holes == False and ext_gr == False)
+                if mode == 'holes' and has_holes:
+                    self.__chunk_area(area, mode)
+                elif mode == 'both' and (has_holes or ext_gr):
+                    self.__chunk_area(area, mode)
+                elif mode == 'ext' and ext_gr:
+                    self.__chunk_area(area, mode)
                 else:
-                    print('Area %i was not chunked because it had < 6 sides.'%(area.id))
-        # store the left, right, top, and bottom lines        
-        self.set_side('left',0,'y')
-        self.set_side('right',-1,'y')
-        self.set_side('top',-1,'x')
-        self.set_side('bottom',0,'x')
-        self.p.select(self)
-        
-    def set_matl(self, mat):
-        """Sets the part material.
-        
-        Args:
-          matl (Matl): the material assigned to the part
-        """
-        self.matl = mat
-            
+                    aname = area.get_name()
+                    val = 'Area %s was not chunked because it had' % aname
+                    adder = ''
+                    if mode == 'both' and both_false:
+                        adder = '<= %i lines and no holes.' % min_sides
+                    elif has_holes == False and (mode in ['both', 'holes']):
+                        adder = 'no holes.'
+                    elif ext_gr == False and (mode in ['both', 'ext']):
+                        adder = '<= %i lines.' % min_sides
+                    print('%s %s' % (val, adder))
+
+        # store the left, right, top, and bottom lines
+        self.__set_side('left')
+        self.__set_side('right')
+        self.__set_side('top')
+        self.__set_side('bottom')
+
     def __str__(self):
         """Returns string listing object type, id number and name."""
         val = 'Part, id=%i name=%s' % (self.id, self.get_name())

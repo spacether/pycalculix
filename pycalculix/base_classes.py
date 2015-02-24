@@ -1,27 +1,30 @@
-"""This module sotres base classes and functions used by others."""
+"""This module stores base classes and functions.
+
+Attributes:
+    RESFILEDS (dict): stores results fields under results type
+
+        key (str):
+            - 'displ': displacement
+            - 'stress': stress
+            - 'strain': strain
+            - 'force': force
+        value (list):
+            - 'displ' = 'ux','uy','uz','utot'
+            - 'stress' = 'Sx','Sy','Sz','Sxy','Syz','Szx','Seqv','S1','S2','S3'
+            - 'strain' = 'ex','ey','ez','exy','eyz','ezx','eeqv','e1','e2','e3'
+            - 'force' = 'fx','fy','fz'
+    FIELDTYPE (dict): the inverse dict of RESFIELDS
+
+        For example: key 'ux' --> value: 'displ'
+"""
 from math import ceil
+from . import environment
 
 RESFIELDS = {}
 RESFIELDS['displ'] = 'ux,uy,uz,utot'.split(',')
 RESFIELDS['stress'] = 'Sx,Sy,Sz,Sxy,Syz,Szx,Seqv,S1,S2,S3'.split(',')
 RESFIELDS['strain'] = 'ex,ey,ez,exy,eyz,ezx,eeqv,e1,e2,e3'.split(',')
 RESFIELDS['force'] = 'fx,fy,fz'.split(',')
-"""RESFIELDS is a dict which stores results fields under results type strings.
-
-Args:
-  key (str):
-    'displ': displacement
-    'stress': stress
-    'strain': strain
-    'force': force
-
-Returns:
-  list:
-    'displ' = 'ux,uy,uz,utot'.split(',')
-    'stress' = 'Sx,Sy,Sz,Sxy,Syz,Szx,Seqv,S1,S2,S3'.split(',')
-    'strain' = 'ex,ey,ez,exy,eyz,ezx,eeqv,e1,e2,e3'.split(',')
-    'force' = 'fx,fy,fz'.split(',')
-"""
 
 #FIELDTYPE is a dict that inverts the RESFIELDS dictionary mapping.
 FIELDTYPE = {}
@@ -30,11 +33,11 @@ for (k, v) in RESFIELDS.items():
         FIELDTYPE[vi] = k
 
 class Idobj(object):
-    """Makes an object that stores an id number for an object.
+    """Makes an object that stores an id number.
 
     This is a base class for nodes, lines, areas etc.
 
-    Atributes:
+    Attributes:
       id (int): the unique id number for the item
     """
 
@@ -42,16 +45,44 @@ class Idobj(object):
         self.id = -1
 
     def set_id(self, id):
-        """Set the id number """
+        """Sets the id number """
         self.id = id
 
     def __hash__(self):
-        """Set the hash of the item to the id number.
+        """Sets the hash of the item to the id number.
 
         This allows one to make sets of these items.
         """
         return self.id
 
+def plot_finish(plt, fname, display):
+    """Display and or save plot."""
+    if fname != '':
+        # save the image
+        fname += '.png'
+        if environment.DPI != None:
+            plt.savefig(fname, dpi=environment.DPI, bbox_inches='tight')
+        else:
+            plt.savefig(fname, bbox_inches='tight')
+        print('File %s was saved.' % fname)
+
+    if display:
+        plt.tight_layout()
+        plt.show()
+
+    # remove all figures
+    plt.close()
+
+def plot_set_bounds(plt, axials, radials):
+    """Sets the axial and radial bounds of the shown plot."""
+    vert = max(radials) - min(radials)
+    horiz = max(axials) - min(axials)
+    vadder = (vert)/5
+    hadder = (horiz)/5
+    (vmax, vmin) = (max(radials)+vadder, min(radials)-vadder)
+    (hmax, hmin) = (max(axials)+hadder, min(axials)-hadder)
+    plt.xlim(hmin, hmax)
+    plt.ylim(vmin, vmax)
 
 class Itemlist(list):
     """Makes a custom list used to store lists of non-mesh items.
@@ -159,3 +190,16 @@ def chunk_list(inlist, size):
     for ind in range(numlists):
         res.append(inlist[ind*size:(ind+1)*size])
     return res
+
+def listify(items):
+    """Returns a list of items. If items is an object it puts it in a list.
+
+    If a list is passed, it returns the list without changing it.
+    If an object is passed, it returns a list with the object in it.
+
+    Args:
+        items (object or list): item or list to convert to a list
+    """
+    if not isinstance(items, list):
+        items = [items]
+    return items

@@ -1,73 +1,142 @@
+"""This module stores the Results_File class."""
+
 import re # used to get info from frd file
-from numpy import roots, linspace # need to find S1-S3, and to make contours
+import math # used for metric number conversion
+from numpy.lib.polynomial import roots # need to find S1-S3
+from numpy.core.function_base import linspace # need to make contours
 import os #need to check if results file exists
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
 
-from . import environment # needed for DPI
 from . import base_classes # needed for RESFIELDS
+from . import mesh
 
-class Results_File(object):
+CMAP = 'jet'
+
+class ResultsFile(object):
     """Makes a results file.
 
     Args:
-    solved_model (Model): parent model
-    fname (str): project/results file prefix
-    
+        problem (Problem): problem that was solved
+
     Attributes:
-    p (Model): parent model
-    fname (str): results file prefix
-    steps (list): a list of float time steps
-    results (dict): a dict sotring the results file.
-      results[step]['node'][nnum][field] --> value
-      results[step]['element'][enum][field] --> value
-      field = 'ux' or 'Seqv' or 'ey' etc.
-    time (float): current time we are looking at, defaults to -1
-      When a file is loaded in, the first time step is loaded.
+        __problem (Problem): parent problem
+        __steps (list): a list of float time steps
+        __results (dict): a dict storing the results data
+            results[step]['node'][nnum][field] --> value
+            results[step]['element'][enum]['avg'][field] --> value
+            results[step]['element'][enum]['max'][field] --> value
+            results[step]['element'][enum]['min'][field] --> value
+            results[step]['element'][enum]['ipoints'][ipnum][field] --> value
+            field = 'ux' or 'Seqv' or 'ey' etc.
+        __time (float): current time we are looking at, defaults to -1
+            When a file is loaded in, the first time step is loaded.
     """
 
-    def __init__(self, solved_model, fname):
-        self.p = solved_model
-        self.fname = fname
-        self.steps = [] # this stores a list of time steps
-        self.results = {} # stores results, nested dicts
-        self.time = -1
-        self.read_frd() # read nodal results
-        self.read_dat() # read element integration pt results
+    def __init__(self, problem):
+        self.__problem = problem
+        self.__steps = [] # this stores a list of time steps
+        self.__results = {} # stores results, nested dicts
+        self.__time = -1
+        if self.__problem.solved:
+            self.load()
 
-    def nplot(self, field, fname='', display=True, levels=21, gradient=False, gmult=1.0):
-        # plot the results in the given field for the selected object
+    @property
+    def steps(self):
+        """Returns a list of loaded time steps.
 
+        Note: this is read only, you can not assign a value to it.
+        """
+        return self.__steps
+
+    @property
+    def time(self):
+        """Returns the current time (float) in the results file.
+
+        Note: this is read only, you can not assign a value to it.
+        """
+        return self.__time
+
+    @staticmethod
+    def __metric_num(number, sig_figs=3, sci=False):
+        """Returns string of number, with only 10**3 suffixes.
+
+        If 0 <= number < 1000 no suffix is added.
+        This is useful for quantities usually given in metric: stress, displacement.
+
+        Args:
+            number (float or int): the number we want converted to __metric_number
+            sig_figs (int): number of significant figures to use, right of decimal
+            sci (bool): True means use scientific formatting, False use metric
+        """
+        if sci:
+            format_str = "%.{}e".format(sig_figs)
+            my_str = format_str % number
+        else:
+            format_str = "%.{}f".format(sig_figs)
+            my_str = format_str % number
+            if number != 0:
+                # get the scientific exponent
+                exp = math.floor(math.log10(abs(number)))
+                metric_exp = exp - (exp % 3)
+                new_float = number/(10**metric_exp)
+                if metric_exp != 0:
+                    format_str = "%.{}fe%i".format(sig_figs)
+                    my_str = format_str % (new_float, metric_exp)
+        return my_str
+
+    def load(self):
+        """Loads the results file with problem.fname prefix."""
+        self.__read_frd() # read nodal results
+        self.__read_dat() # read element integration pt results
+
+    def nplot(self, field, fname='', display=True, levels=21, gradient=False,
+              gmult=1.0, max_val=None, min_val=None, title=''):
+        """Plots nodal results.
+
+        Args:
+            field (str): results item to plot, examples: 'ux', 'ey', 'Seqv'
+            fname (str): prefix of png file name, if writing an image
+            display (bool): True = interactively show the plot
+            levels (int): number of levels to use in the colorbar
+            gradient (bool): True = results plotted with gradient
+                False = results plotted with filled areas
+            gmult (int): geometric multiplier on displacement of nodes
+                displayed_node_loc = model_node_loc + gmult*node_displacement
+            max_val (float or None): max value in the colorbar
+
+                - None: max from selected data used
+                - float: use the passed float
+            min_val (float): min value in the colorbar
+
+                - None: min from selected data used
+                - float: use the passed float
+            title (str): third line in the plot title
+        """
         # store the selected nodes and elements
         sel = {}
-        sel['nodes'] = self.p.p.sel['nodes']
-        sel['elements'] = self.p.p.sel['elements']
-        sel['faces'] = self.p.p.sel['faces']
-        
+        sel['nodes'] = self.__problem.fea.view.nodes
+        sel['elements'] = self.__problem.fea.view.elements
+        sel['faces'] = self.__problem.fea.view.faces
+
         # sort nodes low to high so index is correct
         # we have index to id below so showing subsets works
         sel['nodes'] = list(sel['nodes'])
         sel['nodes'] = sorted(sel['nodes'], key=lambda k: k.id)
-        
-        '''
-        faceplot = False
-        if len(sel['elements']) == 0 and len(sel['faces']) > 0
-        NEED TO ADD CODE HERE TO MAKE INTERPOLATION TRIANGLES FOR ELEMENT FACES
-        '''
-        
+
         # store results at nodes
         axials = []
         radials = []
-        zs = []
+        zvals = []
         id_to_ind = {}
-        for n in sel['nodes']:
-            id_to_ind[n.id] = len(axials)
-            ax = n.y + gmult*self.results[self.time]['node'][n.id]['uy']
-            rad = n.x + gmult*self.results[self.time]['node'][n.id]['ux']
-            axials.append(ax)
+        for node in sel['nodes']:
+            id_to_ind[node.id] = len(axials)
+            axi = node.y + gmult*self.__results[self.__time]['node'][node.id]['uy']
+            rad = node.x + gmult*self.__results[self.__time]['node'][node.id]['ux']
+            axials.append(axi)
             radials.append(rad)
-            zs.append(self.results[self.time]['node'][n.id][field])
+            zvals.append(self.__results[self.__time]['node'][node.id][field])
 
         # make a list of triangles, given by indices, looping anticlockwise
         triangles = []
@@ -76,116 +145,162 @@ class Results_File(object):
             mylist = sel['elements']
         elif len(sel['faces']) > 0:
             mylist = sel['faces']
-        for e in mylist:
-            tris = e.get_tris()     # list of triangle nodes defined by node id
-            for t in tris:
-                for ind, nid in enumerate(t):
-                    t[ind] = id_to_ind[nid]     # convert id to index
+        for element in mylist:
+            tris = element.get_tris() # list of triangle nodes
+            for tri in tris:
+                for ind, nid in enumerate(tri):
+                    tri[ind] = id_to_ind[nid]     # convert id to index
             triangles += tris
-        
+
         # check to see if selected nodes and elements are
         # in the parent model's nodes and elements
-        
         fig = plt.figure()
-        ax = fig.add_subplot(111)
-        
+        ax_ = fig.add_subplot(111)
+
         # need to set tick list here
-        vmin = min(zs)
-        vmax = max(zs)
+        vmin = min(zvals)
+        vmax = max(zvals)
+        stop_plot = False
+        if max_val != None and min_val == None:
+            if max_val < vmin:
+                stop_plot = True
+                print('Error:')
+                print(' Only max was passed but it is < the data min!')
+                print(' Pass a max_val that is > the data min of %f' % vmin)
+            else:
+                vmax = max_val
+        elif min_val != None and max_val == None:
+            if min_val > vmax:
+                stop_plot = True
+                print('Error:')
+                print(' Only min was passed but it is > the data max!')
+                print(' Pass a min_val that is < the data max of %f' % vmax)
+            else:
+                vmin = min_val
+        elif max_val != None and min_val != None:
+            if max_val < min_val:
+                stop_plot = True
+                print('Error:')
+                print(' Min and max passed, but min > max!')
+                print(' Pass a min_val that is < max_val')
+            else:
+                vmax = max_val
+                vmin = min_val
+        # exit if stop plot flag is on
+        if stop_plot:
+            return None
+
         tick_list = [vmin]
         if vmax != vmin:
             # we have a range of values we're plotting
-            tick_list = linspace(vmin,vmax,levels)        
-        
+            tick_list = linspace(vmin, vmax, levels+1)
+
         # plot using a gradient(shaded) or levels
-        if gradient:
+        # code required for the colorbar, needs to go before plotting for colormap
+        cnorm = colors.Normalize(vmin=vmin, vmax=vmax)
+        cmap = colors.ListedColormap(['b', 'b']) # default to plot one val
+        if vmax != vmin:
+            # we have a range of values we're plotting
+            if gradient:
+                cmap = plt.get_cmap(CMAP)
+            else:
+                cmap = plt.get_cmap('jet', levels)
+        cmap.set_under('0.3', 0.8)
+        cmap.set_over('0.7', 0.8)
+        if gradient or len(tick_list) == 1:
             # This one is shaded
-            plt.tripcolor(axials, radials, triangles, zs, shading='gouraud')
+            plt.tripcolor(axials, radials, triangles, zvals, shading='gouraud',
+                          cmap=cmap, norm=cnorm)
         else:
             # this one is not shaded
-            plt.tricontourf(axials, radials, triangles, zs, levels=tick_list)
+            plt.tricontourf(axials, radials, triangles, zvals, levels=tick_list,
+                            cmap=cmap, norm=cnorm, extend='both')
 
-        # code required for the colorbar
-        cNorm  = colors.Normalize(vmin=vmin, vmax=vmax)
-        cmap = colors.ListedColormap(['b', 'b']) # default to plot one val
-        if vmax != vmin:
-            # we have a range of values we're plotting
-            if gradient:
-                cmap = plt.cm.jet
-            else:
-                cmap = plt.get_cmap('jet', levels)
-        scalarMap = cmx.ScalarMappable(norm=cNorm,cmap=cmap)            
-        scalarMap._A = [] # need to set this for it to work
-        plt.colorbar(scalarMap, orientation='vertical', ticks=tick_list)
-            
+        scalarmap = cmx.ScalarMappable(norm=cnorm, cmap=cmap)
+        scalarmap.set_array([])
+        cbar = plt.colorbar(scalarmap, orientation='vertical', ticks=tick_list)
+
+        scibool = False
+        if field[0] == 'e':
+            # strain plotting, use scientific numbering
+            scibool = True
+        met_max = self.__metric_num(max(zvals), sci=scibool)
+        met_min = self.__metric_num(min(zvals), sci=scibool)
+        label = 'Max: %s\nMin: %s' % (met_max, met_min)
+        tick_list = [self.__metric_num(tick, sci=scibool) for tick in tick_list]
+        cbar.ax.set_yticklabels(tick_list)
+        cbar.ax.set_xlabel(label, labelpad=10, x=0, ha='left')
+        cbar.ax.xaxis.set_label_position('top')
+
         # set the horizontal and vertical axes
-        vert = max(radials) - min(radials)
-        horiz = max(axials) - min(axials)
-        vadder = (vert)/5
-        hadder = (horiz)/5    
-        (vmax,vmin) = (max(radials)+vadder, min(radials)-vadder)
-        (hmax,hmin) = (max(axials)+hadder, min(axials)-hadder)
-        plt.xlim(hmin, hmax)
-        plt.ylim(vmin, vmax)
-        
+        base_classes.plot_set_bounds(plt, axials, radials)
+
         # set units
-        [f_unit, d_unit, t_unit] = self.p.p.get_units(field, 'dist', 'time')
+        alist = self.__problem.fea.get_units(field, 'dist', 'time')
+        [f_unit, d_unit, t_unit] = alist
 
         # set plot axes
-        plt.title('Node %s%s\nTime=%f%s' % (field, f_unit, self.time, t_unit))
+        plot_title = ('Node %s%s\nTime=%f%s' %
+                      (field, f_unit, self.__time, t_unit))
+        if title != '':
+            plot_title += '\n%s' % title
+        plt.title(plot_title)
         plt.xlabel('axial, y'+d_unit)
         plt.ylabel('radial, x'+d_unit)
-        ax.set_aspect('equal')
+        ax_.set_aspect('equal')
         if gmult != 1:
-            ax.xaxis.set_ticklabels([])
-            ax.yaxis.set_ticklabels([])
+            ax_.xaxis.set_ticklabels([])
+            ax_.yaxis.set_ticklabels([])
+        base_classes.plot_finish(plt, fname, display)
 
-        if fname != '':
-            # save the image
-            fname += '.png'
-            if environment.DPI != None:
-                plt.savefig(fname, dpi=environment.DPI, bbox_inches='tight')
-            else:
-                plt.savefig(fname, bbox_inches='tight')
-            print('File %s was saved' % (fname))
-        
-        if display:
-            plt.tight_layout()
-            plt.show()
-            
-        # remove all figures
-        plt.close()
+    def eplot(self, field, fname='', display=True, levels=21,
+              gmult=1.0, mode='avg', max_val=None, min_val=None, title=''):
+        """Plots element results.
 
-    def eplot(self, field, fname='', display=True, levels=21, gradient=False, gmult=1.0):
-        # plot the results in the given field for the selected object
+        Args:
+            field (str): results item to plot. Only stresses supported.
+                Examples: 'Sx', 'Sxy', 'S1', 'Seqv' etc.
+            fname (str): prefix of png file name, if writing an image
+            display (bool): True = interactively show the plot
+            levels (int): number of levels to use in the colorbar
+            gmult (int): geometric multiplier on displacement of nodes
+                displayed_node_loc = model_node_loc + gmult*node_displacement
+            mode (str): the type of element result to plot
 
+                - 'avg': integration points averaged to avg element result
+                - 'max': max value of field in the integration points plotted
+                - 'min': min value of field in the integration points plotted
+            max_val (float or None): max value in the colorbar
+
+                - None: max from selected data used
+                - float: use the passed float
+            min_val (float): min value in the colorbar
+
+                - None: min from selected data used
+                - float: use the passed float
+            title (str): third line in the plot title
+        """
         # store the selected nodes and elements
         sel = {}
-        sel['nodes'] = self.p.p.sel['nodes']
-        sel['elements'] = self.p.p.sel['elements']
-        sel['faces'] = self.p.p.sel['faces']
-        
+        sel['nodes'] = self.__problem.fea.view.nodes
+        sel['elements'] = self.__problem.fea.view.elements
+        sel['faces'] = self.__problem.fea.view.faces
+
         # sort nodes low to high so index is correct
         # we have index to id below so showing subsets works
         sel['nodes'] = list(sel['nodes'])
         sel['nodes'] = sorted(sel['nodes'], key=lambda k: k.id)
-        
-        '''
-        faceplot = False
-        if len(sel['elements']) == 0 and len(sel['faces']) > 0
-        NEED TO ADD CODE HERE TO MAKE INTERPOLATION TRIANGLES FOR ELEMENT FACES
-        '''
-        
+
         # store results at nodes
         axials = []
         radials = []
-        zs = []
+        zvals = []
         id_to_ind = {}
-        for n in sel['nodes']:
-            id_to_ind[n.id] = len(axials)
-            ax = n.y + gmult*self.results[self.time]['node'][n.id]['uy']
-            rad = n.x + gmult*self.results[self.time]['node'][n.id]['ux']
-            axials.append(ax)
+        for node in sel['nodes']:
+            id_to_ind[node.id] = len(axials)
+            axi = node.y + gmult*self.__results[self.__time]['node'][node.id]['uy']
+            rad = node.x + gmult*self.__results[self.__time]['node'][node.id]['ux']
+            axials.append(axi)
             radials.append(rad)
 
         # make a list of triangles, given by indices, looping anticlockwise
@@ -195,157 +310,424 @@ class Results_File(object):
             mylist = sel['elements']
         elif len(sel['faces']) > 0:
             mylist = sel['faces']
-        for e in mylist:
-            val = self.results[self.time]['element'][e.id][field]
-            tris = e.get_tris()     # list of triangle nodes defined by node id
-            for t in tris:
-                zs.append(val)
-                for ind, nid in enumerate(t):
-                    t[ind] = id_to_ind[nid]     # convert id to index
+        for ele in mylist:
+            val = self.__results[self.__time]['element'][ele.id][mode][field]
+            tris = ele.get_tris() # list of triangle nodes defined by node id
+            for tri in tris:
+                zvals.append(val)
+                for ind, nid in enumerate(tri):
+                    tri[ind] = id_to_ind[nid]     # convert id to index
             triangles += tris
-        
+
         # check to see if selected nodes and elements are
         # in the parent model's nodes and elements
-        
+
         fig = plt.figure()
-        ax = fig.add_subplot(111)
-        
+        ax_ = fig.add_subplot(111)
+
         # need to set tick list here
-        vmin = min(zs)
-        vmax = max(zs)
+        vmin = min(zvals)
+        vmax = max(zvals)
+        stop_plot = False
+        if max_val != None and min_val == None:
+            if max_val < vmin:
+                stop_plot = True
+                print('Error:')
+                print(' Only max was passed but it is < the data min!')
+                print(' Pass a max_val that is > the data min of %f' % vmin)
+            else:
+                vmax = max_val
+        elif min_val != None and max_val == None:
+            if min_val > vmax:
+                stop_plot = True
+                print('Error:')
+                print(' Only min was passed but it is > the data max!')
+                print(' Pass a min_val that is < the data max of %f' % vmax)
+            else:
+                vmin = min_val
+        elif max_val != None and min_val != None:
+            if max_val < min_val:
+                stop_plot = True
+                print('Error:')
+                print(' Min and max passed, but min > max!')
+                print(' Pass a min_val that is < max_val')
+            else:
+                vmax = max_val
+                vmin = min_val
+        # exit if stop plot flag is on
+        if stop_plot:
+            return None
+
         tick_list = [vmin]
         if vmax != vmin:
             # we have a range of values we're plotting
-            tick_list = linspace(vmin,vmax,levels)        
-        
-        # plot using levels
-        plt.tripcolor(axials, radials, triangles, zs, shading='flat')
+            tick_list = linspace(vmin, vmax, levels+1)
 
-        # code required for the colorbar
-        cNorm  = colors.Normalize(vmin=vmin, vmax=vmax)
+        # code required for the colorbar, needs to go before plotting for cmap
+        cnorm = colors.Normalize(vmin=vmin, vmax=vmax)
         cmap = colors.ListedColormap(['b', 'b']) # default to plot one val
         if vmax != vmin:
             # we have a range of values we're plotting
-            if gradient:
-                cmap = plt.cm.jet
-            else:
-                cmap = plt.get_cmap('jet', levels)
-        scalarMap = cmx.ScalarMappable(norm=cNorm,cmap=cmap)            
-        scalarMap._A = [] # need to set this for it to work
-        plt.colorbar(scalarMap, orientation='vertical', ticks=tick_list)
-            
+            cmap = plt.get_cmap(CMAP, levels)
+        cmap.set_under('0.3', 0.8)
+        cmap.set_over('0.7', 0.8)
+
+        # plot using levels
+        plt.tripcolor(axials, radials, triangles, zvals,
+                      shading='flat', cmap=cmap, norm=cnorm)
+
+        scalarmap = cmx.ScalarMappable(norm=cnorm, cmap=cmap)
+        scalarmap.set_array([])
+        cbar = plt.colorbar(scalarmap, orientation='vertical', ticks=tick_list)
+        scibool = False
+        if field[0] == 'e':
+            # strain plotting, use scientific numbering
+            scibool = True
+        met_max = self.__metric_num(max(zvals), sci=scibool)
+        met_min = self.__metric_num(min(zvals), sci=scibool)
+        label = 'Max: %s\nMin: %s' % (met_max, met_min)
+        tick_list = [self.__metric_num(tick, sci=scibool) for tick in tick_list]
+        cbar.ax.set_yticklabels(tick_list)
+        cbar.ax.set_xlabel(label, labelpad=10, x=0, ha='left')
+        cbar.ax.xaxis.set_label_position('top')
+
         # set the horizontal and vertical axes
-        vert = max(radials) - min(radials)
-        horiz = max(axials) - min(axials)
-        vadder = (vert)/5
-        hadder = (horiz)/5    
-        (vmax,vmin) = (max(radials)+vadder, min(radials)-vadder)
-        (hmax,hmin) = (max(axials)+hadder, min(axials)-hadder)
-        plt.xlim(hmin, hmax)
-        plt.ylim(vmin, vmax)
-        
+        base_classes.plot_set_bounds(plt, axials, radials)
+
         # set units
-        [f_unit, d_unit, t_unit] = self.p.p.get_units(field, 'dist', 'time')
+        alist = self.__problem.fea.get_units(field, 'dist', 'time')
+        [f_unit, d_unit, t_unit] = alist
 
         # set plot axes
-        plt.title('Element %s%s\nTime=%f%s' %
-                  (field, f_unit, self.time, t_unit))
+        plot_title = ('Element %s %s%s\nTime=%f%s' %
+                      (mode, field, f_unit, self.__time, t_unit))
+        if title != '':
+            plot_title += '\n%s' % title
+        plt.title(plot_title)
         plt.xlabel('axial, y'+d_unit)
         plt.ylabel('radial, x'+d_unit)
-        ax.set_aspect('equal')
+        ax_.set_aspect('equal')
         if gmult != 1:
-            ax.xaxis.set_ticklabels([])
-            ax.yaxis.set_ticklabels([])
+            ax_.xaxis.set_ticklabels([])
+            ax_.yaxis.set_ticklabels([])
+        base_classes.plot_finish(plt, fname, display)
 
-        if fname != '':
-            # save the image
-            fname += '.png'
-            if environment.DPI != None:
-                plt.savefig(fname, dpi=environment.DPI, bbox_inches='tight')
-            else:
-                plt.savefig(fname, bbox_inches='tight')
-            print('File %s was saved' % (fname))
-        
-        if display:
-            plt.tight_layout()
-            plt.show()
-            
-        # remove all figures
-        plt.close()
-        
-    def set_time(self, val):
-        # sets the current time to time val
-        self.time = val
-        print('Results file time set to: %f' % (self.time))
+    def set_time(self, time):
+        """Sets the time point we're looking at in the results file.
 
-    def utot(self, vals):
+        Args:
+            time (float): time we are setting
+        """
+        if time in self.steps:
+            self.__time = time
+            print('Results file time set to: %f' % (self.__time))
+        else:
+            print('Time %f is not in the loaded times. Valid times are:')
+            print(self.steps)
+
+    @staticmethod
+    def __utot(vals):
+        """Returns the total displacement distance, given [dx,dy,dz].
+
+        Args:
+            vals (list): [dx, dy, dz] list of displacements in x, y, and z axes
+
+        Returns:
+            res (float): displacement
+        """
         # computes sum of the squares
         res = [a**2 for a in vals]
-        res = ( sum(res) )**0.5
-        return res
-    
-    def seqv(self, vals):
-        # calculates the equivalent stress
-        [s11,s22,s33,s12,s13,s23] = vals
-        a = s11 - s22
-        b = s22 - s33
-        c = s33 - s11
-        d = s12**2 + s23**2 +s13**2
-        res = (0.5*(a**2 + b**2 + c**2 +6*d))**0.5
+        res = (sum(res))**0.5
         return res
 
-    def principals(self, vals):
+    @staticmethod
+    def __seqv(vals):
+        """Returns the Von Mises stress, which will be stored as 'Seqv'.
+
+        Args:
+            vals (list): list of six stresses [s11,s22,s33,s12,s13,s23]
+
+        Returns:
+            res (float): Von Mises stress
+        """
+        [s11, s22, s33, s12, s13, s23] = vals
+        aval = s11 - s22
+        bval = s22 - s33
+        cval = s33 - s11
+        dval = s12**2 + s23**2 +s13**2
+        res = (0.5*(aval**2 + bval**2 + cval**2 +6*dval))**0.5
+        return res
+
+    @staticmethod
+    def __principals(vals):
+        """Returns principal stresses [S1,S2,S3].
+
+        Args:
+            vals (list): six stresses [s11,s22,s33,s12,s13,s23]
+
+        Returns:
+            res (list): principal stresses [S1,S2,S3] stresses are high-to-low
+        """
         # calculates and returns principal stresses, S1, S2, S3
-        [s11,s22,s33,s12,s13,s23] = vals
-        a = 1
-        b = (s11 + s22 + s33)*-1.0
-        c = (s11*s22 + s11*s33 + s22*s33 - s12**2 - s13**2 - s23**2)
-        d = (s11*s22*s33 + 2*s12*s13*s23 - s11*(s23**2) - s22*(s13**2) - s33*(s12**2))*-1.0
-        res = list(roots([a,b,c,d]))
-        res = sorted(res, reverse=True)        
+        [s11, s22, s33, s12, s13, s23] = vals
+        aval = 1
+        bval = (s11 + s22 + s33)*-1.0
+        cval = (s11*s22 + s11*s33 + s22*s33 - s12**2 - s13**2 - s23**2)
+        dval = (s11*s22*s33 + 2*s12*s13*s23 - s11*(s23**2) - s22*(s13**2)
+                - s33*(s12**2))*-1.0
+        res = list(roots([aval, bval, cval, dval]))
+        res = sorted(res, reverse=True)
         return res
-    
-    def get_nmax(self, field):
-        # returns the max value of a given results field
-        res = [ ndict[field] for ndict in self.results[self.time]['node'].values() ]
-        return max(res)
 
-    def get_nmin(self, field):
-        # returns the min value of a given results field
-        res = [ ndict[field] for ndict in self.results[self.time]['node'].values() ]
-        return min(res)
-    
+    def __get_data_dict(self, time, type_str):
+        """Returns the data dict at the correct time for element or node.
+
+        Args:
+            time (float): None or the time we want, if None use current time
+            type_str: 'element' or 'node'
+
+        Returns:
+            res (dict or None): dictionary with field values in it
+                None if the time was invalid
+        """
+        res = self.__results[self.__time][type_str]
+        if time != None:
+            if time not in self.steps:
+                print('Error: passed time is not in steps!')
+                print(' Pass a time in the steps:')
+                print(self.steps)
+                return None
+            else:
+                res = self.__results[time][type_str]
+        return res
+
+    def get_nmax(self, field, time=None):
+        """Returns the max value of node results field in selected nodes.
+
+        Reports results for the current time.
+
+        Args:
+            field (str): results field, for example 'ux', 'ey', 'S1', 'Seqv'
+            time (None or float): the time to query
+
+                - None: uses the current time
+                - float: uses the passed float time
+        Returns:
+            res (float): max value
+        """
+        nodes = self.__problem.fea.view.nodes
+        node_ids = [node.id for node in nodes]
+        data_dict = self.__get_data_dict(time, 'node')
+        if data_dict == None:
+            return None
+        ndicts = [data_dict[nid] for nid in node_ids]
+        res = [ndict[field] for ndict in ndicts]
+        res = max(res)
+        return res
+
+    def get_nmin(self, field, time=None):
+        """Returns the min value of node results field in selected nodes.
+
+        Reports results for the current time.
+
+        Args:
+            field (str): results field, for example 'ux', 'ey', 'S1', 'Seqv'
+            time (None or float): the time to query
+
+                - None: uses the current time
+                - float: uses the passed float time
+        Returns:
+            res (float): min value
+        """
+        nodes = self.__problem.fea.view.nodes
+        node_ids = [node.id for node in nodes]
+        data_dict = self.__get_data_dict(time, 'node')
+        if data_dict == None:
+            return None
+        ndicts = [data_dict[nid] for nid in node_ids]
+        res = [ndict[field] for ndict in ndicts]
+        res = min(res)
+        return res
+
+    def get_nval(self, node, field, time=None):
+        """Returns the field result value under node.
+
+        Result will be returned whether or not passed node is selected.
+
+        Args:
+            node (str or Node): node we are asking about
+            field (str): the results item we want: 'ux', 'Sy', 'Seqv', 'fx'
+            time (None or float): the time to query
+
+                - None: uses the current time
+                - float: uses the passed float time
+        Retruns:
+            res (float or None): float value if field exists, None otherwise
+        """
+        items = self.__problem.fea.get_item(node)
+        if len(items) == 1:
+            if isinstance(items[0], mesh.Node):
+                nnum = items[0].id
+                data_dict = self.__get_data_dict(time, 'node')
+                if data_dict == None:
+                    return None
+                ndict = data_dict[nnum]
+                if field in ndict:
+                    res = ndict[field]
+                    return res
+                else:
+                    print('Passed field is not in the results!')
+                    return None
+            else:
+                print('You did not pass in a node!')
+                print('A single node or string node name must be passed in!')
+                return None
+        else:
+            print('A single node or string node name must be passed in!')
+            return None
+
     def get_fsum(self, item):
-        # returns fsum on nodes under given item (point or line)
-        (fx,fy,fz) = ( [],[],[] )
+        """Returns the force sum on nodes under a given point or line.
+
+        Reports results for the current time.
+
+        Args:
+            item (Point or Line): item that has reaction forces on its nodes
+
+        Returns:
+            list: [fx, fy, fz] reaction forces in each axis, force units
+        """
+        (fxx, fyy, fzz) = ([], [], [])
         nodes = item.nodes
         nodes = [n.id for n in nodes]
-        for n in nodes:
-            x = self.results[self.time]['node'][n]['fx']
-            y = self.results[self.time]['node'][n]['fy']
-            z = self.results[self.time]['node'][n]['fz']
-            if x != 0 or y != 0 or z != 0:
-                #print('Node %i, (fx, fy, fz) = (%12.11f,%12.11f,%12.11f)' % (n, x, y, z))
-                fx.append(x)
-                fy.append(y)
-                fz.append(z)
-        fx = sum(fx)
-        fy = sum(fy)
-        fz = sum(fz)
-        return [fx, fy, fz]
-    
-    def get_emax(self, stype):
-        # returns the max stress of given type
-        res = 0.0
-        for step in self.steps:
-            for (enum, edict) in self.results[step]['element'].items():
-                for (ipnum, ipdict) in edict.items():
-                    if ipdict[stype] > res:
-                        res = ipdict[stype]
+        for node in nodes:
+            f_x = self.__results[self.__time]['node'][node]['fx']
+            f_y = self.__results[self.__time]['node'][node]['fy']
+            f_z = self.__results[self.__time]['node'][node]['fz']
+            if f_x != 0 or f_y != 0 or f_z != 0:
+                fxx.append(f_x)
+                fyy.append(f_y)
+                fzz.append(f_z)
+        fxx = sum(fxx)
+        fyy = sum(fyy)
+        fzz = sum(fzz)
+        return [fxx, fyy, fzz]
+
+    def get_emax(self, field, time=None, mode='avg'):
+        """Returns the max results field value of selected elements at curent time.
+
+        Args:
+            field (str): results field, stresses supported 'S1', 'Sx', etc.
+            time (None or float): the time to query
+
+                - None: uses the current time
+                - float: uses the passed float time
+            mode (str): type of element result to give back
+
+                - 'max': for each element only use the max value of field over
+                    all of its integration points
+                - 'min': for each element only use the min value of field over
+                    all of its integration points
+                - 'avg': for each element only use an average of all integration
+                    points in the eleemnt. Principal streses and Seqv are
+                    calculated after averaging 6 stress components.
+        Returns:
+            res (float): max value
+        """
+        res = []
+        elements = self.__problem.fea.view.elements
+        data_dict = self.__get_data_dict(time, 'element')
+        if data_dict == None:
+            return None
+        for element in elements:
+            enum = element.id
+            edict = data_dict[enum][mode]
+            res.append(edict[field])
+        res = max(res)
         return res
 
-    def get_vals(self, fstr, line):
-        # this returns a list of items based on an input format string
+    def get_emin(self, field, time=None, mode='avg'):
+        """Returns the min results field value of selected elements at curent time.
+
+        Args:
+            field (str): results field, stresses supported 'S1', 'Sx', etc.
+            time (None or float): the time to query
+
+                - None: uses the current time
+                - float: uses the passed float time
+            mode (str): type of element result to give back
+
+                - 'max': for each element only use the max value of field over
+                    all of its integration points
+                - 'min': for each element only use the min value of field over
+                    all of its integration points
+                - 'avg': for each element only use an average of all integration
+                    points in the eleemnt. Principal streses and Seqv are
+                    calculated after averaging 6 stress components.
+        Returns:
+            res (float): min value
+        """
+        res = []
+        elements = self.__problem.fea.view.elements
+        data_dict = self.__get_data_dict(time, 'element')
+        if data_dict == None:
+            return None
+        for element in elements:
+            enum = element.id
+            edict = data_dict[enum][mode]
+            res.append(edict[field])
+        res = min(res)
+        return res
+
+    def get_eval(self, element, field, time=None, mode='avg'):
+        """Returns the field result value under element.
+
+        Result will be returned whether or not passed element is selected.
+
+        Args:
+            element (str or Element): element we are asking about
+            field (str): the results item we want: 'Sy', 'Seqv'
+            mode (str): the type of element result to get
+
+                - 'avg': integration points averaged to avg element result
+                - 'max': max value of field in the integration points plotted
+                - 'min': min value of field in the integration points plotted
+        Retruns:
+            res (float or None): float value if field exists, None otherwise
+        """
+        items = self.__problem.fea.get_item(element)
+        if len(items) == 1:
+            if isinstance(items[0], mesh.Element):
+                enum = items[0].id
+                data_dict = self.__get_data_dict(time, 'element')
+                if data_dict == None:
+                    return None
+                edict = data_dict[enum][mode]
+                if field in edict:
+                    res = edict[field]
+                    return res
+                else:
+                    print('Passed field is not in the results!')
+                    return None
+            else:
+                print('You did not pass in a element!')
+                print('A single element or string element name must be given!')
+                return None
+        else:
+            print('A single element or string element name must be given!')
+            return None
+
+    @staticmethod
+    def __get_vals(fstr, line):
+        """Returns a list of typed items based on an input format string.
+
+        Args:
+            fst (str): C format string, commas separate fields
+            line (str): line string to parse
+
+        Returns:
+            res (list): list of typed items extracted from the line
+        """
         res = []
         fstr = fstr.split(',')
         for item in fstr:
@@ -359,298 +741,317 @@ class Results_File(object):
                 res.append(fwd)
             else:
                 # format is: 1X, A66, 5E12.5, I12
-                # 1X is number of spaces                
-                (m,c) = (1, None)
+                # 1X is number of spaces
+                (mult, ctype) = (1, None)
                 m_pat = re.compile(r'^\d+') # find multiplier
                 c_pat = re.compile(r'[XIEA]') # find character
                 if m_pat.findall(item) != []:
-                    m = int(m_pat.findall(item)[0])
-                c = c_pat.findall(item)[0]
-                if c == 'X':
+                    mult = int(m_pat.findall(item)[0])
+                ctype = c_pat.findall(item)[0]
+                if ctype == 'X':
                     # we are dealing with spaces, just reduce the line size
-                    line = line[m:]
-                elif c == 'A':
+                    line = line[mult:]
+                elif ctype == 'A':
                     # character string only, add it to results
-                    fwd = line[:m].strip()
-                    line = line[m:]
+                    fwd = line[:mult].strip()
+                    line = line[mult:]
                     res.append(fwd)
                 else:
                     # IE, split line into m pieces
                     w_pat = re.compile(r'[IE](\d+)') # find the num after char
-                    w = int(w_pat.findall(item)[0])
-                    for i in range(m):
+                    width = int(w_pat.findall(item)[0])
+                    while mult > 0:
                         # only add items if we have enough line to look at
-                        if w <= len(line):
-                            substr = line[:w]
-                            line = line[w:]
+                        if width <= len(line):
+                            substr = line[:width]
+                            line = line[width:]
                             substr = substr.strip() # remove space padding
-                            if c == 'I':
+                            if ctype == 'I':
                                 substr = int(substr)
-                            elif c == 'E':
+                            elif ctype == 'E':
                                 substr = float(substr)
                             res.append(substr)
+                        mult -= 1
         return res
-                
-    def read_frd(self):
-        # this reads a ccx frd results file which contains nodal results
-        fname = self.fname+'.frd'
+
+    @staticmethod
+    def __skip_lines(infile, numlines):
+        """Reads forward numlines from infile"""
+        lines = int(numlines)
+        while lines > 0:
+            infile.readline()
+            lines -= 1
+
+    def __read_frd(self):
+        """Reads a ccx frd results file which contains nodal results."""
+        fname = self.__problem.fname+'.frd'
         if os.path.isfile(fname):
-            
+
             print('Reading results file: '+fname)
-            f = open(fname)
+            infile = open(fname, 'r')
             mode = 'off'
             time = 0.0
-            FORMAT = None
+            format_ = None
             rfstr = ''
-            node_ids = []            
+            node_ids = []
             while True:
-                line = f.readline()
+                line = infile.readline()
                 if not line:
                     break
-                
+
                 #-------------
                 # set the modes
                 #--------------
                 if '2C' in line:
                     # we are in nodal definition
                     fstr = "1X,'   2','C',18X,I12,37X,I1"
-                    t = self.get_vals(fstr, line)
-                    [KEY,CODE,NUMNOD,FORMAT] = t
+                    # [key, code, numnod, format_]
+                    format_ = self.__get_vals(fstr, line)[3]
 
                     # set results format to short, long or binary
                     # only short and long are parsed so far
-                    if FORMAT == 0:
-                        # short format
+                    if format_ == 0:
                         rfstr = "1X,'-1',I5,3E12.5"
-                    elif FORMAT == 1:
-                        # long format
+                    elif format_ == 1:
                         rfstr = "1X,'-1',I10,3E12.5"
-                    elif format == 2:
+                    elif format_ == 2:
                         # binary
                         pass
-                    
-                    line = f.readline()
+
+                    line = infile.readline()
                     mode = 'nodes'
                     print('Reading '+mode)
 
                 elif '1PSTEP' in line:
                     # we are in a results block
-                    
+
                     # next line has the time in it
-                    line = f.readline()
+                    line = infile.readline()
                     fstr = "1X,' 100','C',6A1,E12.5,I12,20A1,I2,I5,10A1,I2"
-                    t = self.get_vals(fstr, line)
-                    [KEY,CODE,SETNAME,VALUE,NUMNOD,TEXT,ICTYPE,NUMSTP,ANALYS,FORMAT] = t
+                    tmp = self.__get_vals(fstr, line)
+                    #[key, code, setname, value, numnod, text, ictype, numstp, analys, format_]
+                    value, format_ = tmp[3], tmp[9]
 
                     # set results format to short, long or binary
                     # only short and long are parsed so far
-                    if FORMAT == 0:
-                        # short format
+                    if format_ == 0:
                         rfstr = "1X,I2,I5,6E12.5"
-                    elif FORMAT == 1:
-                        # long format
+                    elif format_ == 1:
                         rfstr = "1X,I2,I10,6E12.5"
-                    elif format == 2:
+                    elif format_ == 2:
                         # binary
                         pass
 
                     # set the time
-                    time = VALUE
-                    if time not in self.steps:
-                        self.steps.append(time)
-                    if time not in self.results:
-                        self.results[time] = {'node':{},'element':{}}
+                    time = value
+                    if time not in self.__steps:
+                        self.__steps.append(time)
+                    if time not in self.__results:
+                        self.__results[time] = {'node':{}, 'element':{}}
                         for nid in node_ids:
                             # make dict for each node
-                            self.results[time]['node'][nid] = {}
-                        
+                            self.__results[time]['node'][nid] = {}
+
                     # get the name to determine if stress or displ
-                    line = f.readline()
+                    line = infile.readline()
                     fstr = "1X,I2,2X,8A1,2I5"
-                    t = self.get_vals(fstr, line)
-                    [KEY, NAME,NCOMPS,IRTYPE] = t
-                    
-                    if NAME == 'DISPR':
+                    # [key, name, ncomps, irtype]
+                    name = self.__get_vals(fstr, line)[1]
+
+                    if name == 'DISPR':
                         mode = 'displ'
-                        # read 4 lines to get to data
-                        for i in range(4):
-                            f.readline()
-                    elif NAME == 'STRESSR':
+                        self.__skip_lines(infile, 4)
+                    elif name == 'STRESSR':
                         mode = 'stress'
-                        # read 6 lines to get to data
-                        for i in range(6):
-                            f.readline()
-                    elif NAME == 'TOSTRAIR':
+                        self.__skip_lines(infile, 6)
+                    elif name == 'TOSTRAIR':
                         mode = 'strain'
-                        # read 6 lines to get to data
-                        for i in range(6):
-                            f.readline()
-                    elif NAME == 'FORCR':
+                        self.__skip_lines(infile, 6)
+                    elif name == 'FORCR':
                         mode = 'force'
-                        # read 4 lines to get to data
-                        for i in range(4):
-                            f.readline()
-                            
+                        self.__skip_lines(infile, 4)
+
                     print('Reading '+mode+' storing: '+
                           ','.join(base_classes.RESFIELDS[mode]))
-                    line = f.readline()
-                
+                    line = infile.readline()
+
                 #----------------------------
                 # Store results
                 #----------------------------
-                
+
                 # reset the read mode if we hit an end of record
                 if line[:3] == ' -3':
                     mode = 'off'
-                
+
                 if mode == 'nodes':
                     # node definition, store node numbers only
-                    t = self.get_vals(rfstr, line)
-                    [KEY, NODE, x, y, z] = t
-                    node_ids.append(NODE)
-                    
-                elif mode == 'displ':  
+                    # [key, node, x, y, z]
+                    node = self.__get_vals(rfstr, line)[1]
+                    node_ids.append(node)
+
+                elif mode == 'displ':
                     # displacements
-                    t = self.get_vals(rfstr, line)
-                    [KEY, NODE, ux, uy, uz] = t                    
+                    # [key, node, ux, uy, uz]
+                    [node, ux_, uy_, uz_] = self.__get_vals(rfstr, line)[1:]
                     labs = base_classes.RESFIELDS[mode]
-                    vals = [ux, uy, uz]
-                    utot = self.utot(vals)
+                    vals = [ux_, uy_, uz_]
+                    utot = self.__utot(vals)
                     vals.append(utot)
-                    #print(vals)
-                    d = self.results[time]['node'][NODE]
-                    for (k, val) in zip(labs, vals):
-                        d[k] = val
+                    adict = self.__results[time]['node'][node]
+                    for (label, val) in zip(labs, vals):
+                        adict[label] = val
 
                 elif mode == 'stress':
                     # stresses
-                    t = self.get_vals(rfstr, line)
-                    [KEY, NODE, sx, sy, sz, sxy, syz, szx] = t
+                    tmp = self.__get_vals(rfstr, line)
+                    # [key, node, sx, sy, sz, sxy, syz, szx]
+                    [node, sxx, syy, szz, sxy, syz, szx] = tmp[1:]
                     labs = base_classes.RESFIELDS[mode]
-                    vals = [sx, sy, sz, sxy, syz, szx]
-                    seqv = self.seqv(vals)
-                    [s1, s2, s3] = self.principals(vals)
+                    vals = [sxx, syy, szz, sxy, syz, szx]
+                    seqv = self.__seqv(vals)
+                    [s_1, s_2, s_3] = self.__principals(vals)
                     vals.append(seqv)
-                    vals += [s1, s2, s3]
-                    #print(vals)
-                    d = self.results[time]['node'][NODE]
-                    for (k, val) in zip(labs, vals):
-                        d[k] = val
+                    vals += [s_1, s_2, s_3]
+                    adict = self.__results[time]['node'][node]
+                    for (label, val) in zip(labs, vals):
+                        adict[label] = val
 
                 elif mode == 'strain':
                     # strains
-                    t = self.get_vals(rfstr, line)
-                    [KEY, NODE, ex, ey, ez, exy, eyz, ezx] = t
+                    tmp = self.__get_vals(rfstr, line)
+                    # [key, node, ex, ey, ez, exy, eyz, ezx]
+                    [node, exx, eyy, ezz, exy, eyz, ezx] = tmp[1:]
                     labs = base_classes.RESFIELDS[mode]
-                    vals = [ex, ey, ez, exy, eyz, ezx]
-                    eeqv = self.seqv(vals)
-                    [e1, e2, e3] = self.principals(vals)
+                    vals = [exx, eyy, ezz, exy, eyz, ezx]
+                    eeqv = self.__seqv(vals)
+                    [e_1, e_2, e_3] = self.__principals(vals)
                     vals.append(eeqv)
-                    vals += [e1, e2, e3]
-                    #print(vals)
-                    d = self.results[time]['node'][NODE]
-                    for (k, val) in zip(labs, vals):
-                        d[k] = val
-                
+                    vals += [e_1, e_2, e_3]
+                    adict = self.__results[time]['node'][node]
+                    for (label, val) in zip(labs, vals):
+                        adict[label] = val
+
                 elif mode == 'force':
                     # reaction forces
-                    t = self.get_vals(rfstr, line)
-                    [KEY, NODE, fx, fy, fz] = t
+                    # [key, node, fx, fy, fz]
+                    [node, f_x, f_y, f_z] = self.__get_vals(rfstr, line)[1:]
                     labs = base_classes.RESFIELDS[mode]
-                    vals = [fx, fy, fz]
-                    d = self.results[time]['node'][NODE]
-                    for (k, val) in zip(labs, vals):
-                        d[k] = val                    
+                    vals = [f_x, f_y, f_z]
+                    adict = self.__results[time]['node'][node]
+                    for (label, val) in zip(labs, vals):
+                        adict[label] = val
 
-            f.close()
-            print('The following times have been read: ',self.steps)
-            print('Done reading file: %s' % (fname))
-            self.set_time(self.steps[0])
-            
+            infile.close()
+            print('The following times have been read:')
+            print(self.__steps)
+            print('Done reading file: %s' % fname)
+            self.set_time(self.__steps[0])
+
         else:
-            # Show an error
-            print("Error: %s file not found" % fname)        
+            print("Error: %s file not found" % fname)
 
-    def read_dat(self):
-        # reads the element results file
-        fname = self.fname+'.dat'
+    def __read_dat(self):
+        """Reads ccx dat results file. It has element integration point results.
+        """
+        fname = self.__problem.fname+'.dat'
         if os.path.isfile(fname):
-            
-            f = open(fname)
+
+            infile = open(fname, 'r')
             mode = 'off'
             time = 0.0
             while True:
-                line = f.readline()
+                line = infile.readline()
                 if not line:
                     break
                 line = line.strip()
-                
+
                 # check for read flags for displ or stress
                 if 'stress' in line:
                     words = line.split()
                     # add time if not present
                     time = float(words[-1])
-                    if time not in self.steps:
-                        self.steps.append(time)
-                    if time not in self.results:
-                        self.results[time] = {'node':{},'element':{}}
+                    if time not in self.__steps:
+                        self.__steps.append(time)
+                    if time not in self.__results:
+                        self.__results[time] = {'node':{}, 'element':{}}
                     # set mode
                     if 'stress' in line:
                         mode = 'stress'
-                    f.readline()
-                    line = f.readline().strip()
-                
+                    infile.readline()
+                    line = infile.readline().strip()
+
                 # reset the read type if we hit a blank line
                 if line == '':
                     mode = 'off'
-                
+
                 if mode == 'stress':
                     # store stress results
-                    w = line.split()
+                    tmp = line.split()
                     labs = ['Sx', 'Sy', 'Sz', 'Sxy', 'Sxz', 'Syz', 'Seqv']
-                    vals = [float(a) for a in w[2:]]
-                    seqv = self.seqv(vals)
-                    [s1, s2, s3] = self.principals(vals)
+                    vals = [float(a) for a in tmp[2:]]
+                    seqv = self.__seqv(vals)
+                    [s_1, s_2, s_3] = self.__principals(vals)
                     vals.append(seqv)
-                    vals += [s1, s2, s3]
+                    vals += [s_1, s_2, s_3]
                     #print(vals)
-                    enum = int(w[0])
-                    ipnum = int(w[1]) # integration point number
-                    d = {}
-                    for (key, val) in zip(labs, vals):
-                        d[key] = val
-                    if enum not in self.results[time]['element']:
-                        self.results[time]['element'][enum] = {}
+                    enum = int(tmp[0])
+                    ipnum = int(tmp[1]) # integration point number
+                    adict = {}
+                    for (label, val) in zip(labs, vals):
+                        adict[label] = val
+                    if enum not in self.__results[time]['element']:
+                        start_val = {'ipoints': {},
+                                     'avg': {},
+                                     'min': {},
+                                     'max': {}}
+                        self.__results[time]['element'][enum] = start_val
                     # each line is an integration point result
-                    self.results[time]['element'][enum][ipnum] = d
+                    self.__results[time]['element'][enum]['ipoints'][ipnum] = adict
 
-            f.close()
-            
+            infile.close()
+
             # loop over all element results, calculating avg element result
             # by averaging integration point vals
-            for t in self.steps:
-                for (enum, edict) in self.results[t]['element'].items():
-                    ipnums = [a for a in edict.keys() if isinstance(a, int)]
-                    ipts = [edict[a] for a in ipnums]
-                    
+            for time in self.__steps:
+                for edict in self.__results[time]['element'].values():
+                    ipoints = edict['ipoints'].values()
                     labs = ['Sx', 'Sy', 'Sz', 'Sxy', 'Sxz', 'Syz']
-                    vals = []
-                    for (ind, field) in enumerate(labs):
-                        vlist = [a[field] for a in ipts]
-                        val = sum(vlist)/len(vlist)
-                        edict[field] = val
-                        vals.append(val)
-                    # for each element, caclulate Seqv, S1, S2, S3
-                    seqv = self.seqv(vals)
-                    [s1, s2, s3] = self.principals(vals)
-                    edict['Seqv'] = seqv
-                    edict['S1'] = s1
-                    edict['S2'] = s2
-                    edict['S3'] = s3
-            
-            print('The following times have been read: ',self.steps)
-            print('Results from file: %s have been read.' % (fname))
-            
+                    field_dict = {}
+                    # set field values in max, min, avg locations
+                    for field in labs:
+                        field_vals = [ipt[field] for ipt in ipoints]
+                        field_avg = sum(field_vals)/len(field_vals)
+                        field_max, field_min = max(field_vals), min(field_vals)
+                        edict['avg'][field] = field_avg
+                        edict['max'][field] = field_max
+                        edict['min'][field] = field_min
+                        field_dict[field] = field_vals
+                    # for each element, caclulate Seqv, S1, S2, S3 at average
+                    locs = ['avg', 'max', 'min']
+                    for loc in locs:
+                        seqv, s_1, s_2, s_3 = None, None, None, None
+                        if loc == 'avg':
+                            vals = [edict[loc][lab] for lab in labs]
+                            seqv = self.__seqv(vals)
+                            [s_1, s_2, s_3] = self.__principals(vals)
+                        elif mode == 'max':
+                            seqv = max(field_dict['Seqv'])
+                            s_1 = max(field_dict['S1'])
+                            s_2 = max(field_dict['S2'])
+                            s_3 = max(field_dict['S3'])
+                        elif mode == 'min':
+                            seqv = min(field_dict['Seqv'])
+                            s_1 = min(field_dict['S1'])
+                            s_2 = min(field_dict['S2'])
+                            s_3 = min(field_dict['S3'])
+                        edict[loc]['Seqv'] = seqv
+                        edict[loc]['S1'] = s_1
+                        edict[loc]['S2'] = s_2
+                        edict[loc]['S3'] = s_3
+
+            print('The following times have been read:')
+            print(self.__steps)
+            print('Results from file: %s have been read.' % fname)
+
         else:
-            # Show an error
-            print("Error: %s file not found" % fname)        
+            print('Error: %s file not found' % fname)

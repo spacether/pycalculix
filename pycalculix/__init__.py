@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """
 pycalculix Description:
-This module provides a python interface to the calculix FEA preprocessor and
+This module provides a python interface to the Calculix FEA preprocessor and
 solver. Simplicity is emphasized.
 
 2D models are supported including:
@@ -22,14 +22,18 @@ https://github.com/spacether/pycalculix
 """
 
 __author__ = "Justin Black"
-__copyright__ = "Copyright 2014, Justin Black"
+__copyright__ = "Copyright 2015, Justin Black"
 __credits__ = ["Justin Black"]
 __license__ = "GPL V2"
 __version__ = "0.9.3"
 __maintainer__ = "Justin Black"
-__email__ = "justin.a.black[insert~at~sine]gmail.com"
+__email__ = "justin.a.black[insert~at~sign]gmail.com"
 __status__ = "Beta"
 __all__ = ['environment', 'geometry', 'components', 'loads', 'part', 'mesh',
-           'material', 'feamodel', 'model', 'results_file']
+           'material', 'feamodel', 'problem', 'results_file']
 
 from .feamodel import FeaModel
+from .part import Part
+from .material import Material
+from .problem import Problem
+from .results_file import ResultsFile

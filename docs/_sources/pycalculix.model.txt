@@ -1,7 +1,0 @@
-pycalculix.model module
-=======================
-
-.. automodule:: pycalculix.model
-    :members:
-    :undoc-members:
-    :show-inheritance:

@@ -1,4 +1,4 @@
-from pycalculix import FeaModel
+import pycalculix as pyc
 import matplotlib.pyplot as plt
 import math
 import numpy as np
@@ -34,49 +34,49 @@ for ratio in ratios:
     left = right - rad
 
     # vertical hole in plate model, make model
-    proj_name = 'example4_hole_kt'
-    a = FeaModel(proj_name)
-    a.set_units('m')    # this sets dist units to meters, labels our consistent units
+    model_name = 'example4_hole_kt'
+    model = pyc.FeaModel(model_name)
+    model.set_units('m')    # this sets dist units to meters, labels our consistent units
     
     # make part, coordinates are x, y = radial, axial
-    b = a.PartMaker()
-    b.goto(0.0,rad)
-    b.draw_arc(rad, 0.0, 0.0, 0.0)
-    b.draw_line_rad(left)
-    b.draw_line_ax(top)
-    b.draw_line_rad(-right*.5)
-    b.draw_line_rad(-right*.5) #this extra point chunks our area a little better than the full area
-    b.draw_line_ax(-bot)
-    # b.plot_geometry('hole_kt_prechunk', display=disp) # view the geometry, points, lines, and areas
-    b.chunk()
-    a.plot_geometry(proj_name+'_chunked', display=disp) # view the geometry, points, lines, and areas
+    part = pyc.Part(model)
+    part.goto(0.0,rad)
+    part.draw_arc(rad, 0.0, 0.0, 0.0)
+    part.draw_line_rad(left)
+    part.draw_line_ax(top)
+    part.draw_line_rad(-right*.5)
+    part.draw_line_rad(-right*.5) #this extra point chunks our area a little better than the full area
+    part.draw_line_ax(-bot)
+    # part.plot_geometry('hole_kt_prechunk', display=disp) # view the geometry, points, lines, and areas
+    part.chunk()
+    model.plot_geometry(model_name+'_chunked', display=disp) # view the geometry, points, lines, and areas
     
     # set loads and constraints
-    a.set_load('press',b.top,-1*stress_val)
-    a.set_constr('fix',b.left,'y')
-    a.set_constr('fix',b.bottom,'x')
+    model.set_load('press',part.top,-1*stress_val)
+    model.set_constr('fix',part.left,'y')
+    model.set_constr('fix',part.bottom,'x')
     
     # set part material
-    mat = a.MatlMaker('steel')
+    mat = pyc.Material('steel')
     mat.set_mech_props(7800, 210000, 0.3)
-    a.set_matl(mat, b)    
+    model.set_matl(mat, part)    
     
     # set the element type, line division, and mesh the database
     ediv = 19
-    a.get_item('L0').set_ediv(ediv) # sets # of elements on the arc
+    model.set_ediv('L0',ediv) # sets # of elements on the arc
     
-    a.set_eshape('tri', 2)
-    a.set_etype(b, 'plstress', thickness)
-    a.mesh(1.0, 'gmsh')               # mesh with 1.0 fineness, smaller is finer
-    a.plot_elements('%s_elem_%.3f' % (proj_name, ratio), display=disp)
-    a.plot_pressures('%s_press' % (proj_name), display=disp)
+    model.set_eshape('tri', 2)
+    model.set_etype('plstress', part, thickness)
+    model.mesh(1.0, 'gmsh')               # mesh with 1.0 fineness, smaller is finer
+    model.plot_elements('%s_elem_%.3f' % (model_name, ratio), display=disp)
+    model.plot_pressures('%s_press' % (model_name), display=disp)
 
     # make model and solve it
-    mod = a.ModelMaker(b, 'struct') 
-    mod.solve()
+    prob = pyc.Problem(model, 'struct', part) 
+    prob.solve()
 
     # query results and store them
-    sx = mod.rfile.get_nmax('Sx')
+    sx = prob.rfile.get_nmax('Sx')
     kt_fea = sx/stress_val
     ktg_res.append(kt_fea)
     ktg_pet.append(kt_peterson(ratio))
