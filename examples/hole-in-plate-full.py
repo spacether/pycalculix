@@ -3,7 +3,7 @@ import pycalculix as pyc
 # Vertical hole in plate model, make model
 proj_name = 'hole-in-plate-full'
 model = pyc.FeaModel(proj_name)
-model.set_units('m')    # this sets dist units to meters, labels our consistent units
+model.set_units('m') # this sets dist units to meters
 
 # Define variables we'll use to draw part geometry
 diam = 2.0 # hole diam

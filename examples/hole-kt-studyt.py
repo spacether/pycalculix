@@ -36,7 +36,7 @@ for ratio in ratios:
     # vertical hole in plate model, make model
     model_name = 'hole-kt-study'
     model = pyc.FeaModel(model_name)
-    model.set_units('m')    # this sets dist units to meters, labels our consistent units
+    model.set_units('m')    # this sets dist units to meters
     
     # make part, coordinates are x, y = radial, axial
     part = pyc.Part(model)
@@ -45,11 +45,11 @@ for ratio in ratios:
     part.draw_line_rad(left)
     part.draw_line_ax(top)
     part.draw_line_rad(-right*.5)
-    part.draw_line_rad(-right*.5) #this extra point chunks our area a little better than the full area
+    part.draw_line_rad(-right*.5) #this point lets us chunks our area
     part.draw_line_ax(-bot)
-    # part.plot_geometry('hole_kt_prechunk', display=disp) # view the geometry, points, lines, and areas
+    # part.plot_geometry('hole_kt_prechunk', display=disp) # view geometry
     part.chunk()
-    model.plot_geometry(model_name+'_chunked', display=disp) # view the geometry, points, lines, and areas
+    model.plot_geometry(model_name+'_chunked', display=disp) # view geometry
     
     # set loads and constraints
     model.set_load('press',part.top,-1*stress_val)

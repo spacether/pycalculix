@@ -3,7 +3,7 @@ import pycalculix as pyc
 # Vertical hole in plate model, make model
 proj_name = 'hole-in-plate-quarter'
 model = pyc.FeaModel(proj_name)
-model.set_units('m')    # this sets dist units to meters, labels our consistent units
+model.set_units('m') # this sets dist units to meters
 
 # Define variables we'll use to draw part geometry
 diam = 2.000 # hole diam
@@ -15,7 +15,7 @@ width_quarter = width/2
 length_quarter = length/2
 rad = diam*0.5
 
-# Draw part geometry, you must draw the part CLOCKWISE, x, y = radial, axial
+# Draw part geometry, x, y = radial, axial
 part = pyc.Part(model)
 part.goto(0.0, rad)
 part.draw_arc_angle(90, 0.0, 0.0)
