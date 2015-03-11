@@ -30,10 +30,11 @@ __maintainer__ = "Justin Black"
 __email__ = "justin.a.black[insert~at~sign]gmail.com"
 __status__ = "Beta"
 __all__ = ['environment', 'geometry', 'components', 'loads', 'part', 'mesh',
-           'material', 'feamodel', 'problem', 'results_file']
+           'material', 'feamodel', 'problem', 'results_file', 'cadimporter']
 
 from .feamodel import FeaModel
 from .part import Part
 from .material import Material
 from .problem import Problem
 from .results_file import ResultsFile
+from .cadimporter import CadImporter

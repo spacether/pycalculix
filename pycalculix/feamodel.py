@@ -136,6 +136,22 @@ class FeaModel(object):
         if gmsh != None:
             environment.GMSH = gmsh
 
+    def set_ediv(self, items, ediv):
+        """Sets the number of elements on the passed line.
+
+        Args:
+            items (str or SignLine or SignArc or list): lines to set ediv on
+
+                - str: 'L0'
+                - list of str ['L0', 'L1']
+                - list of SignLine or SignArc part.bottom or part.hole[-1]
+
+            ediv (int): number of elements to mesh on the line
+        """
+        items = self.get_items(items)
+        for line in items:
+            line.set_ediv(ediv)
+
     def set_units(self, dist_unit='m', cfswitch=False):
         """Sets the units that will be displayed when plotting.
 
@@ -185,29 +201,12 @@ class FeaModel(object):
         # set values
         adict = dict(zip(keys, vals))
         adict['displ'] = adict['dist']
+        print('================================================')
         print('Units have been set to %s_%s' % (adict['dist'], adict['force']))
         for key in adict:
             print('For %s use %s' % (key, adict[key]))
+        print('================================================')
         self.units = adict
-
-    def set_ediv(self, line_name, ediv):
-        """Sets the number of elements on the passed line.
-
-        Args:
-            line_name (str or SignLine or SignArc or list): name(s) of the line(s)
-
-                - str: 'L0'
-                - list of str ['L0', 'L1']
-                - list of SignLine or SignArc part.bottom or part.hole[-1]
-            ediv (int): number of elements to mesh on the line
-        """
-        line_name = base_classes.listify(line_name)
-        for ind, item in enumerate(line_name):
-            if isinstance(item, str):
-                line_name[ind] = self.get_item(item)
-
-        for line in line_name:
-            line.set_ediv(ediv)
 
     def get_units(self, *args):
         """Returns units for the passed arguments. Accepts and returns a list
@@ -1422,28 +1421,25 @@ class FeaModel(object):
 
         # write all lines
         for line in self.lines:
-            ln = line.get_name()
-            p1 = line.pt(0).get_name()
-            p2 = line.pt(1).get_name()
+            lname = line.get_name()
+            pt1 = line.pt(0).get_name()
+            pt2 = line.pt(1).get_name()
             linestr = ''
             if isinstance(line, geometry.Arc):
                 # line is arc
-                pc = line.actr.get_name()
-                linestr = 'line %s %s %s %s' % (ln, p1, p2, pc)
+                pctr = line.actr.get_name()
+                linestr = 'line %s %s %s %s' % (lname, pt1, pt2, pctr)
             else:
                 # straight line
-                linestr = 'line %s %s %s' % (ln, p1, p2)
+                linestr = 'line %s %s %s' % (lname, pt1, pt2)
             # set division if we have it
             if line.ediv != None:
-                for p in self.parts:
-                    if line in p.get_lines():
-                        break
                 ndiv = self.eorder*line.ediv
                 linestr += ' '+str(int(ndiv))
             fbd.append(linestr)
-            L = 'seta %s l %s' % (ln, ln)
-            comps.append(L)
-            cfiles.append(ln)
+            linestr = 'seta %s l %s' % (lname, lname)
+            comps.append(linestr)
+            cfiles.append(lname)
 
         # write all areas
         for area in self.areas:
@@ -1458,31 +1454,31 @@ class FeaModel(object):
                 linestr = linestr + ' '.join(line_ids)
                 fbd.append(linestr)
                 # add area component, nodes + elements
-                L = 'seta %s s %s' % (area.get_name(), area.get_name())
-                fbd.append(L)
+                astr = 'seta %s s %s' % (area.get_name(), area.get_name())
+                fbd.append(astr)
                 cfiles.append(area.get_name())
 
         # write part area components
-        for p in self.parts:
+        for apart in self.parts:
             # make components for each part
             # seta P0 s s0 s1
-            line = 'seta %s s ' % (p.get_name(),)
-            cfiles.append(p.get_name())
+            line = 'seta %s s ' % apart.get_name()
+            cfiles.append(apart.get_name())
             area_ids = []
-            for area in p.areas:
+            for area in apart.areas:
                 if area.closed:
                     area_ids.append(area.get_name())
             line = line + ' '.join(area_ids)
             fbd.append(line)
 
             # mesh all areas
-            for area in p.areas:
+            for area in apart.areas:
                 aname = area.get_name()
                 estr = self.eshape+str(self.eorder)+area.etype
                 cgx_etype = cgx_elements[estr]
                 fbd.append('elty %s %s' % (aname, cgx_etype))
-                fbd.append('div all mult %i' % emult)
-                fbd.append('mesh %s' % aname)
+            fbd.append('div all mult %i' % emult)
+            fbd.append('mesh all')
 
         # save mesh file
         fbd.append('send all abq')
@@ -1521,8 +1517,8 @@ class FeaModel(object):
         files = ['all.msh']
         files += [f+'.nam' for f in cfiles]
         for fname in files:
-            f = open(fname, 'r')
-            for line in f:
+            infile = open(fname, 'r')
+            for line in infile:
                 # cgx adds E and N prfixes on sets after =, get rid of these
                 if '=' in line and fname != 'all.msh':
                     L = line.split('=')
@@ -1530,18 +1526,18 @@ class FeaModel(object):
                     inp.append(line.strip())
                 else:
                     inp.append(line.strip())
-            f.close()
+            infile.close()
 
             # delete file
             os.remove(fname)
 
         # write out inp file
         fname = self.fname+'.inp'
-        f = open(fname, 'w')
+        outfile = open(fname, 'w')
         for line in inp:
             #print (line)
-            f.write(line+'\n')
-        f.close()
+            outfile.write(line+'\n')
+        outfile.close()
         print('File: %s was written' % fname)
 
         # read in the calculix mesh

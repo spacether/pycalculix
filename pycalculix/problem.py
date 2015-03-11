@@ -17,12 +17,10 @@ class Problem(base_classes.Idobj):
         problem_type (str): model type, options:
 
             - 'struct': structural
-        parts (Part or list of Part): stores the parts to run the analysis on
         fname (str): file prefix for the problem .inp and results files
             If value is '' it will default to the project name of the FeaModel
     Attributes:
         fea (FeaModel): parent FeaModel
-        __parts (list of Part): stores the parts to run the analysis on
         __ptype (str): problem type, options:
 
             - 'struct': structural
@@ -31,9 +29,8 @@ class Problem(base_classes.Idobj):
         rfile (Results_File):
             Results_File is loaded in after the model has been solved
     """
-    def __init__(self, feamodel, problem_type, parts, fname=''):
+    def __init__(self, feamodel, problem_type, fname=''):
         self.fea = feamodel
-        self.__parts = base_classes.listify(parts)
         self.__ptype = problem_type
         self.solved = False
         if fname == '':
@@ -54,6 +51,7 @@ class Problem(base_classes.Idobj):
         res.append('*NODE, NSET=nodes')
         for node in nodes:
             res.append(node.ccx())
+        print('INFO: %i nodes' % len(nodes))
         return res
 
     def __get_etxt(self, elements):
@@ -73,9 +71,11 @@ class Problem(base_classes.Idobj):
                 eall_written = True
             res.append('*ELEMENT, TYPE=%s, ELSET=%s' % (ccxtype, setname))
             elist = [e for e in elements if e.ccxtype == ccxtype]
+            print('INFO: %i %s elements' % (len(elist), ccxtype))
             for element in elist:
                 res.append(element.ccx())
             eall += elist
+            print('INFO: %i total elements' % len(eall))
         if eall_written == False:
             tmp = self.__get_eset('EALL', eall)
             res += tmp
@@ -134,9 +134,8 @@ class Problem(base_classes.Idobj):
             load_dict = self.fea.loads
 
             # store all nodes, elements, and part element sets
-            for part in self.__parts:
-                box['nodes'] += part.nodes
-                box['elements'] += part.elements
+            box['nodes'] = self.fea.view.nodes
+            box['elements'] = self.fea.view.elements
 
             # store all node and element components
             for time in load_dict:

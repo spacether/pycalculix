@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # pycalculix documentation build configuration file, created by
-# sphinx-quickstart on Tue Feb 24 15:01:08 2015.
+# sphinx-quickstart on Sat Feb 28 12:54:42 2015.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.

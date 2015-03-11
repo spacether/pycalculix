@@ -159,21 +159,23 @@ Version Updates:
             Many methods and variables made private to clean up name space.
 
 TODO:
+Fix chunking with the real dxf part
+    Only 'kontrola.dxf' has problems right now
+    Almost there, get rid of zero length curve
+Add plotting of internal points
 Fix the Linux distribution to make it work out of the box
-Make line loop class in geometry
-Allow closure in cw or ccw direction
 Add run line to example files for linux
-Fix linux version
 Add tutorial videos
 Update pdf
--Improve Pylint Scores:
-    feamodel:       8.86
-    geometry:       7.88
+Improve Pylint Scores:
+    feamodel:       8.96
+    geometry:       8.79
     results_file:   9.75 X
     part:           9.64 X
     selector        9.89 X
     mesh:           9.66 X
     loads:          9.80 X
+    cadimporter     9.71 X
     problem:        9.82 X
     base_classes:   9.51 X
     components:     10.0 X
@@ -181,11 +183,6 @@ Update pdf
     environment     10.0 X
 
 Future Goals:
-Allow cw vs ccw line closures
-    Check sign and correct it once closed
-    http://mathworld.wolfram.com/PolygonArea.html
-Fix area computation
-    http://en.wikipedia.org/wiki/List_of_centroids
 -CAD import of brep and igs via gmsh
 -CAD export via gmsh (step, brep)
 -Ability to make a new field (% yield etc)

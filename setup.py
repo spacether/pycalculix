@@ -19,9 +19,9 @@ for program in progs:
 
 setup(
     name = "pycalculix",
-    install_requires = ['matplotlib >= 1.3.1', 'numpy'],
+    install_requires = ['matplotlib >= 1.3.1', 'numpy', 'dxfgrabber'],
     version = "0.9.3",
-    description = "Python 3 library to automate and build finite element analysis (FEA) models in Calculix.",
+    description = "Python 3 library to build and solve finite element analysis (FEA) models in Calculix.",
     author = "Justin Black",
     author_email = "justin.a.black@gmail.com",
     packages = find_packages(),
@@ -48,11 +48,12 @@ Python 3 library to automate and build finite element analysis (FEA) models in C
 Meshing uses Calculix or GMSH.
 Website: http://justinablack.com/pycalculix/
 Source Code: https://github.com/spacether/pycalculix
+Documentation: http://spacether.github.io/pycalculix/pycalculix.html
 
-Usefull applications of Pycalculix:
--Trade studies for plane stress, splane strain, or axisymmetric parts
+Useful applications of Pycalculix:
+-Trade studies for plane stress, plane strain, or axisymmetric parts
 -Quick Kt analysis of 2D geometry
--Leaning finite element analyis (FEA) and Python
+-Learning finite element analyis (FEA) and Python
 
 Notes:
 I build a chunker in python which tries to cut big areas (> 5 sides) which
@@ -62,24 +63,28 @@ The chunker may not always be able to cut areas correctly.
 Elements Supported:
 Axisymmetric, plane stress, and plane strain elements are supported.
 First and second order triangles and quadrilaterals are supported.
-  First order elments only have corner nodes
-  Second order elements have midside nodes
+  First order elements only have corner nodes
+  Second order elements have corner and mid-side nodes
 Second order elements produce more accurate results
 Setting element divisions on lines is supported
 
 Geometry Building:
 One can build separate parts made of points, lines, arcs, and areas.
-Straight lines and arcs are currently supported.
 One can draw a part made of straight lines, then smooth out corners by adding
 blends/fillets with the part method: part.fillet_lines(L1, L2, arc_radius)
-The new filleet will be tangent to both adjacent lines.
+The new fillet will be tangent to both adjacent lines.
 
 Loading:
-Force loading, constant pressure, linearly varying pressure, gravity, and rotational speed forces are implemented.
-Displacement constraints are also supported.
-Loads are stored on geometry primitives (points lines etc) and can be applied before or after meshing.
+Force loading
+Constant pressure
+Linearly varying pressure (water pressure)
+Gravity
+Rotational speed forces
+Displacement constraints are supported
+Loads are stored on geometry primitives (points lines etc) and can be applied
+before or after meshing.
 
 Examples:
-Visit: http://justinablack.com/pycalculix/ to browse example models.
+https://github.com/spacether/pycalculix/tree/master/examples
 """
 )

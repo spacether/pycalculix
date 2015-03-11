@@ -15,8 +15,9 @@ if runstr in ['Y','y']:
     print('Cleaning folder: '+folder_to_clean)
     for f in os.listdir(folder_to_clean):
         f = os.path.join(folder_to_clean, f)
-        if f.endswith('.py') == False and f.endswith('.pdf') == False:
-            os.remove(f)    
+        ext = os.path.splitext(f)[1]
+        if ext not in ['.py', '.pdf', '.dxf']:
+            os.remove(f)
 
 else:
     print ('User chose not to clean the examples folder')

@@ -463,6 +463,7 @@ class Selector(object):
     def deselect(self, items):
         """Removes the passed item or items from the selection set.
         """
+        self.__all = False
         for item in items:
             if isinstance(item, part.Part):
                 self.__parts.discard(item)
@@ -498,6 +499,15 @@ class Selector(object):
                 - 'faces'
                 - 'nodes'
         """
+        if self.__all == True:
+            self.__parts = self.parts
+            self.__areas = self.areas
+            self.__slines = self.lines
+            self.__points = self.points
+            self.__elements = self.elements
+            self.__faces = self.faces
+            self.__nodes = self.nodes
+            self.__all = False
         if sel_type == 'all':
             self.select_none()
         elif sel_type == 'parts':
@@ -518,6 +528,7 @@ class Selector(object):
     def select_none(self):
         """Empties out the selection object.
         """
+        self.__all = False
         self.__parts = set()
         self.__areas = set()
         self.__slines = set()
