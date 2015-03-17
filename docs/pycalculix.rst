@@ -7,6 +7,7 @@ Submodules
 .. toctree::
 
    pycalculix.base_classes
+   pycalculix.cadimporter
    pycalculix.components
    pycalculix.environment
    pycalculix.feamodel
@@ -14,7 +15,7 @@ Submodules
    pycalculix.loads
    pycalculix.material
    pycalculix.mesh
-   pycalculix.part
+   pycalculix.partmodule
    pycalculix.problem
    pycalculix.results_file
    pycalculix.selector

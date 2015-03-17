@@ -1,5 +1,5 @@
 .. pycalculix documentation master file, created by
-   sphinx-quickstart on Sat Feb 28 12:54:42 2015.
+   sphinx-quickstart on Mon Mar 16 12:57:59 2015.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 

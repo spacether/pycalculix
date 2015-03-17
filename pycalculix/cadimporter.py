@@ -5,9 +5,10 @@ import os
 # needed to prevent dxfgrabber from crashing on import
 os.environ['DXFGRABBER_CYTHON'] = 'OFF'
 import dxfgrabber # needed for dxf files
+import subprocess # needed to run gmsh to make geo files
 
 from . import geometry
-from . import part
+from . import partmodule
 
 class CadImporter(object):
     """Makes an object which can import cad parts.
@@ -16,6 +17,13 @@ class CadImporter(object):
         feamodel (FeaModel): model that we want to import parts into
         layer (int): layer to import, all entities will be flattened
             to one plane. -1 mean all layers, any other number is a specific layer
+        swapxy (bool): True rotates the part from x axial to y axial
+        scale (str): string telling the unit conversion scalar
+
+            * Any option of 'fromunit-tounit' using the below units
+            * mm, m, in, ft
+            * Examples 'mm-m' 'm-in' 'ft-mm' 'in-ft'
+            * Default value is '' and does not apply a scale factor
 
     Attributes:
         __fea (FeaModel): model
@@ -24,11 +32,12 @@ class CadImporter(object):
         __swapxy (bool): If true, swap part from xy to yx orientation
     """
 
-    def __init__(self, feamodel, fname='', layer=-1, swapxy=False):
+    def __init__(self, feamodel, fname='', layer=-1, swapxy=False, scale=''):
         self.__fea = feamodel
         self.__fname = fname
         self.__layer = layer
         self.__swapxy = swapxy
+        self.__scale = scale
 
     def load(self):
         """Loads the self.__fname cad file
@@ -42,8 +51,22 @@ class CadImporter(object):
         else:
             fname_list = self.__fname.split('.')
             ext = fname_list[1]
+            first_pt = None
+            if len(self.__fea.points) > 0:
+                first_pt = self.__fea.points[0]
             if ext == 'dxf':
-                return self.load_dxf()
+                parts = self.__load_dxf()
+            elif ext in ['brep', 'brp', 'iges', 'igs', 'step', 'stp']:
+                self.__make_geo()
+                parts = self.__load_geo()
+            last_pt = None
+            if first_pt != None:
+                if len(self.__fea.points) > 2:
+                    last_pt = self.__fea.points[-1]
+            if self.__scale != '':
+                # call scale
+                pass
+            return parts
 
     def __fix_point(self, point):
         """Adjusts the point to be in the right plane (yx)"""
@@ -142,7 +165,32 @@ class CadImporter(object):
                     all_lines.append(arc)
         return [list(point_set), all_lines]
 
-    def load_dxf(self):
+    def __make_geo(self):
+        """Makes a gmsh geo file given a step, iges, or brep input"""
+        # gmsh freecad_part.iges -o out_iges.geo -0
+        fname_list = self.__fname.split('.')
+        geo_file = fname_list[0]+'.geo'
+        runstr = "%s %s -o %s -0" % (environment.GMSH, self.__fname, geo_file)
+        print(runstr)
+        subprocess.call(runstr, shell=True)
+        print('Wrote file: %s' % geo_file)
+
+    def __load_geo(self):
+        """Loads in a gmsh geo file and returns a list of parts
+
+        Returns:
+            list: list of Part
+        """
+        pass
+        # process any splines? and turn them into arcs
+        # http://www.mathopenref.com/constcirclecenter.html
+        # find max dist between points
+        # double it
+        # select two segments
+        # draw normal lines
+        # find intersections, that is the center
+        
+    def __load_dxf(self):
         """Loads in a dxf file and returns a list of parts
 
         Returns:
@@ -239,7 +287,7 @@ class CadImporter(object):
         # make parts
         parts_list = []
         for part_loops in parts:
-            this_part = part.Part(self.__fea)
+            this_part = partmodule.Part(self.__fea)
             for ind, loop in enumerate(part_loops):
                 is_hole = loop.hole
                 start = loop[0].pt(0)

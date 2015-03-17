@@ -66,6 +66,7 @@ class Point(base_classes.Idobj):
         self.nodes = []
         self.lines = []
         self.arc_center = False
+        self.on_part = True
         base_classes.Idobj.__init__(self)
 
     def get_name(self):
@@ -148,9 +149,15 @@ class Point(base_classes.Idobj):
             return factor
 
     def save_line(self, line):
-        """Saves the line in th epoint."""
+        """Saves the line or arc in the point."""
         if line not in self.lines:
             self.lines.append(line)
+        if self.arc_center == True:
+            if len(self.lines) > 1:
+                for line in self.lines:
+                    if isinstance(line, Line):
+                        self.arc_center = False
+                        break
 
     def length(self):
         """Returns the length of this point or vector."""
@@ -368,9 +375,21 @@ class Line(base_classes.Idobj):
             ind (int): index of the point we're updating, 0=start, 1=end
             point (Point): new point we are assigning to Line
         """
-        # used to update specific points in the line
+        # remove this line from the old point
+        self.points[ind].lines.remove(self)
+        # update the point
         self.points[ind] = point
         self.midpt = self.mid()
+        self.save_to_points()
+        other_point = self.pt(int(not ind))
+        if point == other_point:
+            other_point.lines.remove(self)
+            for sline in self.signlines:
+                sline.lineloop.remove(sline)
+            if self.id != -1:
+                if len(self.signlines) > 0:
+                    area = self.signlines[0].lineloop.parent
+                    area.part.fea.lines.remove(self)
 
     def mid(self):
         """Calculates and returns a midpoint between start and end points."""
@@ -619,7 +638,7 @@ class SignLine(Line, base_classes.Idobj):
     Attributes:
         line (Line): parent line
         sign (int): 1 = positive, or -1 = negative
-        parent (None or Area): parent Area, start out as None
+        lineloop (None or LineLoop): parent LineLoop, default is None
         faces (list): list of element faces
         n1 (list): list of first order nodes on line
         nodes (list): nodes on the line
@@ -627,7 +646,7 @@ class SignLine(Line, base_classes.Idobj):
     def __init__(self, parent_line, sign):
         self.line = parent_line
         self.sign = sign
-        self.parent = None
+        self.lineloop = None
         self.faces = []
         self.n1 = []
         base_classes.Idobj.__init__(self)
@@ -656,11 +675,11 @@ class SignLine(Line, base_classes.Idobj):
         """Applies the element divisions onto the parent line."""
         self.line.set_ediv(ediv)
 
-    def set_parent(self, p):
-        """Sets area parent."""
+    def set_lineloop(self, lineloop):
+        """Sets the parent LineLoop"""
         # this is needed to cascade set ediv up to FEA model and down onto
         # other lines with this ediv
-        self.parent = p
+        self.lineloop = lineloop
 
     def get_name(self):
         """Returns the SignLine name."""
@@ -841,7 +860,7 @@ class Arc(base_classes.Idobj):
         """Returns the length of the arc."""
         a = self.pt(0)-self.actr
         b = self.pt(1)-self.actr
-        ang = a.ang_bet_rad(b)
+        ang = abs(a.ang_bet_rad(b))
         res = self.radius*ang
         return res
 
@@ -874,15 +893,27 @@ class Arc(base_classes.Idobj):
         return self.points[ind]
 
     def set_pt(self, ind, point):
-        """Update the line's point at ind to the new point.
+        """Update the arc's point at ind to the new point.
 
         Args:
             ind (int): index of the point we're updating, 0=start, 1=end
             point (Point): new point we are assigning to Line
         """
-        # used to update specific points in the line
+        # remove this line from the old point
+        self.points[ind].lines.remove(self)
+        # set the new point
         self.points[ind] = point
         self.midpt = self.mid()
+        self.save_to_points()
+        other_point = self.pt(int(not ind))
+        if point == other_point:
+            other_point.lines.remove(self)
+            for sline in self.signlines:
+                sline.lineloop.remove(sline)
+            if self.id != -1:
+                if len(self.signlines) > 0:
+                    area = self.signlines[0].lineloop.parent
+                    area.part.fea.lines.remove(self)
 
     def mid(self):
         """Caclulates and returns the midpoint of the arc."""
@@ -1191,14 +1222,23 @@ class Arc(base_classes.Idobj):
         return val
 
 class SignArc(Arc, base_classes.Idobj):
-    """This class is for a signed line."""
+    """Makes a signed arc.
+
+    Attributes:
+        line (Arc): parent arc
+        sign (int): 1 = positive, or -1 = negative
+        lineloop (None or LineLoop): parent LineLoop, default is None
+        nodes (list): nodes on the arc
+        faces (list): list of element faces
+        n1 (list): list of first order nodes on line
+    """
 
     def __init__(self, parent_line, sign):
         self.line = parent_line
         self.sign = sign
-        self.parent = None
-        self.nodes = []
+        self.lineloop = None
         self.faces = []
+        self.n1 = []
         base_classes.Idobj.__init__(self)
 
     def pt(self, ind):
@@ -1216,11 +1256,11 @@ class SignArc(Arc, base_classes.Idobj):
         """Apply the element divisions onto the parent line."""
         self.line.set_ediv(ediv)
 
-    def set_parent(self, p):
-        """Sets area parent."""
+    def set_lineloop(self, lineloop):
+        """Sets the parent LineLoop"""
         # this is needed to cascade set ediv up to FEA model and down onto
         # other lines with this ediv
-        self.parent = p
+        self.lineloop = lineloop
 
     def get_name(self):
         """Returns the line name."""
@@ -1336,6 +1376,7 @@ class LineLoop(list):
     Args:
         items (list): Line or Arc or SignLine or SignArc
         hole_bool (bool): True if hole, False otherwise
+        parent (Area or None): parent Area, defaults to None
 
     Attributes:
         closed (bool): True if closed
@@ -1343,19 +1384,28 @@ class LineLoop(list):
         hole (bool): True if loop is a hole
         ccw (bool): True if loop is counter-clockwise
         center (Point): a point at the loop centroid
-        parent (None or Area): the loop's parent Area
+        parent (Area or None): the loop's parent Area
     """
 
     def __init__(self, items=[], hole_bool=False, parent=None):
-        list.__init__(self, items)
+        super().__init__(items)
+        self.id = -1
+        for item in self:
+            if isinstance(item, SignLine) or isinstance(item, SignArc):
+                item.lineloop = self
         self.hole = hole_bool
         self.parent = parent
 
-    def set_parent(self, parent):
-        """Sets the line loop's parent area"""
-        self.parent = parent
-        for sline in self:
-            sline.set_parent(self.parent)
+    def set_id(self, id):
+        """Sets the id number"""
+        self.id = id
+
+    def __hash__(self):
+        """Sets the hash of the item to the id number.
+
+        This allows one to make sets of these items.
+        """
+        return self.id
 
     @property
     def closed(self):
@@ -1540,9 +1590,45 @@ class LineLoop(list):
         else:
             return False
 
+    def append(self, item):
+        """Adds an item to this LineLoop
+
+        Args:
+          item (SingArc or SignLine): item to add to the list
+        """
+        if isinstance(item, SignLine) or isinstance(item, SignArc):
+            item.set_lineloop(self)
+        super().append(item)
+        return item
+
+    def remove(self, item):
+        """Removes an item from this LineLoop
+
+        Args:
+          item (SingArc or SignLine): item to remove
+        """
+        if isinstance(item, SignLine) or isinstance(item, SignArc):
+            if item in item.line.signlines:
+                item.line.signlines.remove(item)
+            else:
+                print('Removing sline %s from loop in area %s'
+                      % (item.get_name(), self.parent.get_name()))
+                print('''===THIS SLINE NOT IN SLINE.LINE.SIGNLINES!===''')
+        super().remove(item)
+
+    def insert(self, index, item):
+        """Removes an item from this LineLoop
+
+        Args:
+          item (SingArc or SignLine): item to remove
+        """
+        if isinstance(item, SignLine) or isinstance(item, SignArc):
+            item.set_lineloop(self)
+        super().insert(index, item)
+
     def __str__(self):
         """Prints the LineLoop definition."""
-        res = ''
+        res = 'Number of items %i\n' % len(self)
         for line in self:
             res += '%s\n' % line
         return res
@@ -1553,11 +1639,11 @@ class Area(base_classes.Idobj):
     Area is closed in a clockwise direction.
 
     Args:
-        p (Part): parent part
+        part (Part): parent Part
         line_list (list): list of Lines and Arcs that close the area
 
     Attributes:
-        parent (Part): parent part
+        part (Part): parent part
         closed (boolean): True if closed, False if not
         exlines (LineLoop): LineLoop of signlines that define the area exterior
         signlines (list): list of signed lines or arcs that define the area
@@ -1578,12 +1664,10 @@ class Area(base_classes.Idobj):
         elements (list): child elements that are in the area
     """
 
-    def __init__(self, parent, line_list=[]):
-        # initialtes the area
+    def __init__(self, part, line_list=[]):
         base_classes.Idobj.__init__(self)
-        self.parent = parent # parent part reference
+        self.part = part # parent part reference
         self.closed = False
-        self.exlines = LineLoop(line_list)
         self.matl = None
         self.etype = None
         self.area = 0.0
@@ -1591,7 +1675,11 @@ class Area(base_classes.Idobj):
         self.center = None
         self.nodes = []
         self.elements = []
-        self.update(line_list)
+        exloop = LineLoop(line_list, False, self)
+        exloop = self.part.fea.lineloops.append(exloop)
+        self.exlines = exloop
+        if self.exlines.closed == True:
+            self.close()
 
     def __hash__(self):
         """Returns the item's id as its hash."""
@@ -1723,6 +1811,20 @@ class Area(base_classes.Idobj):
                     maxlen = dist
         return maxlen
 
+    def rem_sline(self, sline):
+        """Removes a sline from this area."""
+        loops = [self.exlines] + self.holes
+        for loop in loops:
+            if sline in loop:
+                print ('Line %s removed from %s'
+                       % (sline.get_name(), self.get_name()))
+                loop.remove(sline)
+        if sline.id != -1:
+            line = sline.line
+            self.part.fea.signlines.remove(sline)
+            if len(line.signlines) == 0:
+                self.part.fea.lines.remove(line)
+
     def add_sline(self, signline):
         """Adds signline to the area definition.
 
@@ -1730,7 +1832,6 @@ class Area(base_classes.Idobj):
         Area is closed if needed.
         """
         # this adds a line to the area
-        signline.set_parent(self)
         self.exlines.append(signline)
         if self.exlines.closed:
             self.close()
@@ -1744,16 +1845,14 @@ class Area(base_classes.Idobj):
         Returns:
             closed (bool): boolean telling if the hole was closed
         """
-        signline.set_parent(self)
-        this_hole = LineLoop([], hole_bool=True, parent=self)
-        if len(self.holes) == 0:
-            self.holes.append(this_hole)
-        else:
-            last_hole = self.holes[-1]
-            if last_hole.closed == False:
-                this_hole = last_hole
-            else:
-                self.holes.append(this_hole)
+        make_new = (len(self.holes) == 0)
+        if make_new == False:
+            if self.holes[-1].closed == True:
+                make_new = True
+        if make_new:
+            hole = LineLoop([], hole_bool=True, parent=self)
+            hole = self.part.fea.lineloops.append(hole)
+            self.holes.append(hole)
         self.holes[-1].append(signline)
         # reverse the hole if it's closed in the cw direction
         if self.holes[-1].closed == True:
@@ -1784,27 +1883,34 @@ class Area(base_classes.Idobj):
                         verts.append((0, 0))
                         codes.append(Path.CLOSEPOLY)
             path = Path(verts, codes, _interpolation_steps=2)
-            patch = PathPatch(path, facecolor='yellow', linewidth=0.0)
+            patch = PathPatch(path, linewidth=0.0)
             return patch
 
-    def plot(self, ax, label=True, fill=True):
+    def label(self, axis):
+        """Labels the area on a Matplotlib axis
+
+        Args:
+            axis (Matplotlib Axis): Matplotlib Axis
+        """
+        axis.text(self.center.y, self.center.x, self.get_name(),
+                  ha='center', va='center')
+
+    def plot(self, axis, label=True, color='yellow'):
         """Plots the area on a Matplotlib axis.
 
         Args:
-            ax (Matplotlib axis): Matplotlib axis
+            axis (Matplotlib axis): Matplotlib axis
             label (bool): if True, label area
-            fill (bool): if True, fill in area
         """
         # http://stackoverflow.com/questions/8919719/how-to-plot-a-complex-polygon
         if self.closed:
             # plot area patch
-            if fill:
-                patch = self.get_patch()
-                ax.add_patch(patch)
+            patch = self.get_patch()
+            patch.set_color(color)
+            axis.add_patch(patch)
             # label ares
             if label:
-                ax.text(self.center.y, self.center.x, self.get_name(),
-                        ha='center', va='center')
+                self.label(axis)
 
     def contains_point(self, point):
         """Returns bool telling if pt is inside the area.
@@ -1830,28 +1936,22 @@ class Area(base_classes.Idobj):
         Returns:
             bool: True if succeeded, False if failed
         """
-        # this inserts a line after the given line
-        print('Inserting line %s into area %s next to %s' %
-              (lnew.get_name(), self.get_name(), lgiven.get_name()))
-        if lgiven in self.exlines:
-            lnew.set_parent(self)
-            ind = self.exlines.index(lgiven)
+        if lgiven in self.signlines:
+            print('Inserting line %s into area %s next to %s' %
+                  (lnew.get_name(), self.get_name(), lgiven.get_name()))
+            lineloop = lgiven.lineloop
+            type = 'exterior lines'
+            if lineloop.hole:
+                type = 'hole lines'
+            ind = lineloop.index(lgiven)
             if after:
                 ind += 1
             print(' Inserting line into %s outer lines' % self.get_name())
-            self.exlines.insert(ind, lnew)
+            lineloop.insert(ind, lnew)
             return True
         else:
-            for hole in self.holes:
-                if lgiven in hole:
-                    lnew.set_parent(self)
-                    ind = hole.index(lgiven)
-                    if after:
-                        ind += 1
-                    print(' Inserting line into %s hole' % self.get_name())
-                    hole.insert(ind, lnew)
-                    return True
-            print(' Insert FAILED')
+            print('ERROR: Passed line was not in %s!' % self.get_name())
+            print('You must pass a line in this area!')
             return False
 
     def set_child_ccxtypes(self):
@@ -1876,17 +1976,17 @@ class Area(base_classes.Idobj):
         self.set_child_ccxtypes()
 
     def update(self, line_list):
-        """Updates the area's signlines list to the passed list.
+        """Updates the area's external lines to the passed list.
 
-        The area's signlines list is replaced with the passed list.
         If the area is cosed, self.close() will be called.
 
         Args:
             line_list (list): list of SignLine and SignArc items
         """
-        # adds the line list and checks for closure
-        self.exlines = LineLoop(line_list)
-        for sline in self.exlines:
-            sline.set_parent(self)
+        to_rem = list(self.exlines)
+        for sline in to_rem:
+            self.exlines.remove(sline)
+        for sline in line_list:
+            self.exlines.append(sline)
         if self.exlines.closed == True:
             self.close()

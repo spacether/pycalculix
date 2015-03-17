@@ -20,14 +20,15 @@ from . import material
 from . import components
 from . import loads
 from . import mesh
-from . import part
+from . import partmodule
 from . import problem
 from . import selector
 
 # element colors, 0-1, 0=black, 1=whate
 ECOLOR = '.4'
 FCOLOR = '.9'
-CMAP = 'jet'
+CMAP = 'jet' # for results
+GEOM_CMAP = 'Pastel1' # color map for parts or areas
 
 class FeaModel(object):
     """Makes a FeaModel instance.
@@ -49,10 +50,12 @@ class FeaModel(object):
 
     Attributes:
         fname (str): FeaModel project file name prefix
-        points (Itemlist): list of all geometry points
-        lines (Itemlist): list of all geometry lines
-        areas (Itemlist):list of all geometry areas
-        parts (Itemlist): list of all geometry parts
+        points (Itemlist): list of all Point
+        lines (Itemlist): list of all Line and Arc
+        signlines (Itemlist): list of all SignLine and SignArc
+        lineloops (Itemlist): list of all LineLoop, contain SignLine SignArc
+        areas (Itemlist):list of all Area, each contains LineLoop(s)
+        parts (Itemlist): list of all Part
         matls (Itemlist): list of all materials
         components (Itemlist): list of all components
         loads (dict): a dictionary of loads
@@ -113,6 +116,7 @@ class FeaModel(object):
         self.points = base_classes.Itemlist()
         self.lines = base_classes.Itemlist()
         self.signlines = base_classes.Itemlist()
+        self.lineloops = base_classes.Itemlist()
         self.areas = base_classes.Itemlist()
         self.parts = base_classes.Itemlist()
         self.matls = base_classes.Itemlist()
@@ -308,7 +312,7 @@ class FeaModel(object):
         """Makes and returns a new part."""
         #p = part.Part(self)
         #self.parts.append(p)
-        return part.Part(self)
+        return partmodule.Part(self)
 
     def make_problem(self, problem_type='struct', parts='all'):
         """Makes and returns a new problem, which can be solved.
@@ -327,6 +331,22 @@ class FeaModel(object):
             parts = self.parts
         prob = problem.Problem(self, problem_type, parts)
         return prob
+
+    def print_summary(self):
+        """Prints a summary of the items in the database.
+        """
+        items = ['parts', 'areas', 'signlines', 'points', 'elements', 'faces',
+                 'nodes']
+        names = ['parts', 'areas', 'lines', 'points', 'elements', 'faces',
+                 'nodes']
+
+        spacer = '----------------------------------'
+        print(spacer)
+        print("Items in the database:")
+        for (item_str, name) in zip(items, names):
+            items = getattr(self, item_str)
+            print(' %s: %i' % (name, len(items)))
+        print(spacer)
 
     def plot_elements(self, fname='', display=True, title='Elements',
                       enum=False, nshow=False, nnum=False):
@@ -638,6 +658,162 @@ class FeaModel(object):
                 res = 'No elements are selected! Select some!'
             print(res)
 
+    def plot_multiple(self, fname='', display=True, title='',
+                      styledict={'labels':['points', 'lines', 'areas', 'parts'],
+                                 'items':['points, lines, areas']}):
+        """Plots items of type styledict['items'], labels styledict['labels']
+
+        Only the items currently selected will be plotted.
+        """
+        # http://stackoverflow.com/questions/470690/how-to-automatically-generate-n-distinct-colors/4382138#4382138
+        # http://stackoverflow.com/questions/2328339/how-to-generate-n-different-colors-for-any-natural-number-n
+        # start plotting
+        fig = plt.figure()
+        axis = fig.add_subplot(111)
+
+        # check if we're plotting parts or areas and pick a color map
+        colormaker, ids = None, None
+        color_plot = False
+        if 'parts' in styledict['items']:
+            color_plot = True
+            ids = [item.id for item in self.view.parts]
+            if 'areas' in styledict['items']:
+                styledict['items'].remove('areas')
+        if 'areas' in styledict['items']:
+            color_plot = True
+            ids = [item.id for item in self.view.areas]
+        if color_plot:
+            cmap = plt.get_cmap(GEOM_CMAP)
+            norm = colors.Normalize(vmin=min(ids), vmax=max(ids))
+            colormaker = cmx.ScalarMappable(norm=norm, cmap=cmap)
+
+        # plot the items
+        for item_type in ['points', 'lines', 'areas', 'parts']:
+            plot_on = item_type in styledict['items']
+            label_on = item_type in styledict['labels']
+            items = getattr(self.view, item_type)
+            if plot_on and label_on:
+                for item in items:
+                    if color_plot and item_type in ['areas', 'parts']:
+                        color = colormaker.to_rgba(item.id)
+                        item.plot(axis, True, color)
+                    else:
+                        item.plot(axis, True)
+            elif plot_on:
+                for item in items:
+                    if color_plot and item_type in ['areas', 'parts']:
+                        color = colormaker.to_rgba(item.id)
+                        item.plot(axis, False, color)
+                    else:
+                        item.plot(axis, False)
+            elif label_on:
+                for item in items:
+                    item.label(axis)
+
+        # set the horizontal and vertical axes
+        points = self.view.points
+        radials = [point.x for point in points]
+        axials = [point.y for point in points]
+        base_classes.plot_set_bounds(plt, axials, radials)
+
+        # set units
+        [d_unit] = self.get_units('dist')
+
+        # show plot
+        plt.title(title)
+        plt.xlabel('axial, y'+d_unit)
+        plt.ylabel('radial, x'+d_unit)
+        axis.set_aspect('equal')
+        base_classes.plot_finish(plt, fname, display)
+
+    def plot_parts(self, fname='', display=True, title='Parts', label=True):
+        """Plots selected parts
+
+        Defaults to displaying labels on: parts and filling all part areas.
+
+        Args:
+            fname (str): png image file prefix, if given, image will be saved
+            display (bool): if True, interactive plot will be shown, if False
+                plot will not be shown. Default = True
+            title (str): the plot's title
+            label (bool): if True all Part objects will be labeled
+        """
+        item = 'parts'
+        styledict = {'items':[], 'labels':[]}
+        if label:
+            styledict['items'].append(item)
+            styledict['labels'].append(item)
+        else:
+            styledict['items'].append(item)
+
+        self.plot_multiple(fname, display, title, styledict)
+
+    def plot_areas(self, fname='', display=True, title='Areas', label=True):
+        """Plots selected areas
+
+        Defaults to displaying labels on: areas and filling all part areas.
+
+        Args:
+            fname (str): png image file prefix, if given, image will be saved
+            display (bool): if True, interactive plot will be shown, if False
+                plot will not be shown. Default = True
+            title (str): the plot's title
+            label (bool): if True all areas will be labeled
+        """
+        item = 'areas'
+        styledict = {'items':[], 'labels':[]}
+        if label:
+            styledict['items'].append(item)
+            styledict['labels'].append(item)
+        else:
+            styledict['items'].append(item)
+
+        self.plot_multiple(fname, display, title, styledict)
+
+    def plot_lines(self, fname='', display=True, title='Lines', label=True):
+        """Plots selected lines and arcs
+
+        Defaults to displaying labels on: lines and arcs
+
+        Args:
+            fname (str): png image file prefix, if given, image will be saved
+            display (bool): if True, interactive plot will be shown, if False
+                plot will not be shown. Default = True
+            title (str): the plot's title
+            label (bool): if True all lines and arcs will be labeled
+        """
+        item = 'lines'
+        styledict = {'items':[], 'labels':[]}
+        if label:
+            styledict['items'].append(item)
+            styledict['labels'].append(item)
+        else:
+            styledict['items'].append(item)
+
+        self.plot_multiple(fname, display, title, styledict)
+
+    def plot_points(self, fname='', display=True, title='Points', label=True):
+        """Plots selected points
+
+        Defaults to displaying labels on: points
+
+        Args:
+            fname (str): png image file prefix, if given, image will be saved
+            display (bool): if True, interactive plot will be shown, if False
+                plot will not be shown. Default = True
+            title (str): the plot's title
+            label (bool): if True all points will be labeled
+        """
+        item = 'points'
+        styledict = {'items':[], 'labels':[]}
+        if label:
+            styledict['items'].append(item)
+            styledict['labels'].append(item)
+        else:
+            styledict['items'].append(item)
+
+        self.plot_multiple(fname, display, title, styledict)
+
     def plot_geometry(self, fname='', display=True, title='Geometry', pnum=True,
                       lnum=True, anum=True, afill=True):
         """Plots selected geometry items: areas, lines, points.
@@ -655,43 +831,21 @@ class FeaModel(object):
             anum (bool): if True all Area objects will be labeled
             afill (bool): if True all Area objects will be filled
         """
-        # this method plots the part
-        # check out: http://nickcharlton.net/posts/drawing-animating-shapes-matplotlib.html
+        styledict = {'items':[], 'labels':[]}
+        if pnum:
+            styledict['items'].append('points')
+            styledict['labels'].append('points')
+        if lnum:
+            styledict['items'].append('lines')
+            styledict['labels'].append('lines')
+        if anum:
+            styledict['labels'].append('areas')
+            if afill:
+                styledict['items'].append('areas')
+        elif anum == False and afill:
+            styledict['items'].append('areas')
 
-        points = self.view.points
-        lines = self.view.lines
-        areas = self.view.areas
-
-        # start plotting
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-
-        #plot areas
-        for area in areas:
-            area.plot(ax, anum, afill)
-
-        #plot lines
-        for sline in lines:
-            sline.plot(ax, lnum)
-
-        # plot points
-        for point in points:
-            point.plot(ax, pnum)
-
-        # set the horizontal and vertical axes
-        radials = [point.x for point in points]
-        axials = [point.y for point in points]
-        base_classes.plot_set_bounds(plt, axials, radials)
-
-        # set units
-        [d_unit] = self.get_units('dist')
-
-        # show plot
-        plt.title(title)
-        plt.xlabel('axial, y'+d_unit)
-        plt.ylabel('radial, x'+d_unit)
-        ax.set_aspect('equal')
-        base_classes.plot_finish(plt, fname, display)
+        self.plot_multiple(fname, display, title, styledict)
 
     def __get_cname(self, items):
         """Returns a component name prefix, for labeling lists of items.
@@ -722,6 +876,40 @@ class FeaModel(object):
             comp = self.components[ind]
         return comp
 
+    def register(self, item):
+        """Adds an item to the feamodel.
+
+        Item is added to the correct list and its id is updated.
+        Allowed Items:
+
+        * Point
+        * Line
+        * Arc
+        * SignLine
+        * SignArc
+        * LineLoop
+        * Area
+        * Part
+        """
+        class_name = item.__class__.__name__
+        class_to_list = {'Point': 'points',
+                         'Line': 'lines',
+                         'Arc': 'lines',
+                         'SignLine': 'signlines',
+                         'SignArc': 'signlines',
+                         'LineLoop': 'lineloops',
+                         'Area': 'areas',
+                         'Part': 'parts'}
+        if class_name in class_to_list:
+            list_name = class_to_list[class_name]
+            getattr(self, list_name).append(item)
+        else:
+            print('ERROR: the item you passed must be a geometry item!')
+            print('You passed a %s' % class_name)
+            message = ("Allowed items: Point, Line, Arc, SignLine, SignArc, "
+                       "LineLoop, Area, Part")
+            print(message)
+
     def __add_load(self, load, time):
         """Adds a load to the FeaModel.
 
@@ -734,6 +922,46 @@ class FeaModel(object):
         else:
             self.loads[time] = [load]
         return load
+
+    def scale(self, unitstr, point_first=None, point_last=None):
+        """Scales the points from [point_first, ..., point_last] using unitstr
+
+        If point_first and point_last are both None, all points are scaled.
+
+        Args:
+            unitstr (str): string scalar 'fromunit-tounit' using the below units:
+
+                * mm, m, in, ft
+                * Examples 'mm-m' 'm-in' 'ft-mm' 'in-ft'
+                * Default value is '' and does not apply a scale factor
+
+            point_first (Point or None or str): the first point to scale,
+                string point names may be passed
+            point_last (Point or None or str): the last point to scale,
+                string point names may be passed
+        """
+        # convert to points if passing in string point names 'P0'
+        if isinstance(point_first, str):
+            point_first = self.get_item(point_first)
+        if isinstance(point_last, str):
+            point_last = self.get_item(point_last)
+
+        ind_first = 0
+        if point_first != None:
+            ind_first = self.points.index(point_first)
+        ind_last = -1
+        if point_last != None:
+            ind_last = self.points.index(point_last)
+
+        unit_size = {'m':1.0, 'mm':.001, 'ft':.3048, 'in':0.0254}
+        units = unitstr.split('-')
+        from_unit, to_unit = units[0], units[1]
+        scalar = unit_size[from_unit]/unit_size[to_unit]
+        # scale all points in set
+        # update all dependent arcs
+        # update all dependent line loops
+        # update all dependent areas
+        # update all dependent parts
 
     def set_gravity(self, grav, items):
         """Sets gravity on the elements in items.
@@ -977,7 +1205,7 @@ class FeaModel(object):
         for item in items:
             if isinstance(item, geometry.Area):
                 item.set_etype(etype)
-            if isinstance(item, part.Part):
+            if isinstance(item, partmodule.Part):
                 for area in item.areas:
                     area.set_etype(etype)
 
@@ -1151,38 +1379,38 @@ class FeaModel(object):
         # assign nodes to feamodel
         self.nodes = N
 
-        for apart in self.parts:
+        for part in self.parts:
             # assign part element and node sets
-            pname = apart.get_name()
-            apart.elements = sets['E'][pname]
-            apart.nodes = sets['N'][pname]
+            pname = part.get_name()
+            part.elements = sets['E'][pname]
+            part.nodes = sets['N'][pname]
 
             # assign all nodes and elements to areas, fix the element types
-            for area in apart.areas:
+            for area in part.areas:
                 aname = area.get_name()
                 area.elements = sets['E'][aname]
                 area.nodes = sets['N'][aname]
                 area.set_child_ccxtypes() #paint element types on elements
 
             # assign the child nodes to points
-            pts = apart.points
-            for pt in pts:
+            pts = part.points
+            for point in pts:
                 ndist = []
-                for n in apart.nodes:
-                    p_tmp = geometry.Point(n.x, n.y)
-                    p_tmp = pt - p_tmp
-                    dist = p_tmp.length()
-                    ndist.append({'dist':dist, 'node':n})
+                for node in part.nodes:
+                    p_tmp = geometry.Point(node.x, node.y)
+                    dist = point - p_tmp
+                    dist = dist.length()
+                    ndist.append({'dist':dist, 'node':node})
                 # sort the list by dist, sorts low to high
                 ndist = sorted(ndist, key=lambda k: k['dist'])
-                pt.nodes = [ndist[0]['node']]
+                point.nodes = [ndist[0]['node']]
                 #print('Point %s = node %s' % (pt, pt.nodes))
 
             # assign the nodes and n1 and faces to lines
-            slines = apart.signlines
+            slines = part.signlines
             for sline in slines:
                 lname = sline.get_name()
-                area = sline.parent
+                area = sline.lineloop.parent
                 nodes = sets['N'][sline.line.get_name()]
                 n1 = [n for n in nodes if n.order == 1]
                 sline.nodes = nodes
@@ -1215,7 +1443,7 @@ class FeaModel(object):
 
                 - Low numbers are very fine, higher numbers are coarser.
             mesher (str): the mesher to use
-            
+
                 - 'gmsh': mesh with Gmsh, this is reccomended, it allows holes
                 - 'cgx': mesh with Calculix cgx, it doesn't allow holes
         """
@@ -1239,27 +1467,25 @@ class FeaModel(object):
 
         # write all points
         for pt in self.points:
-            linestr = 'Point(%i) = {%f, %f, %f};' % (pt.id, pt.x, pt.y, 0.0)
-            geo.append(linestr)
+            txtline = 'Point(%i) = {%f, %f, %f};' % (pt.id, pt.x, pt.y, 0.0)
+            geo.append(txtline)
 
         # start storing an index number
         ind = self.points[-1].id + 1
 
         # write all lines
         for line in self.lines:
-            ln = line.id
-            ids['line'][ln] = ind
-            p1 = line.pt(0).id
-            p2 = line.pt(1).id
+            lnum = line.id
+            ids['line'][lnum] = ind
+            pt1 = line.pt(0).id
+            pt2 = line.pt(1).id
             linestr = ''
             if isinstance(line, geometry.Arc):
-                # line is arc
-                pc = line.actr.id
-                linestr = 'Circle(%i) = {%i, %i, %i};' % (ind, p1, pc, p2)
+                ctr = line.actr.id
+                txtline = 'Circle(%i) = {%i, %i, %i};' % (ind, pt1, ctr, pt2)
             else:
-                # straight line
-                linestr = 'Line(%i) = {%i,%i};' % (ind, p1, p2)
-            geo.append(linestr)
+                txtline = 'Line(%i) = {%i,%i};' % (ind, pt1, pt2)
+            geo.append(txtline)
 
             # set division if we have it
             if line.ediv != None:
@@ -1270,12 +1496,12 @@ class FeaModel(object):
                     esize = esize*2
                     # this is needed because quad recombine
                     # splits 1 element into 2
-                linestr = 'Transfinite Line{%i} = %i;' % (ind, ndiv)
+                txtline = 'Transfinite Line{%i} = %i;' % (ind, ndiv)
                 print('LINE ELEMENT SIZE: %f, MAKES %i ELEMENTS'
                       % (line.length()/line.ediv, line.ediv))
-                geo.append(linestr)
+                geo.append(txtline)
                 geo.append('Characteristic Length {%i,%i} = %f;'
-                           % (p1, p2, esize))
+                           % (pt1, pt2, esize))
             ind += 1
 
         # write all areas
@@ -1284,19 +1510,19 @@ class FeaModel(object):
                 aid = area.id
                 aname = area.get_name()
                 loop_ids = []
-                loops = [area.signlines] + area.holes
+                loops = [area.exlines] + area.holes
                 for loop in loops:
-                    linestr = 'Line Loop(%i) = ' % (ind)
+                    txtline = 'Line Loop(%i) = ' % (ind)
                     loop_ids.append(str(ind))
                     line_ids = []
-                    for line in loop:
-                        lid = ids['line'][line.line.id]
+                    for sline in loop:
+                        lid = ids['line'][sline.line.id]
                         prefix = ''
-                        if line.sign == -1:
+                        if sline.sign == -1:
                             prefix = '-'
                         line_ids.append('%s%i' % (prefix, lid))
-                    linestr = linestr + '{'+ ','.join(line_ids)+'};'
-                    geo.append(linestr)
+                    txtline = txtline + '{'+ ','.join(line_ids)+'};'
+                    geo.append(txtline)
                     ind += 1
                 loop_ids = ','.join(loop_ids)
                 geo.append('Plane Surface(%i) = {%s};' % (ind, loop_ids))
@@ -1305,41 +1531,41 @@ class FeaModel(object):
                 ind += 1
 
         # write part area components
-        for p in self.parts:
+        for part in self.parts:
             # make components for each part
-            line = "Physical Surface('%s') = " % (p.get_name())
+            txtline = "Physical Surface('%s') = " % (part.get_name())
             area_ids = []
-            for area in p.areas:
+            for area in part.areas:
                 if area.closed:
                     aid = ids['plane_surface'][area.id]
                     area_ids.append(str(aid))
-            line = line + '{' + ','.join(area_ids) + '};'
-            geo.append(line)
+            txtline = txtline + '{' + ','.join(area_ids) + '};'
+            geo.append(txtline)
 
         # write all line componenets so we can get nodes out
-        for L in self.lines:
-            lid = ids['line'][L.id]
-            line = "Physical Line('%s') = {%i};" % (L.get_name(), lid)
-            geo.append(line)
+        for line in self.lines:
+            lid = ids['line'][line.id]
+            txtline = "Physical Line('%s') = {%i};" % (line.get_name(), lid)
+            geo.append(txtline)
 
         # write node componenets
-        # node list is not produced by gmsh
-        for pt in self.points:
-            linestr = "Physical Point('%s') = {%i};" % (pt.get_name(), pt.id)
-            geo.append(linestr)
+        # ERROR: node list is not produced by gmsh
+        for point in self.points:
+            pname = point.get_name()
+            txtline = "Physical Point('%s') = {%i};" % (pname, point.id)
+            geo.append(txtline)
 
         # set the meshing options
-        geo.append('Mesh.CharacteristicLengthFactor = '+str(fineness)+
-                   '; //mesh fineness')
+        geo.append('Mesh.CharacteristicLengthFactor = '
+                   +str(fineness)+'; //mesh fineness')
         geo.append('Mesh.RecombinationAlgorithm = 1; //blossom')
-        #geo.append('Mesh.Lloyd = 1; //smoothing algorithm')
 
         if self.eshape == 'quad':
             geo.append('Mesh.RecombineAll = 1; //turns on quads')
             geo.append('Mesh.SubdivisionAlgorithm = 1; // quadrangles only')
             #geo.append('Mesh.RecombinationAlgorithm = 1; //turns on blossom needed for quad')
 
-        eo = self.eorder
+        order = self.eorder
         geo.append('Mesh.CharacteristicLengthExtendFromBoundary = 1;')
         geo.append('Mesh.CharacteristicLengthMin = 0;')
         geo.append('Mesh.CharacteristicLengthMax = 1e+022;')
@@ -1348,31 +1574,33 @@ class FeaModel(object):
         geo.append('Mesh.CharacteristicLengthFromPoints = 1;')
         #geo.append('Mesh.Algorithm = 2; //delauny') #okay for quads
         geo.append('Mesh.Algorithm = 8; //delquad = delauny for quads')
-        geo.append('Mesh.ElementOrder = '+str(eo)+'; //linear or second set here')
-        if eo == 2:
-            geo.append('Mesh.SecondOrderIncomplete=1; //req for 2nd ord, no face node')
+        geo.append('Mesh.ElementOrder = '
+                   +str(order)
+                   +'; //linear or second set here')
+        if order == 2:
+            geo.append('Mesh.SecondOrderIncomplete=1; //no face node w/ 2nd order')
         geo.append('Mesh.SaveGroupsOfNodes = 1; // save node groups')
 
         # write geo file to the local directory
         fname = self.fname+'.geo'
         fout = self.fname+'.inp'
-        f = open(fname, 'w')
+        outfile = open(fname, 'w')
         for line in geo:
             #print (line)
-            f.write(line+'\n')
-        f.close()
+            outfile.write(line+'\n')
+        outfile.close()
         print('File: %s was written' % fname)
 
         # run file in bg mode, -2 is 2d mesh
-        astr = "%s %s -2 -o %s" % (environment.GMSH, fname, fout)
-        print(astr)
-        subprocess.call(astr, shell=True)
+        runstr = "%s %s -2 -o %s" % (environment.GMSH, fname, fout)
+        print(runstr)
+        subprocess.call(runstr, shell=True)
         print('File: %s was written' % fout)
         print('Meshing done!')
 
         # write gmsh msh file
-        astr = "%s %s -2 -o %s" % (environment.GMSH, fname, self.fname+'.msh')
-        subprocess.call(astr, shell=True)
+        runstr = "%s %s -2 -o %s" % (environment.GMSH, fname, self.fname+'.msh')
+        subprocess.call(runstr, shell=True)
         print('File: %s.msh was written' % self.fname)
 
         # read in the calculix mesh

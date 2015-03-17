@@ -730,14 +730,15 @@ class ResultsFile(object):
         """
         res = []
         fstr = fstr.split(',')
+        thestr = str(line)
         for item in fstr:
             if item[0] == "'":
                 # strip off the char quaotes
                 item = item[1:-1]
                 # this is a string entry, grab the val out of the line
                 ind = len(item)
-                fwd = line[:ind]
-                line = line[ind:]
+                fwd = thestr[:ind]
+                thestr = thestr[ind:]
                 res.append(fwd)
             else:
                 # format is: 1X, A66, 5E12.5, I12
@@ -750,11 +751,11 @@ class ResultsFile(object):
                 ctype = c_pat.findall(item)[0]
                 if ctype == 'X':
                     # we are dealing with spaces, just reduce the line size
-                    line = line[mult:]
+                    thestr = thestr[mult:]
                 elif ctype == 'A':
                     # character string only, add it to results
-                    fwd = line[:mult].strip()
-                    line = line[mult:]
+                    fwd = thestr[:mult].strip()
+                    thestr = thestr[mult:]
                     res.append(fwd)
                 else:
                     # IE, split line into m pieces
@@ -762,9 +763,9 @@ class ResultsFile(object):
                     width = int(w_pat.findall(item)[0])
                     while mult > 0:
                         # only add items if we have enough line to look at
-                        if width <= len(line):
-                            substr = line[:width]
-                            line = line[width:]
+                        if width <= len(thestr):
+                            substr = thestr[:width]
+                            thestr = thestr[width:]
                             substr = substr.strip() # remove space padding
                             if ctype == 'I':
                                 substr = int(substr)

@@ -117,6 +117,8 @@ Wing IDE:
 
 Version Updates:
 0.9.3
+    ADDED: Import CAD geometry from dxf file
+        See pycalculix.CadImporter
     ADDED: Element results plotting added
         Element results plotting:   pycalculix.Problem.rfile.eplot()
         Nodal results plotting:     pycalculix.Problem.rfile.nplot()
@@ -159,16 +161,14 @@ Version Updates:
             Many methods and variables made private to clean up name space.
 
 TODO:
-Fix chunking with the real dxf part
-    Only 'kontrola.dxf' has problems right now
-    Almost there, get rid of zero length curve
-Add plotting of internal points
+Linux: pass a minimum of 3 values to the colorbar as labels, then clear top and bottom
 Fix the Linux distribution to make it work out of the box
+    Need to fix the paths to the linux binaries
 Add run line to example files for linux
 Add tutorial videos
 Update pdf
 Improve Pylint Scores:
-    feamodel:       8.96
+    feamodel:       9.17
     geometry:       8.79
     results_file:   9.75 X
     part:           9.64 X
@@ -183,8 +183,17 @@ Improve Pylint Scores:
     environment     10.0 X
 
 Future Goals:
--CAD import of brep and igs via gmsh
--CAD export via gmsh (step, brep)
+-CAD import of: brep, step, iges
+    can make geo files with gmsh:
+        gmsh freecad_part.iges -o out_iges.geo -0
+        gmsh freecad_part.brep -o out_brep.geo -0
+        gmsh freecad_part.step -o out_step.geo -0
+
+            Importing the geo file:
+            Do points need explicit numbers? no, store them in a dict
+                points[geo_str] = point
+            Need to convert spline to arcs if it's a circle or arc >= 180
+                Will need to delete some points + make center point
 -Ability to make a new field (% yield etc)
 -Double check effective strain calculation:
     http://orange.engr.ucdavis.edu/Documentation12.0/120/ans_thry.pdf 

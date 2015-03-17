@@ -192,8 +192,9 @@ class Problem(base_classes.Idobj):
             print('File: %s was written' % (fname))
 
             # run file
-            subprocess.call("%s %s" % (environment.CCX, self.fname),
-                            shell=True)
+            runstr = "%s %s" % (environment.CCX, self.fname)
+            print(runstr)
+            subprocess.call(runstr, shell=True)
             print('Solving done!')
 
             # select the probem's parts and load the results file

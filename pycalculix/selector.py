@@ -3,7 +3,7 @@
 Selector is used in FeaModel to store the model's selected set.
 """
 
-from . import part
+from . import partmodule
 from . import geometry
 from . import mesh
 from . import components
@@ -116,7 +116,7 @@ class Selector(object):
     def __add_select(self, items):
         """Adds items to the selection set."""
         for item in items:
-            if isinstance(item, part.Part):
+            if isinstance(item, partmodule.Part):
                 self.__parts.add(item)
             elif isinstance(item, geometry.Area):
                 self.__areas.add(item)
@@ -190,7 +190,7 @@ class Selector(object):
             if sel_type in sets:
                 this_set = getattr(self, sel_type)
                 for item in this_set:
-                    if isinstance(item, part.Part):
+                    if isinstance(item, partmodule.Part):
                         # areas
                         self.select_below_all('parts')
                         # slines
@@ -288,8 +288,8 @@ class Selector(object):
         """
         items = set()
         if sel_type == 'parts':
-            for apart in self.parts:
-                for area in apart.areas:
+            for part in self.parts:
+                for area in part.areas:
                     items.add(area)
         elif sel_type == 'areas':
             for area in self.areas:
@@ -465,7 +465,7 @@ class Selector(object):
         """
         self.__all = False
         for item in items:
-            if isinstance(item, part.Part):
+            if isinstance(item, partmodule.Part):
                 self.__parts.discard(item)
             elif isinstance(item, geometry.Area):
                 self.__areas.discard(item)

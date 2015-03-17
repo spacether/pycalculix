@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
+# above line needed to run the file in linux
+
 import pycalculix as pyc
 import matplotlib.pyplot as plt
 import math
 
 # We'll be modeling a rotating jet engine part
-# make model
 model_name = 'compr-rotor'
 model = pyc.FeaModel(model_name)
 model.set_units('m')    # this sets dist units to meters, labels our consistent units
