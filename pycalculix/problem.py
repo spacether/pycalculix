@@ -141,7 +141,7 @@ class Problem(base_classes.Idobj):
         return new_str
 
     def __fix_frd(self):
-        """Fixes the frd file on win32 systems. Text formatting fixed.
+        """Fixes the frd file on win32 systems. Text formatting fixed
 
         On win32 Calculix, results file formatting is  not written correctly.
         Nodal results and stresses are not written as fixed length fields.
