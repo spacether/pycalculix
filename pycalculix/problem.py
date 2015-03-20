@@ -113,6 +113,79 @@ class Problem(base_classes.Idobj):
             res.append(line)
         return res
 
+    @staticmethod
+    def __fix_line(line, fstr):
+        """Fixes the line and returns a fixed line.
+
+        Args:
+            line (str): line to fix
+            fstr (str): format string to use
+        """
+        items = fstr.split(',')
+        node_num_size = int(items[2][1:])
+        pre_len = 3 + node_num_size
+        # we are missing + prefix on some numbers, some are too long
+        start_str = line[:pre_len]
+        end_str = line[pre_len:]
+        fields = end_str.count('E')
+        low_ind = 0
+        values = []
+        while len(values) < fields:
+            high_ind = end_str.find('E', low_ind)+5
+            value = float(end_str[low_ind:high_ind])
+            values.append(value)
+            low_ind = high_ind
+        values = ['%12.5e' % val for val in values]
+        end_str = ''.join(values)
+        new_str = start_str + end_str + '\n'
+        return new_str
+
+    def __fix_frd(self):
+        """Fixes the frd file on win32 systems. Text formatting fixed.
+
+        On win32 Calculix, results file formatting is  not written correctly.
+        Nodal results and stresses are not written as fixed length fields.
+        """
+        if 'win32' in environment.CCX:
+            frd_file = self.fname+'.frd'
+            lines = []
+            try:
+                with open(frd_file, "r") as infile:
+                    lines = infile.readlines()
+                numlines = len(lines)
+                ind = 0
+                fix = False
+                fstr = ''
+                while ind < numlines:
+                    line = lines[ind]
+                    if '1PSTEP' in line:
+                        # we are in a results block
+                        ind += 1
+                        line = lines[ind]
+                        format_ = int(line.split()[-1])
+                        if format_ == 0:
+                            fstr = "1X,I2,I5,6E12.5"
+                        elif format_ == 1:
+                            fstr = "1X,I2,I10,6E12.5"
+                        ind += 1
+                        line = lines[ind]
+                        if 'DISPR' in line or 'FORCR' in line:
+                            ind += 5
+                        else:
+                            ind += 7
+                        fix = True
+                        line = lines[ind]
+                    if line[:3] == ' -3':
+                        fix = False
+                    if fix:
+                        lines[ind] = self.__fix_line(line, fstr)
+                    ind += 1
+                with open(frd_file, "w") as outfile:
+                    outfile.writelines(lines)
+                print('File %s had its formatting fixed!' % frd_file)
+            except IOError:
+                print('Error reading .frd file!')
+
     def solve(self):
         """Solves the model in Calculix ccx."""
         inp = []
@@ -198,6 +271,10 @@ class Problem(base_classes.Idobj):
             print('Solving done!')
 
             # select the probem's parts and load the results file
-            if os.path.isfile(fname):
+            frd_file = self.fname+'.frd'
+            if os.path.isfile(frd_file):
                 self.solved = True
+                self.__fix_frd()
                 self.rfile.load()
+            else:
+                print('ERROR: results .frd file was not written!')
