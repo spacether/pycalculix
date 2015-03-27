@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import pycalculix as pyc
 
 model_name = 'import-dxf'
@@ -10,7 +11,6 @@ importer = pyc.CadImporter(model, fname, swapxy=True)
 parts = importer.load()
 model.plot_geometry(model_name+'_imported')
 #parts[0].chunk()
-parts[0].chunk('both', False, [0,0])
 model.plot_geometry(model_name+'_chunked_areas', pnum=False, lnum=False)
 model.plot_geometry(model_name+'_chunked_lines', anum=False, pnum=False)
 model.plot_geometry(model_name+'_chunked_points', anum=False, lnum=False)

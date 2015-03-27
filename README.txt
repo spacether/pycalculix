@@ -164,12 +164,11 @@ TODO:
 Linux: pass a minimum of 3 values to the colorbar as labels, then clear top and bottom
 Fix the Linux distribution to make it work out of the box
     Need to fix the paths to the linux binaries
-Add run line to example files for linux
 Add tutorial videos
 Update pdf
 Improve Pylint Scores:
-    feamodel:       9.17
-    geometry:       8.79
+    feamodel:       9.28
+    geometry:       9.02
     results_file:   9.75 X
     part:           9.64 X
     selector        9.89 X
@@ -180,7 +179,7 @@ Improve Pylint Scores:
     base_classes:   9.51 X
     components:     10.0 X
     material:       10.0 X
-    environment     10.0 X
+    environment     9.39 X
 
 Future Goals:
 -CAD import of: brep, step, iges

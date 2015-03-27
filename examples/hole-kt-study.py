@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import pycalculix as pyc
 import matplotlib.pyplot as plt
 import math
@@ -93,7 +94,7 @@ plt.legend(loc='lower right')
 plt.title('Tension Hole in Plate Stress Concentration Factor, Ktg')
 plt.xlabel('D/h')
 plt.ylabel('Ktg')
-plt.show()
+pyc.base_classes.plot_finish(plt, fname=model_name+'_kts', display=True)
 
 # plot error
 fig, ax = plt.subplots()
@@ -103,4 +104,4 @@ plt.legend(loc='lower right')
 plt.title('Tension Hole in Plate Ktg Error, FEA vs Peterson')
 plt.xlabel('D/h')
 plt.ylabel('Error (%)')
-plt.show()
+pyc.base_classes.plot_finish(plt, fname=model_name+'_error', display=True)

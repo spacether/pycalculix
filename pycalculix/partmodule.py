@@ -657,6 +657,9 @@ class Part(base_classes.Idobj):
             new_prim = geometry.Arc(pnew, pend, line.actr)
         new_sline = self.__make_get_sline(new_prim)[0]
         # insert the new line into existing areas
+        is_line = isinstance(line, geometry.Line) or isinstance(line, geometry.Arc)
+        is_sline = isinstance(line, geometry.SignLine) or isinstance(line, geometry.SignArc)
+        print('Cutting line (is_line, is_sline, signlines) (%s, %s, %i)' % (is_line, is_sline, len(line.signlines)))
         slines = line.signlines
         for sline in slines:
             area = sline.lineloop.parent
@@ -679,6 +682,7 @@ class Part(base_classes.Idobj):
         lpre_end = area.line_from_startpt(end_pt)
         if lpre_start == None or lpre_end == None:
             self.fea.plot_geometry()
+            print(area.exlines)
         istart = area.exlines.index(lpre_start)
         iend = area.exlines.index(lpre_end)
         low = min(istart, iend)
@@ -703,7 +707,8 @@ class Part(base_classes.Idobj):
         # make new area
         cline_rev = self.__make_get_sline(rev)[0]
         alist_other = mid + [cline_rev]
-        anew = self.fea.areas.append(geometry.Area(self, alist_other))
+        anew = geometry.Area(self, alist_other)
+        self.fea.register(anew)
         self.areas.append(anew)
 
         # fix holes
@@ -741,7 +746,7 @@ class Part(base_classes.Idobj):
         fwd = geometry.Line(start_pt, end_pt)
         fwd_sline = self.__make_get_sline(fwd)[0]
         rev_sline = fwd_sline.signed_copy(-1)
-        rev_sline = self.fea.signlines.append(rev_sline)
+        self.fea.register(rev_sline)
         rev_sline.line.add_signline(rev_sline)
         alist_curr = beg + [fwd_sline] + mid + [rev_sline] + end
         area.holes.remove(thehole)

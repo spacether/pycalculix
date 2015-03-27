@@ -53,7 +53,7 @@ class FeaModel(object):
         points (Itemlist): list of all Point
         lines (Itemlist): list of all Line and Arc
         signlines (Itemlist): list of all SignLine and SignArc
-        lineloops (Itemlist): list of all LineLoop, contain SignLine SignArc
+        lineloops (Itemlist): list of all LineLoop, each contains SignLine SignArc
         areas (Itemlist):list of all Area, each contains LineLoop(s)
         parts (Itemlist): list of all Part
         matls (Itemlist): list of all materials
@@ -365,27 +365,28 @@ class FeaModel(object):
         elements = self.view.elements
         if len(elements) > 0:
             # plotting elements
-            fig, ax = plt.subplots()
+            fig = plt.figure()
+            axis = fig.add_subplot(111)
             polys = []
             for element in elements:
                 poly = element.get_poly()
                 polys.append(poly)
             coll = PatchCollection(polys, facecolors=FCOLOR, edgecolors=ECOLOR)
-            ax.add_collection(coll)
+            axis.add_collection(coll)
 
             # plot element numbers
             if enum:
                 for element in elements:
-                    element.label(ax)
+                    element.label(axis)
 
             # plot nodes, this is quicker than individual plotting
             if nshow:
                 axs = [node.y for node in nodes]
                 rads = [node.x for node in nodes]
-                ax.scatter(axs, rads, s=7, color='black')
+                axis.scatter(axs, rads, s=7, color='black')
                 if nnum:
                     for node in nodes:
-                        node.label(ax)
+                        node.label(axis)
 
             # set units
             [d_unit] = self.get_units('dist')
@@ -437,7 +438,7 @@ class FeaModel(object):
         if len(elements) > 0:
             # plotting elements
             fig = plt.figure()
-            ax = fig.add_subplot(111, aspect='equal')
+            axis = fig.add_subplot(111, aspect='equal')
 
             # plot polys and calculate avg face length
             polys = []
@@ -447,7 +448,7 @@ class FeaModel(object):
                 poly = element.get_poly()
                 polys.append(poly)
             coll = PatchCollection(polys, edgecolors=ECOLOR, facecolors=FCOLOR)
-            ax.add_collection(coll)
+            axis.add_collection(coll)
             face_len = sum(face_len)/len(face_len)
 
             # store pressures we'll want to plot: list of [face, pval]
@@ -510,11 +511,12 @@ class FeaModel(object):
                     tail = face_point
                     delta = other_point - face_point
 
-                hw = face_len*0.2
-                hl = face_len*0.3
-                colorVal = scalarmap.to_rgba(abs(pval))
+                headwidth = face_len*0.2
+                headlength = face_len*0.3
+                colorval = scalarmap.to_rgba(abs(pval))
                 plt.arrow(tail.y, tail.x, delta.y, delta.x,
-                          color=colorVal, head_width=hw, head_length=hl,
+                          color=colorval,
+                          head_width=headwidth, head_length=headlength,
                           length_includes_head=True)
 
             # set the horizontal and vertical axes
@@ -557,7 +559,7 @@ class FeaModel(object):
         if len(elements) > 0:
             # plotting elements
             fig = plt.figure()
-            ax = fig.add_subplot(111, aspect='equal')
+            axis = fig.add_subplot(111, aspect='equal')
 
             # plot polys and calculate avg face length
             polys = []
@@ -567,7 +569,7 @@ class FeaModel(object):
                 poly = element.get_poly()
                 polys.append(poly)
             coll = PatchCollection(polys, edgecolors=ECOLOR, facecolors=FCOLOR)
-            ax.add_collection(coll)
+            axis.add_collection(coll)
             face_len = sum(face_len)/len(face_len)
 
             # store displacements we'll plot: list of [node, dict ux,uy,uz]
@@ -847,7 +849,8 @@ class FeaModel(object):
 
         self.plot_multiple(fname, display, title, styledict)
 
-    def __get_cname(self, items):
+    @staticmethod
+    def __get_cname(items):
         """Returns a component name prefix, for labeling lists of items.
 
         Args:
@@ -1479,7 +1482,7 @@ class FeaModel(object):
             ids['line'][lnum] = ind
             pt1 = line.pt(0).id
             pt2 = line.pt(1).id
-            linestr = ''
+            txtline = ''
             if isinstance(line, geometry.Arc):
                 ctr = line.actr.id
                 txtline = 'Circle(%i) = {%i, %i, %i};' % (ind, pt1, ctr, pt2)
@@ -1640,8 +1643,8 @@ class FeaModel(object):
         emult = int(round(num)) # this converts fineness to mesh multiplier
 
         # write all points
-        for pt in self.points:
-            linestr = 'pnt %s %f %f %f' % (pt.get_name(), pt.x, pt.y, 0.0)
+        for point in self.points:
+            linestr = 'pnt %s %f %f %f' % (point.get_name(), point.x, point.y, 0.0)
             fbd.append(linestr)
             # gmsh can't make node componenets so don't do it in cgx
             #L = 'seta %s p %s' % (pt.get_name(), pt.get_name())

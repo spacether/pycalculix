@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import pycalculix as pyc
 
 # Vertical hole in plate model, make model

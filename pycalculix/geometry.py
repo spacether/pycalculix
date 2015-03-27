@@ -1048,7 +1048,7 @@ class Arc(base_classes.Idobj):
         if self.concavity == 'concave':
             resv = self.actr - point
         elif self.concavity == 'convex':
-            resv = point - self.actr            
+            resv = point - self.actr
         if point == self.pt(0):
             resv.rot_ccw_deg(-90)
         else:
@@ -1393,6 +1393,8 @@ class LineLoop(list):
         for item in self:
             if isinstance(item, SignLine) or isinstance(item, SignArc):
                 item.lineloop = self
+                if item not in item.line.signlines:
+                    item.line.add_signline(item)
         self.hole = hole_bool
         self.parent = parent
 
@@ -1531,6 +1533,10 @@ class LineLoop(list):
             line.reverse()
         super().reverse()
 
+    def set_parent(self, parent):
+        """Sets the line loop's parent part."""
+        self.parent = parent
+
     def get_patch(self):
         """Returns a patch of the LineLoop, or None of not closed."""
         if self.closed:
@@ -1602,25 +1608,26 @@ class LineLoop(list):
         return item
 
     def remove(self, item):
-        """Removes an item from this LineLoop
+        """Removes an SignLine or SignArc item from this LineLoop
 
         Args:
-          item (SingArc or SignLine): item to remove
+          item (SignArc or SignLine): item to remove
         """
         if isinstance(item, SignLine) or isinstance(item, SignArc):
-            if item in item.line.signlines:
-                item.line.signlines.remove(item)
-            else:
+            item.set_lineloop(None)
+            if item not in item.line.signlines:
+                print('''===THIS SLINE NOT IN SLINE.LINE.SIGNLINES!===''')
                 print('Removing sline %s from loop in area %s'
                       % (item.get_name(), self.parent.get_name()))
-                print('''===THIS SLINE NOT IN SLINE.LINE.SIGNLINES!===''')
+                print('SLINE.LINE %s' % item.line)
+                print('SLINE.LINE.SIGNLINES %r' % item.line.signlines)
         super().remove(item)
 
     def insert(self, index, item):
-        """Removes an item from this LineLoop
+        """Inserts a SignLine or SignArc item into this LineLoop
 
         Args:
-          item (SingArc or SignLine): item to remove
+          item (SingArc or SignLine): item to insert
         """
         if isinstance(item, SignLine) or isinstance(item, SignArc):
             item.set_lineloop(self)
@@ -1676,7 +1683,7 @@ class Area(base_classes.Idobj):
         self.nodes = []
         self.elements = []
         exloop = LineLoop(line_list, False, self)
-        exloop = self.part.fea.lineloops.append(exloop)
+        self.part.fea.register(exloop)
         self.exlines = exloop
         if self.exlines.closed == True:
             self.close()
@@ -1753,9 +1760,10 @@ class Area(base_classes.Idobj):
             pt (Point): the start point of the line one wants
 
         Returns:
-            match (None or SignLine or SignArc): Returns None if no line is found
-                , otherwise the correct line or arc which starts with pt will be
-                returned.
+            match (None or SignLine or SignArc):
+            |  Returns None if no line is found, otherwise the correct line or
+            |  arc which starts with pt will be
+            |  returned.
         """
         # returns the line that starts on the given point
         matches = []
@@ -1816,8 +1824,8 @@ class Area(base_classes.Idobj):
         loops = [self.exlines] + self.holes
         for loop in loops:
             if sline in loop:
-                print ('Line %s removed from %s'
-                       % (sline.get_name(), self.get_name()))
+                print('Line %s removed from %s'
+                      % (sline.get_name(), self.get_name()))
                 loop.remove(sline)
         if sline.id != -1:
             line = sline.line

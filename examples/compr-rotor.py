@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# above line needed to run the file in linux
-
 import pycalculix as pyc
 import matplotlib.pyplot as plt
 import math

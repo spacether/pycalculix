@@ -15,6 +15,7 @@ import ctypes # needed to see if it's 32-bit and to get correct win version
 
 # http://stackoverflow.com/questions/19128219/detect-windows-8-1-in-python/22325767#22325767
 class OSVERSIONINFOEXW(ctypes.Structure):
+    """Returns object w/ attributes that will identify window os version"""
     _fields_ = [('dwOSVersionInfoSize', ctypes.c_ulong),
                 ('dwMajorVersion', ctypes.c_ulong),
                 ('dwMinorVersion', ctypes.c_ulong),
@@ -28,8 +29,7 @@ class OSVERSIONINFOEXW(ctypes.Structure):
                 ('wReserved', ctypes.c_byte)]
 
 def get_version():
-    """
-    Get's the OS major.minor version. Returns a float of OS_MAJOR.OS_MINOR
+    """Get's the OS version. Returns a float of OS_MAJOR.OS_MINOR
     """
     os_version = OSVERSIONINFOEXW()
     os_version.dwOSVersionInfoSize = ctypes.sizeof(os_version)
@@ -78,9 +78,9 @@ def get_paths():
         gmsh = os.path.join(mydir, 'gmsh_win32', 'gmsh.exe')
     elif platform.system() == 'Linux':
         mysys = 'linux'+bits
-        ccx = 'ccx'
+        ccx = os.path.join(mydir, 'calculix_'+mysys, 'ccx')
         cgx = os.path.join(mydir, 'calculix_'+mysys, 'cgx')
-        gmsh = 'gmsh'
+        gmsh = os.path.join(mydir, 'gmsh_linux32', 'gmsh')
     return [ccx, cgx, gmsh]
 
 DPI = get_dpi()

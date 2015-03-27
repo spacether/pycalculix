@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import pycalculix as pyc
 
 model_name = 'rounded-square'
@@ -12,10 +13,11 @@ axial = 10
 
 part = pyc.Part(model)
 part.goto(radius_inner, axial)
-part.draw_line_rad(thickness*0.5)
-part.draw_line_rad(thickness*0.5)
+part.draw_line_rad(thickness*0.6)
+part.draw_line_to(radius_inner+thickness, axial)
 line_1 = part.draw_line_ax(length)[0]
 line_2 = part.draw_line_rad(-thickness)[0]
+part.draw_line_ax(-length*0.5)
 part.draw_line_to(radius_inner, axial)
 part.fillet_lines(line_1, line_2, radius)
 
