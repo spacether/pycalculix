@@ -78,20 +78,29 @@ class Component(base_classes.Idobj):
         items_per_line = 6
         firstline = ''
         if self.ctype == 'nodes':
-            # node componenet
+            # node component, displacement
             firstline = '*NSET,NSET='+self.name
         elif self.ctype == 'elements':
-            # element componet
+            # element component, materials
             firstline = '*ELSET,ELSET='+self.name
+        elif self.ctype == 'faces':
+            # face component, contact surface
+            firstline = '*SURFACE,NAME=%s,TYPE=ELEMENT' % self.name            
         res.append(firstline)
         items = self.get_children()
-        grouped_items = base_classes.chunk_list(items, items_per_line)
-        for group in grouped_items:
-            item_ids = [str(x.id) for x in group]
-            line = ', '.join(item_ids)
-            if group != grouped_items[-1]:
-                line += ','
-            res.append(line)
+        if self.ctype == 'faces':
+            for face in items:
+                enum = face.element.id
+                fnum = face.id
+                res.append("%i,S%i" % (enum, fnum))
+        elif self.ctype in ['nodes', 'elements']:
+            grouped_items = base_classes.chunk_list(items, items_per_line)
+            for group in grouped_items:
+                item_ids = [str(x.id) for x in group]
+                line = ', '.join(item_ids)
+                if group != grouped_items[-1]:
+                    line += ','
+                res.append(line)
         return res
 
     def write_cgx(self):

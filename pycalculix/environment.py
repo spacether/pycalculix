@@ -77,10 +77,11 @@ def get_paths():
         cgx = os.path.join(mydir, 'calculix_'+mysys, 'cgx.exe')
         gmsh = os.path.join(mydir, 'gmsh_win32', 'gmsh.exe')
     elif platform.system() == 'Linux':
-        mysys = 'linux'+bits
-        ccx = os.path.join(mydir, 'calculix_'+mysys, 'ccx')
-        cgx = os.path.join(mydir, 'calculix_'+mysys, 'cgx')
-        gmsh = os.path.join(mydir, 'gmsh_linux32', 'gmsh')
+        #mysys = 'linux'+bits
+        # assume that the user has the programs installed separately
+        ccx = 'ccx'
+        cgx = 'cgx'
+        gmsh = 'gmsh'
     return [ccx, cgx, gmsh]
 
 DPI = get_dpi()

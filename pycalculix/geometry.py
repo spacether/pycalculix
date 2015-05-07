@@ -383,13 +383,14 @@ class Line(base_classes.Idobj):
         self.save_to_points()
         other_point = self.pt(int(not ind))
         if point == other_point:
+            # we are making a zero length line
             other_point.lines.remove(self)
-            for sline in self.signlines:
-                sline.lineloop.remove(sline)
             if self.id != -1:
                 if len(self.signlines) > 0:
                     area = self.signlines[0].lineloop.parent
                     area.part.fea.lines.remove(self)
+            for sline in self.signlines:
+                sline.lineloop.remove(sline)
 
     def mid(self):
         """Calculates and returns a midpoint between start and end points."""

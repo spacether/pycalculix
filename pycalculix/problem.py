@@ -215,6 +215,9 @@ class Problem(base_classes.Idobj):
                 for load in load_dict[time]:
                     if load.ltype not in ['press', 'press_fluid']:
                         box['components'].add(load.comp)
+            for contact in self.fea.contacts:
+                box['components'].add(contact.master_comp)
+                box['components'].add(contact.slave_comp)
 
             box['nodes'] = self.__get_ntxt(box['nodes'])
             box['elements'] = self.__get_etxt(box['elements'])
@@ -235,6 +238,10 @@ class Problem(base_classes.Idobj):
                     # this is for thicknesses and materials
                     for load in load_dict[time]:
                         inp += load.ccx()
+                    for surf_interaction in self.fea.surfints:
+                        inp += surf_interaction.ccx()
+                    for contact in self.fea.contacts:
+                        inp += contact.ccx()                        
                 else:
                     # only write times >= 1
                     inp.append('*STEP')

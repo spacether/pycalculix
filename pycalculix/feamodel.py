@@ -18,6 +18,7 @@ from . import base_classes
 from . import geometry
 from . import material
 from . import components
+from . import connectors
 from . import loads
 from . import mesh
 from . import partmodule
@@ -122,6 +123,8 @@ class FeaModel(object):
         self.matls = base_classes.Itemlist()
         self.components = base_classes.Itemlist()
         self.loads = {}    # store loads by time
+        self.contacts = base_classes.Itemlist()
+        self.surfints = base_classes.Itemlist()
         self.problems = base_classes.Itemlist()
         self.nodes = base_classes.Meshlist()
         self.elements = base_classes.Meshlist()
@@ -483,12 +486,19 @@ class FeaModel(object):
                 mult = dist/(pmax - pmin)
 
             # make tick list for later plot, and color map
-            tick_list = [pmin]  # default to plot one val
-            cmap = colors.ListedColormap(['b', 'b']) # default to plot one val
+            cbar_val = None
+            tick_list = []
+            cmap = None
             if pmax != pmin:
                 # we have a range of values we're plotting
                 tick_list = linspace(pmin, pmax, 8)
                 cmap = plt.get_cmap(CMAP)
+            else:
+                cbar_val = pmin
+                pmax = pmin + 1.0
+                pmin = pmin - 1.0
+                tick_list = [pmin, cbar_val, pmax]  # default 3 values to plot one solid color
+                cmap = colors.ListedColormap(['b', 'b']) # default to plot one val
 
             # set color contours for arrows
             cnorm = colors.Normalize(vmin=pmin, vmax=pmax)
@@ -530,7 +540,10 @@ class FeaModel(object):
             plt.ylabel('radial, x'+d_unit)
 
             # set the colorbar
-            plt.colorbar(scalarmap, orientation='vertical', ticks=tick_list)
+            cbar = plt.colorbar(scalarmap, orientation='vertical',
+                                ticks=tick_list)
+            if cbar_val != None:
+                cbar.ax.set_yticklabels(['',str(cbar_val),''])
             base_classes.plot_finish(plt, fname, display)
 
         else:
@@ -589,12 +602,19 @@ class FeaModel(object):
             pmax = max(vals)
 
             # make tick list for later plot, and color map
-            tick_list = [pmin]  # default to plot one val
-            cmap = colors.ListedColormap(['b', 'b']) # default to plot one val
+            cbar_val = None
+            tick_list = []
+            cmap = None
             if pmax != pmin:
                 # we have a range of values we're plotting
                 tick_list = linspace(pmin, pmax, 8)
                 cmap = plt.get_cmap(CMAP)
+            else:
+                cbar_val = pmin
+                pmax = pmin + 1.0
+                pmin = pmin - 1.0
+                tick_list = [pmin, cbar_val, pmax]  # default 3 values to plot one solid color
+                cmap = colors.ListedColormap(['b', 'b']) # default to plot one val
 
             # set color contours for arrows
             cnorm = colors.Normalize(vmin=pmin, vmax=pmax)
@@ -649,7 +669,10 @@ class FeaModel(object):
             plt.ylabel('radial, x'+d_unit)
 
             # set the colorbar
-            plt.colorbar(scalarmap, orientation='vertical', ticks=tick_list)
+            cbar = plt.colorbar(scalarmap, orientation='vertical',
+                                ticks=tick_list)
+            if cbar_val != None:
+                cbar.ax.set_yticklabels(['',str(cbar_val),''])
             base_classes.plot_finish(plt, fname, display)
 
         else:
@@ -1163,6 +1186,33 @@ class FeaModel(object):
         load = loads.ConstLoad(ltype, comp, val)
         self.__add_load(load, self.time)
         return load
+
+    def set_contact_linear(self, master_lines, slave_lines, kval):
+        """Sets contact between master and slave lines.
+        
+        Args:
+            master_lines (list): list of SignLine or SignArc
+            slave_lines (list): list of SignLine or SignArc
+        """
+
+        master_items = self.get_items(master_lines)
+        master_cname = self.__get_cname(master_items)
+        ctype = 'faces'
+        master_comp = components.Component(master_items, ctype, master_cname)
+        master_comp = self.__get_make_comp(master_comp)
+
+        slave_items = self.get_items(slave_lines)
+        slave_cname = self.__get_cname(slave_items)
+        ctype = 'faces'
+        slave_comp = components.Component(slave_items, ctype, slave_cname)
+        slave_comp = self.__get_make_comp(slave_comp)
+        
+        surf_int = connectors.SurfaceInteraction('LINEAR', kval)
+        self.surfints.append(surf_int)
+        
+        cont = connectors.Contact(master_comp, slave_comp, surf_int, True)
+        self.contacts.append(cont)
+
 
     def set_eshape(self, eshape='quad', eorder=2):
         """Sets the element shape and order to use when meshing the model.

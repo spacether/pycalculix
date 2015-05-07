@@ -5,27 +5,33 @@ Website: http://justinablack.com/pycalculix/
 Source Code: https://github.com/spacether/pycalculix
 Documentation: http://spacether.github.io/pycalculix/pycalculix.html
 
+
 Usefull applications of Pycalculix:
 -Trade studies for plane stress, plane strain, or axisymmetric parts
 -Quick Kt analysis of 2D geometry
 -Learning finite element analyis (FEA) and Python
+
 
 Folder layout:
 The folders of this project are laid out to allow me to distribute it on pypi.
 Pypi link: https://pypi.python.org/pypi/pycalculix
 Note: the main body of pycalculix code is in pycalculix/feamodel.py module
 
+
 Notes, Cutting Areas:
 I built a chunker in python which tries to cut big areas (> 5 sides) which
 cgx can't mesh into smaller areas (<= 5 sides) which are meshable in cgx.
 The chunker may not always be able to cut areas correctly.
 
+
 License:
 See LICENSE.txt (GPL v2)
+
 
 Creator:
 Justin Black, justin.a.black[at-sign]gmail[dot]com
 Initial Release: December 2014
+
 
 Elements Supported:
 Axisymmetric, plane stress, and plane strain elements are supported.
@@ -35,12 +41,14 @@ First and second order triangles and quadrilaterals are supported.
 Second order elements produce more accurate results
 Setting element divisions on lines is supported
 
+
 Geometry Building:
 One can build separate parts made of points, lines, arcs, and areas.
 Straight lines and arcs are currently supported.
 One can draw a part made of straight lines, then smooth out corners by adding
 arcs with the part method: part.fillet_lines(L1, L2, arc_radius)
 The new arc will be tangent to both adjacent lines.
+
 
 Loading:
 Force loading
@@ -52,13 +60,32 @@ Displacement constraints
 Loads are stored on geometry primitives (points lines, areas) and can be
 applied before or after meshing.
 
+
 Getting Started:
-Please read through the below files in the examples folder:
-example1_dam.py
-example2_hole_in_plate.py
-example3_compr_rotor.py
-example4_hole_kt.py
-example5_times_dam.py
+1) To run a pycalcuix file you have to have pycalulix installed,
+see Installation below
+2) The you can then write your own pycalculix programs or run one of the example
+files in the eamples folder on github:
+https://github.com/spacether/pycalculix/tree/master/examples
+3) To run a file:
+WINDOWS:
+Graphical user interface:
+  Double click the file: if the .py extension is associated correctly you can
+  double click it to run the .py program
+Console:
+  1) cd into the directory with your .py file in it
+  2) type:
+  python the_program.py
+  where the_program.py is the name of the file that you are running
+  This assumes that python3 is your active python installation
+
+LINUX:
+Console:
+  1) cd into the directory with your .py file in it
+  2) type:
+  python3 the_program.py
+  where the_program.py is the name of the file that you are running
+
 
 Files Produced:
 Meshing and solving are done in the background using cgx or gmsh for meshing,
@@ -72,6 +99,7 @@ Files Used:
        by interpolating element integration point results back to the nodes)
 *.dat (Calculix ccx element results file, includes integration point results)
 
+
 Installation:
 pycalculix requires the below software:
   Python3+
@@ -80,15 +108,60 @@ pycalculix requires the below software:
   Calculix (solving)
   Gmsh (meshing)
 
-Easiest Installation:
-Install python 3+, then type
+EASIEST INSTALLATION:
+
+WINDOWS:
+1) Install Anaconda* python 3.4:
+http://continuum.io/downloads#py34  
+This includes required libraries like numpy and matplotlib.
+Note:
+64-bit:
+    This is an easier option for 64 bit systems because the binaries of the
+    other libraries are harder to find.
+32-bit:
+    *Rather than installing anaconda you can just install python 3+ from the
+    python site:
+    https://www.python.org/downloads/release/python-343/
+    When you install pycalculix in the next step below, the required libraries
+    will autoinstall on your system.
+
+2) In a console window, type:
 pip install pycalculix
 Note: This installs the calculix and gmsh programs in sub-folders in the python
-      pycalculix folder.
-      Running these included binaries from pycalculix only works for windows.
-        Linux machines will need libraries to be installed for calculix to work.
-	They would also need the programs to be chmoded so they could be run as
-	executables.      
+    pycalculix folder.
+    Running these included binaries from pycalculix only works for windows.
+
+3) You are done! See 'Getting Started'
+
+LINUX
+(assumes Ubuntu 14.04)
+
+1) Install required prerequsisites. In the console enter:
+sudo apt-get install python3-pip python3-matplotlib gmsh
+Note: this installs
+    pip (a python library downloader) for python 3
+    python3 matplotlib (the required matplotlib library needed for plotting)
+    gmsh (software needed to mesh you FEA models)
+
+2) Install both calculix ccx and calculix cgx for your architecture (32 or 64 bit)
+Ubuntu 14.04.1 (Trusty)
+--------
+32-bit:
+--------
+ccx: https://code.launchpad.net/~cae-team/+archive/ubuntu/ppa/+build/7043228/+files/calculix-ccx_2.7-0%7E1%2B6%7Eubuntu14.04.1_i386.deb
+cgx: https://code.launchpad.net/~cae-team/+archive/ubuntu/ppa/+build/7043230/+files/calculix-cgx_2.7-0%7E1%2B3%7Eubuntu14.10.1_i386.deb
+
+--------
+64-bit:
+--------
+ccx: https://code.launchpad.net/~cae-team/+archive/ubuntu/ppa/+build/7043227/+files/calculix-ccx_2.7-0%7E1%2B6%7Eubuntu14.04.1_amd64.deb
+cgx: https://code.launchpad.net/~cae-team/+archive/ubuntu/ppa/+build/7043229/+files/calculix-cgx_2.7-0%7E1%2B3%7Eubuntu14.10.1_amd64.deb
+
+3) In the console window type:
+pip3 install pycalculix
+
+4) You are done! See 'Getting Started'
+
 
 Separate Installs:
 Install Python 3+: https://www.python.org/downloads/release/python-342/
@@ -106,7 +179,7 @@ Anaconda:
 	An installation package that includes Python and many python libraries
 	Anaconda includes the below Python3+, Numpy, and Matplotlib.
 	If you are a Python beginner, I suggest downloading and installing it
-	rather than the below separate installers.
+	rather than the separate installers.
 	Url:
 	http://continuum.io/downloads#py34	
 
@@ -161,9 +234,6 @@ Version Updates:
             Many methods and variables made private to clean up name space.
 
 TODO:
-Linux: pass a minimum of 3 values to the colorbar as labels, then clear top and bottom
-Fix the Linux distribution to make it work out of the box
-    Need to fix the paths to the linux binaries
 Add tutorial videos
 Update pdf
 Improve Pylint Scores:
@@ -206,6 +276,13 @@ Future Goals:
 -Add part offset function to offset a line and close an area
 -Add contact between parts
 -Add compression supports
+    model.make_compr_support('L5', 10)
+        make new part with new line loop, not closed, new line
+        set ndivs on both lines (only needed if before meshing)
+        make connector object
+            pre mesh: make gap elements after meshing
+            post mesh: clone the existing nodes with new node numbers, make gap eles
+
 -Reaction force fix?
 -Coupling nodes under points and lines ("gluing")
     This would allow 'correct' stresses for knock up at discontinuities
@@ -216,3 +293,5 @@ Future Goals:
 -Bolted joint example perhaps, nodal thickness on bolt and nut areas
 -Interactive selection?
 -Face plotting?
+-Aluminum can model?
+    -https://www.youtube.com/watch?v=hUhisi2FBuw

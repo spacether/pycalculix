@@ -9,6 +9,7 @@ Submodules
    pycalculix.base_classes
    pycalculix.cadimporter
    pycalculix.components
+   pycalculix.connectors
    pycalculix.environment
    pycalculix.feamodel
    pycalculix.geometry

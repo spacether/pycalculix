@@ -561,7 +561,7 @@ class ResultsFile(object):
 
                 - None: uses the current time
                 - float: uses the passed float time
-        Retruns:
+        Returns:
             res (float or None): float value if field exists, None otherwise
         """
         items = self.__problem.fea.get_item(node)
@@ -592,7 +592,7 @@ class ResultsFile(object):
         Reports results for the current time.
 
         Args:
-            item (Point or Line): item that has reaction forces on its nodes
+            item (Point or SignLine): item that has reaction forces on its nodes
 
         Returns:
             list: [fx, fy, fz] reaction forces in each axis, force units
@@ -692,7 +692,7 @@ class ResultsFile(object):
                 - 'avg': integration points averaged to avg element result
                 - 'max': max value of field in the integration points plotted
                 - 'min': min value of field in the integration points plotted
-        Retruns:
+        Returns:
             res (float or None): float value if field exists, None otherwise
         """
         items = self.__problem.fea.get_item(element)
