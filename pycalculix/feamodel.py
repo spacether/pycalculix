@@ -1330,6 +1330,8 @@ class FeaModel(object):
         F = [] # store faces
         sets = {'E':{}, 'N':{}} # store sets
         etype = ''
+        Dict_NodeIDs={}
+        Dict_ElemIDs={}
 
         # read in input file
         for line in f:
@@ -1340,6 +1342,7 @@ class FeaModel(object):
                     (nnum, x, y, z) = (int(L[0]), float(L[1]), float(L[2]), float(L[3]))
                     node = mesh.Node(nnum, x, y, z)
                     N.append(node)
+                    Dict_NodeIDs[nnum]=node
                 elif mode == 'emake':
                     L = line.split(',')
                     L = [int(a.strip()) for a in L]
@@ -1348,6 +1351,7 @@ class FeaModel(object):
                     e = mesh.Element(enum, etype, nlist)
                     faces = e.faces
                     E.append(e)
+                    Dict_ElemIDs[enum]=e
                     F += faces
                     sets[set_type][set_name].append(e)
                 elif mode == 'set':
@@ -1356,9 +1360,9 @@ class FeaModel(object):
                     L = [int(a) for a in L if a != '']
                     items = []
                     if set_type == 'E':
-                        items = [E.idget(a) for a in L]
+                        items = [Dict_ElemIDs[a] for a in L if a in Dict_ElemIDs.keys()]
                     elif set_type == 'N':
-                        items = [N.idget(a) for a in L]
+                        items = [Dict_NodeIDs[a] for a in L]
                     if items == [None]*len(items):
                         pass # the elements were not found
                     else:
