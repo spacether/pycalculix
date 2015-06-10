@@ -237,19 +237,20 @@ TODO:
 Add tutorial videos
 Update pdf
 Improve Pylint Scores:
-    feamodel:       9.28
-    geometry:       9.02
-    results_file:   9.75 X
-    part:           9.64 X
-    selector        9.89 X
-    mesh:           9.66 X
-    loads:          9.80 X
-    cadimporter     9.71 X
-    problem:        9.82 X
-    base_classes:   9.51 X
-    components:     10.0 X
-    material:       10.0 X
-    environment     9.39 X
+    feamodel        9.28
+    geometry        9.02
+    results_file    9.75
+    part            9.64
+    selector        9.89
+    mesh            9.66
+    loads           9.80
+    cadimporter     9.71
+    problem         9.82
+    base_classes    9.51
+    components      10.0
+    material        10.0
+    environment     9.39
+    connectors      9.57
 
 Future Goals:
 -CAD import of: brep, step, iges

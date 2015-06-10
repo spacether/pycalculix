@@ -2,7 +2,7 @@
 import pycalculix as pyc
 
 # Model of a pinned plate with 3 pins
-# one wil be force, the other will be fixity
+# one will be force, the others will be fixed
 proj_name = 'pinned-plate'
 model = pyc.FeaModel(proj_name)
 model.set_units('in')
@@ -12,7 +12,7 @@ pin1 = [0, 0]
 pin2 = [pin1[0], 4]
 pin3 = [4, 8]
 
-# dimentions for drawing parts
+# dimensions for drawing parts
 pinhole_rad = 0.25
 pin_rad = pinhole_rad - .015
 width_plate = 1
@@ -91,7 +91,7 @@ model.set_matl(mat, part)
 factor = 5 # can be between 5 and 50
 kval = youngs*factor
 for (pin, hole) in zip(pins, holes):
-    model.set_contact_linear(pin, hole, kval)
+    model.set_contact_linear(pin, hole, kval, True)
 
 # mesh the model
 model.set_eshape('tri', 2)
@@ -110,4 +110,10 @@ fields = 'Sx,Sy,S1,S2,S3,Seqv,ux,uy,utot'    # store the fields to plot
 fields = fields.split(',')
 for field in fields:
     fname = proj_name+'_'+field
+    prob.rfile.nplot(field, fname, display=False)
+
+model.view.select(part)
+model.view.allsel_under('parts')
+for field in fields:
+    fname = proj_name+'_PART_'+field
     prob.rfile.nplot(field, fname, display=False)

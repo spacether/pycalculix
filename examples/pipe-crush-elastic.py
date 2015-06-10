@@ -11,7 +11,9 @@ rad_outer = 0.1143 # pipe outer radius
 pipe_wall_th = .00887 # wall thickness
 rad_inner = rad_outer - pipe_wall_th
 pipe_length = 10*rad_outer
-e_size = pipe_wall_th/4.0
+wall_elements = 4.0
+e_size = pipe_wall_th/wall_elements
+disp = False
 
 # Draw pipe, x, y = radial, axial
 pipe = pyc.Part(model)
@@ -34,10 +36,10 @@ plate_bottom = plate.draw_line_to(rad_outer, 0.0)[0]
 num_plate_eles = int(round(plate_bottom.length()/e_size,0))
 
 # view model
-model.plot_geometry(proj_name+'_geometry')
-model.plot_parts(proj_name+'_parts')
-model.plot_areas(proj_name+'_areas')
-model.plot_lines(proj_name+'_lines')
+model.plot_geometry(proj_name+'_geometry', display=disp)
+model.plot_parts(proj_name+'_parts', display=disp)
+model.plot_areas(proj_name+'_areas', display=disp)
+model.plot_lines(proj_name+'_lines', display=disp)
 
 # set loads and constraints
 model.set_constr('fix',pipe.left,'y')
@@ -63,12 +65,12 @@ model.set_contact_linear(plate_bottom, arc_outer, kval)
 model.set_eshape('quad', 2)
 model.set_etype('plstrain', pipe, pipe_length)
 model.set_etype('plstrain', plate, pipe_length)
-model.set_ediv(['L1','L3', 'L4', 'L6'], 4) # set element divisions
+model.set_ediv(['L1','L3', 'L4', 'L6'], wall_elements) # set element divisions
 model.set_ediv(['L0','L2'], num_arc_eles) # set element divisions
 model.set_ediv(['L5','L7'], num_plate_eles)
 model.mesh(1.0, 'gmsh') # mesh 1.0 fineness, smaller is finer
-model.plot_elements(proj_name+'_elem')   # plot part elements
-model.plot_constraints(proj_name+'_constr')
+model.plot_elements(proj_name+'_elem', display=disp)   # plot part elements
+model.plot_constraints(proj_name+'_constr', display=disp)
 
 # make and solve the model
 prob = pyc.Problem(model, 'struct')
@@ -79,4 +81,11 @@ fields = 'Sx,Sy,S1,S2,S3,Seqv,ux,uy,utot'    # store the fields to plot
 fields = fields.split(',')
 for field in fields:
     fname = proj_name+'_'+field
-    prob.rfile.nplot(field, fname, display=False)
+    prob.rfile.nplot(field, fname, display=disp)
+
+model.view.select(pipe)
+model.view.allsel_under('parts')
+
+for field in fields:
+    fname = proj_name+'_PIPE_'+field
+    prob.rfile.nplot(field, fname, display=disp)

@@ -67,6 +67,8 @@ class FeaModel(object):
             | Time = 0.0 stores constant loads, such as:
             |    material, thickness
 
+        contacts (Itemlist): list of contacts
+        surfints (Itemlist): list of surface interactions
         problems (Itemlist): list of problems
         nodes (Meshlist): list of all mesh nodes
         eshape (str): element shape
@@ -351,6 +353,54 @@ class FeaModel(object):
             print(' %s: %i' % (name, len(items)))
         print(spacer)
 
+    def plot_nodes(self, fname='', display=True, title='Nodes', nnum=False):
+        """Plots the selected nodes.
+
+        Args:
+            fname (str): png image file prefix, if given, image will be saved
+            display (bool): if True, interactive plot will be shown, if False
+                plot will not be shown
+            title (str): the plot's title
+            nnum (bool): if True node numbers are plotted
+        """
+        nodes = self.view.nodes
+        if len(nodes) > 0:
+            # plotting elements
+            fig = plt.figure()
+            axis = fig.add_subplot(111)
+
+            # plot nodes, this is quicker than individual plotting
+            axs = [node.y for node in nodes]
+            rads = [node.x for node in nodes]
+            axis.scatter(axs, rads, s=7, color='black')
+            if nnum:
+                for node in nodes:
+                    node.label(axis)
+
+            # set units
+            [d_unit] = self.get_units('dist')
+            plt.title(title)
+            plt.xlabel('axial, y'+d_unit)
+            plt.ylabel('radial, x'+d_unit)
+            plt.axis('scaled')
+
+            # extract max and min for plot window
+            radials = [n.x for n in nodes]
+            axials = [n.y for n in nodes]
+
+            # finish pot
+            base_classes.plot_set_bounds(plt, axials, radials)
+            base_classes.plot_finish(plt, fname, display)
+
+        else:
+            # no elements exist or no elemnts are selected
+            res = ''
+            if len(self.nodes) == 0:
+                res = 'No nodes exist! Try meshing your parts!'
+            else:
+                res = 'No nodes are selected! Select some!'
+            print(res)
+
     def plot_elements(self, fname='', display=True, title='Elements',
                       enum=False, nshow=False, nnum=False):
         """Plots the selected elements.
@@ -543,7 +593,7 @@ class FeaModel(object):
             cbar = plt.colorbar(scalarmap, orientation='vertical',
                                 ticks=tick_list)
             if cbar_val != None:
-                cbar.ax.set_yticklabels(['',str(cbar_val),''])
+                cbar.ax.set_yticklabels(['', str(cbar_val), ''])
             base_classes.plot_finish(plt, fname, display)
 
         else:
@@ -672,7 +722,7 @@ class FeaModel(object):
             cbar = plt.colorbar(scalarmap, orientation='vertical',
                                 ticks=tick_list)
             if cbar_val != None:
-                cbar.ax.set_yticklabels(['',str(cbar_val),''])
+                cbar.ax.set_yticklabels(['', str(cbar_val), ''])
             base_classes.plot_finish(plt, fname, display)
 
         else:
@@ -901,6 +951,24 @@ class FeaModel(object):
             ind = self.components.index(comp)
             comp = self.components[ind]
         return comp
+
+    def __get_make_surfint(self, surfint):
+        """Stores surfac interaction if it doesn't exist, returns it if it does.
+
+        Args:
+            surfint (connectors.SurfaceInteraction): item to get or make
+        """
+        items = [item for item in self.surfints if item.int_type == surfint.int_type]
+        if surfint.int_type == 'LINEAR':
+            for item in items:
+                if item.k == surfint.k:
+                    return item
+        elif surfint.type == 'EXPONENTIAL':
+            for item in items:
+                if item.c0 == surfint.c0 and item.p0 == surfint.p0:
+                    return item
+        surfint = self.surfints.append(surfint)
+        return surfint
 
     def register(self, item):
         """Adds an item to the feamodel.
@@ -1187,12 +1255,18 @@ class FeaModel(object):
         self.__add_load(load, self.time)
         return load
 
-    def set_contact_linear(self, master_lines, slave_lines, kval):
+    def set_contact_linear(self, master_lines, slave_lines, kval, many_si=False):
         """Sets contact between master and slave lines.
-        
+
+        Slave lines are on the more compliant or more curved object.
+
         Args:
             master_lines (list): list of SignLine or SignArc
             slave_lines (list): list of SignLine or SignArc
+            kval (float): stiffness, 5 to 50 times the youngs modulus
+                of the touching matl
+            many_si (bool): True, make unique surface interaction for every contact
+                False, use existing surface interaction if we can
         """
 
         master_items = self.get_items(master_lines)
@@ -1206,10 +1280,13 @@ class FeaModel(object):
         ctype = 'faces'
         slave_comp = components.Component(slave_items, ctype, slave_cname)
         slave_comp = self.__get_make_comp(slave_comp)
-        
+
         surf_int = connectors.SurfaceInteraction('LINEAR', kval)
-        self.surfints.append(surf_int)
-        
+        if many_si:
+            surf_int = self.surfints.append(surf_int)
+        else:
+            surf_int = self.__get_make_surfint(surf_int)
+
         cont = connectors.Contact(master_comp, slave_comp, surf_int, True)
         self.contacts.append(cont)
 
@@ -1421,7 +1498,7 @@ class FeaModel(object):
         self.elements = E
         self.faces = F
 
-        # remove arc center ndoes from imported node set
+        # remove arc center nodes from imported node set
         # those nodes have no elements under them
         torem = []
         for node in N:
