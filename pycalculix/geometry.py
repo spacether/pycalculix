@@ -356,7 +356,7 @@ class Line(base_classes.Idobj):
         Args:
             ediv (int): number of required elements on this line
         """
-        print('Funktion ediv aufgerufen')
+        
         self.ediv = ediv
         self.pt(0).set_esize(self.length()/ediv)
         self.pt(1).set_esize(self.length()/ediv)
@@ -893,20 +893,20 @@ class Arc(base_classes.Idobj):
             point.save_line(self)
         
     def set_ediv(self, ediv):
-        """Sets the number of element divisions on the line when meshing.
+        """Sets the number of element divisions on the arc when meshing.
 
         Args:
-            ediv (int): number of required elements on this line
+            ediv (int): number of required elements on this arc
         """
         self.ediv = ediv
         self.pt(0).set_esize(self.length()/ediv)
         self.pt(1).set_esize(self.length()/ediv)
         
     def set_esize(self, esize):
-        """Sets the size of mesh elements on the line when meshing.
+        """Sets the size of mesh elements on the arc when meshing.
 
         Args:
-            esize (float): size of mesh elements on this line
+            esize (float): size of mesh elements on this arc
         """
         self.pt(0).set_esize(esize)
         self.pt(1).set_esize(esize)
