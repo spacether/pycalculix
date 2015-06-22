@@ -160,6 +160,22 @@ class FeaModel(object):
         items = self.get_items(items)
         for line in items:
             line.set_ediv(ediv)
+            
+    def set_esize(self, items, esize):
+        """Sets the element size on the passed line.
+
+        Args:
+            items (str or SignLine or SignArc or list): lines or points to set esize on
+
+                - str: 'L0'
+                - list of str ['L0', 'L1', 'P3']
+                - list of SignLine or SignArc part.bottom or part.hole[-1]
+
+            esize (float): size of the mesh elements on the line
+        """
+        items = self.get_items(items)
+        for item in items:
+            item.set_esize(esize)
 
     def set_units(self, dist_unit='m', cfswitch=False):
         """Sets the units that will be displayed when plotting.
@@ -1424,7 +1440,7 @@ class FeaModel(object):
                     L = line.split(',')
                     L = [int(a.strip()) for a in L]
                     enum = L[0]
-                    nlist = [N.idget(a) for a in L[1:]]
+                    nlist = [Dict_NodeIDs[a] for a in L[1:]]
                     e = mesh.Element(enum, etype, nlist)
                     faces = e.faces
                     E.append(e)
@@ -1477,7 +1493,7 @@ class FeaModel(object):
                 sets[set_type][set_name] = []
                 mode = 'set'
         f.close()
-
+        
         # loop through sets and remove empty sets
         # store sets to delete
         todel = []
@@ -1569,11 +1585,11 @@ class FeaModel(object):
         print('Nodes: %i' % len(N))
         print('Done reading Calculix/Abaqus .inp file')
 
-    def mesh(self, fineness=1.0, mesher='gmsh'):
+    def mesh(self, element_size=1.0, mesher='gmsh'):
         """Meshes all parts.
 
         Args:
-            fineness (float): 0.0001 - 1.0, how fine the mesh is.
+            element_size (float): 0.0001 - 1.0, how fine the mesh is.
 
                 - Low numbers are very fine, higher numbers are coarser.
             mesher (str): the mesher to use
@@ -1582,15 +1598,15 @@ class FeaModel(object):
                 - 'cgx': mesh with Calculix cgx, it doesn't allow holes
         """
         if mesher == 'gmsh':
-            self.__mesh_gmsh(fineness)
+            self.__mesh_gmsh(element_size)
         elif mesher == 'cgx':
-            self.__mesh_cgx(fineness)
+            self.__mesh_cgx(element_size)
 
-    def __mesh_gmsh(self, fineness):
+    def __mesh_gmsh(self, element_size):
         """Meshes all parts using the Gmsh mesher.
 
         Args:
-            fineness (float): 0.0001 - 1.0, how fine the mesh is.
+            element_size (float): 0.0001 - 1.0, how fine the mesh is.
 
                 Low numbers are very fine, higher numbers are coarser.
         """
@@ -1601,7 +1617,10 @@ class FeaModel(object):
 
         # write all points
         for pt in self.points:
-            txtline = 'Point(%i) = {%f, %f, %f};' % (pt.id, pt.x, pt.y, 0.0)
+            if pt.esize == None:
+                txtline = 'Point(%i) = {%f, %f, %f, %f};' % (pt.id, pt.x, pt.y, 0.0, element_size if self.eshape=='tri' else element_size*2.)
+            else:
+                txtline = 'Point(%i) = {%f, %f, %f, %f};' % (pt.id, pt.x, pt.y, 0.0, pt.esize if self.eshape=='tri' else pt.esize*2.)
             geo.append(txtline)
 
         # start storing an index number
@@ -1621,21 +1640,6 @@ class FeaModel(object):
                 txtline = 'Line(%i) = {%i,%i};' % (ind, pt1, pt2)
             geo.append(txtline)
 
-            # set division if we have it
-            if line.ediv != None:
-                ndiv = line.ediv+1
-                esize = line.length()/line.ediv
-                if self.eshape == 'quad':
-                    ndiv = line.ediv/2+1
-                    esize = esize*2
-                    # this is needed because quad recombine
-                    # splits 1 element into 2
-                txtline = 'Transfinite Line{%i} = %i;' % (ind, ndiv)
-                print('LINE ELEMENT SIZE: %f, MAKES %i ELEMENTS'
-                      % (line.length()/line.ediv, line.ediv))
-                geo.append(txtline)
-                geo.append('Characteristic Length {%i,%i} = %f;'
-                           % (pt1, pt2, esize))
             ind += 1
 
         # write all areas
@@ -1690,8 +1694,6 @@ class FeaModel(object):
             geo.append(txtline)
 
         # set the meshing options
-        geo.append('Mesh.CharacteristicLengthFactor = '
-                   +str(fineness)+'; //mesh fineness')
         geo.append('Mesh.RecombinationAlgorithm = 1; //blossom')
 
         if self.eshape == 'quad':
@@ -1740,11 +1742,11 @@ class FeaModel(object):
         # read in the calculix mesh
         self.__read_inp(self.fname+'.inp')
 
-    def __mesh_cgx(self, fineness):
+    def __mesh_cgx(self, element_size):
         """Meshes all parts using the Calculix cgx mesher.
 
         Args:
-            fineness (float): 0.0001 - 1.0, how fine the mesh is.
+            element_size (float): 0.0001 - 1.0, how fine the mesh is.
 
                 Low numbers are very fine, higher numbers are coarser.
         """
@@ -1770,8 +1772,8 @@ class FeaModel(object):
         cgx_elements['quad2plstrain'] = 'qu8e'
         cgx_elements['quad1plstrain'] = 'qu4e'
 
-        num = 1.0/fineness
-        emult = int(round(num)) # this converts fineness to mesh multiplier
+        num = 1.0/element_size
+        emult = int(round(num)) # this converts element_size to mesh multiplier
 
         # write all points
         for point in self.points:

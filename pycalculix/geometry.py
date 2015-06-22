@@ -67,6 +67,7 @@ class Point(base_classes.Idobj):
         self.lines = []
         self.arc_center = False
         self.on_part = True
+        self.esize = None
         base_classes.Idobj.__init__(self)
 
     def get_name(self):
@@ -258,6 +259,10 @@ class Point(base_classes.Idobj):
         """Returns string listing object type, id number, and coordinates"""
         val = 'Point %s, (x, y)=(%.3f, %.3f)' % (self.get_name(), self.x, self.y)
         return val
+    
+    def set_esize(self, size):
+        self.esize = size
+        
 
 
 class Line(base_classes.Idobj):
@@ -351,7 +356,20 @@ class Line(base_classes.Idobj):
         Args:
             ediv (int): number of required elements on this line
         """
+        
         self.ediv = ediv
+        self.pt(0).set_esize(self.length()/ediv)
+        self.pt(1).set_esize(self.length()/ediv)
+        
+        
+    def set_esize(self, esize):
+        """Sets the size of mesh elements on the line when meshing.
+
+        Args:
+            esize (float): size of mesh elements on this line
+        """
+        self.pt(0).set_esize(esize)
+        self.pt(1).set_esize(esize)
 
     def signed_copy(self, sign):
         """Returns a SignLine copy of this Line with the passed sign."""
@@ -675,7 +693,11 @@ class SignLine(Line, base_classes.Idobj):
     def set_ediv(self, ediv):
         """Applies the element divisions onto the parent line."""
         self.line.set_ediv(ediv)
-
+        
+    def set_esize(self, esize):
+        """Applies the element size onto the parent line."""
+        self.line.set_esize(esize)
+        
     def set_lineloop(self, lineloop):
         """Sets the parent LineLoop"""
         # this is needed to cascade set ediv up to FEA model and down onto
@@ -869,7 +891,7 @@ class Arc(base_classes.Idobj):
         """This stores this line in the line's child points."""
         for point in self.allpoints:
             point.save_line(self)
-
+        
     def set_ediv(self, ediv):
         """Sets the number of element divisions on the arc when meshing.
 
@@ -877,7 +899,18 @@ class Arc(base_classes.Idobj):
             ediv (int): number of required elements on this arc
         """
         self.ediv = ediv
+        self.pt(0).set_esize(self.length()/ediv)
+        self.pt(1).set_esize(self.length()/ediv)
+        
+    def set_esize(self, esize):
+        """Sets the size of mesh elements on the arc when meshing.
 
+        Args:
+            esize (float): size of mesh elements on this arc
+        """
+        self.pt(0).set_esize(esize)
+        self.pt(1).set_esize(esize)
+        
     def signed_copy(self, sign):
         """Returns a SignArc instance of this Arc with the passed sign."""
         return SignArc(self, sign)
