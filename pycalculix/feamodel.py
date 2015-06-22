@@ -1387,7 +1387,6 @@ class FeaModel(object):
             # mode setting
             if '*Node' in line or '*NODE' in line:
                 mode = 'nmake'
-                print('mode=nmake')
             elif '*Element' in line or '*ELEMENT' in line:
                 L = line.split(',') # split it based on commas
                 e = L[1].split('=')
@@ -1400,7 +1399,6 @@ class FeaModel(object):
                     set_type = 'E'
                     sets[set_type][set_name] = []
                     mode = 'emake'
-                    print('mode=emake')
                 else:
                     mode = None
             elif '*ELSET' in line:
@@ -1410,7 +1408,6 @@ class FeaModel(object):
                 set_type = 'E'
                 sets[set_type][set_name] = []
                 mode = 'set'
-                print('mode=set')
             elif '*NSET' in line:
                 L = line.split(',')
                 e = L[1].split('=')
@@ -1418,11 +1415,8 @@ class FeaModel(object):
                 set_type = 'N'
                 sets[set_type][set_name] = []
                 mode = 'set'
-                print('mode=set')
         f.close()
-
-        print('inputfile read')
-		
+        
         # loop through sets and remove empty sets
         # store sets to delete
         todel = []
@@ -1434,7 +1428,7 @@ class FeaModel(object):
         for adict in todel:
             (set_type, set_name) = (adict['set_type'], adict['set_name'])
             del sets[set_type][set_name]
-            print('Empty set type:%s name:%s deleted' % (set_type, set_name))
+            #print('Empty set type:%s name:%s deleted' % (set_type, set_name))
 
         # this resets the min element to number 1
         if E.get_minid() > 1:
