@@ -67,6 +67,8 @@ class FeaModel(object):
             | Time = 0.0 stores constant loads, such as:
             |    material, thickness
 
+        contacts (Itemlist): list of contacts
+        surfints (Itemlist): list of surface interactions
         problems (Itemlist): list of problems
         nodes (Meshlist): list of all mesh nodes
         eshape (str): element shape
@@ -158,22 +160,6 @@ class FeaModel(object):
         items = self.get_items(items)
         for line in items:
             line.set_ediv(ediv)
-            
-    def set_esize(self, items, esize):
-        """Sets the element size on the passed line.
-
-        Args:
-            items (str or SignLine or SignArc or list): lines or points to set esize on
-
-                - str: 'L0'
-                - list of str ['L0', 'L1', 'P3']
-                - list of SignLine or SignArc part.bottom or part.hole[-1]
-
-            esize (float): size of the mesh elements on the line
-        """
-        items = self.get_items(items)
-        for item in items:
-            item.set_esize(esize)
 
     def set_units(self, dist_unit='m', cfswitch=False):
         """Sets the units that will be displayed when plotting.
@@ -367,6 +353,54 @@ class FeaModel(object):
             print(' %s: %i' % (name, len(items)))
         print(spacer)
 
+    def plot_nodes(self, fname='', display=True, title='Nodes', nnum=False):
+        """Plots the selected nodes.
+
+        Args:
+            fname (str): png image file prefix, if given, image will be saved
+            display (bool): if True, interactive plot will be shown, if False
+                plot will not be shown
+            title (str): the plot's title
+            nnum (bool): if True node numbers are plotted
+        """
+        nodes = self.view.nodes
+        if len(nodes) > 0:
+            # plotting elements
+            fig = plt.figure()
+            axis = fig.add_subplot(111)
+
+            # plot nodes, this is quicker than individual plotting
+            axs = [node.y for node in nodes]
+            rads = [node.x for node in nodes]
+            axis.scatter(axs, rads, s=7, color='black')
+            if nnum:
+                for node in nodes:
+                    node.label(axis)
+
+            # set units
+            [d_unit] = self.get_units('dist')
+            plt.title(title)
+            plt.xlabel('axial, y'+d_unit)
+            plt.ylabel('radial, x'+d_unit)
+            plt.axis('scaled')
+
+            # extract max and min for plot window
+            radials = [n.x for n in nodes]
+            axials = [n.y for n in nodes]
+
+            # finish pot
+            base_classes.plot_set_bounds(plt, axials, radials)
+            base_classes.plot_finish(plt, fname, display)
+
+        else:
+            # no elements exist or no elemnts are selected
+            res = ''
+            if len(self.nodes) == 0:
+                res = 'No nodes exist! Try meshing your parts!'
+            else:
+                res = 'No nodes are selected! Select some!'
+            print(res)
+
     def plot_elements(self, fname='', display=True, title='Elements',
                       enum=False, nshow=False, nnum=False):
         """Plots the selected elements.
@@ -559,7 +593,7 @@ class FeaModel(object):
             cbar = plt.colorbar(scalarmap, orientation='vertical',
                                 ticks=tick_list)
             if cbar_val != None:
-                cbar.ax.set_yticklabels(['',str(cbar_val),''])
+                cbar.ax.set_yticklabels(['', str(cbar_val), ''])
             base_classes.plot_finish(plt, fname, display)
 
         else:
@@ -688,7 +722,7 @@ class FeaModel(object):
             cbar = plt.colorbar(scalarmap, orientation='vertical',
                                 ticks=tick_list)
             if cbar_val != None:
-                cbar.ax.set_yticklabels(['',str(cbar_val),''])
+                cbar.ax.set_yticklabels(['', str(cbar_val), ''])
             base_classes.plot_finish(plt, fname, display)
 
         else:
@@ -917,6 +951,24 @@ class FeaModel(object):
             ind = self.components.index(comp)
             comp = self.components[ind]
         return comp
+
+    def __get_make_surfint(self, surfint):
+        """Stores surfac interaction if it doesn't exist, returns it if it does.
+
+        Args:
+            surfint (connectors.SurfaceInteraction): item to get or make
+        """
+        items = [item for item in self.surfints if item.int_type == surfint.int_type]
+        if surfint.int_type == 'LINEAR':
+            for item in items:
+                if item.k == surfint.k:
+                    return item
+        elif surfint.type == 'EXPONENTIAL':
+            for item in items:
+                if item.c0 == surfint.c0 and item.p0 == surfint.p0:
+                    return item
+        surfint = self.surfints.append(surfint)
+        return surfint
 
     def register(self, item):
         """Adds an item to the feamodel.
@@ -1203,12 +1255,18 @@ class FeaModel(object):
         self.__add_load(load, self.time)
         return load
 
-    def set_contact_linear(self, master_lines, slave_lines, kval):
+    def set_contact_linear(self, master_lines, slave_lines, kval, many_si=False):
         """Sets contact between master and slave lines.
-        
+
+        Slave lines are on the more compliant or more curved object.
+
         Args:
             master_lines (list): list of SignLine or SignArc
             slave_lines (list): list of SignLine or SignArc
+            kval (float): stiffness, 5 to 50 times the youngs modulus
+                of the touching matl
+            many_si (bool): True, make unique surface interaction for every contact
+                False, use existing surface interaction if we can
         """
 
         master_items = self.get_items(master_lines)
@@ -1222,10 +1280,13 @@ class FeaModel(object):
         ctype = 'faces'
         slave_comp = components.Component(slave_items, ctype, slave_cname)
         slave_comp = self.__get_make_comp(slave_comp)
-        
+
         surf_int = connectors.SurfaceInteraction('LINEAR', kval)
-        self.surfints.append(surf_int)
-        
+        if many_si:
+            surf_int = self.surfints.append(surf_int)
+        else:
+            surf_int = self.__get_make_surfint(surf_int)
+
         cont = connectors.Contact(master_comp, slave_comp, surf_int, True)
         self.contacts.append(cont)
 
@@ -1363,7 +1424,7 @@ class FeaModel(object):
                     L = line.split(',')
                     L = [int(a.strip()) for a in L]
                     enum = L[0]
-                    nlist = [Dict_NodeIDs[a] for a in L[1:]]
+                    nlist = [N.idget(a) for a in L[1:]]
                     e = mesh.Element(enum, etype, nlist)
                     faces = e.faces
                     E.append(e)
@@ -1416,7 +1477,7 @@ class FeaModel(object):
                 sets[set_type][set_name] = []
                 mode = 'set'
         f.close()
-        
+
         # loop through sets and remove empty sets
         # store sets to delete
         todel = []
@@ -1441,7 +1502,7 @@ class FeaModel(object):
         self.elements = E
         self.faces = F
 
-        # remove arc center ndoes from imported node set
+        # remove arc center nodes from imported node set
         # those nodes have no elements under them
         torem = []
         for node in N:
@@ -1508,11 +1569,11 @@ class FeaModel(object):
         print('Nodes: %i' % len(N))
         print('Done reading Calculix/Abaqus .inp file')
 
-    def mesh(self, element_size=1.0, mesher='gmsh'):
+    def mesh(self, fineness=1.0, mesher='gmsh'):
         """Meshes all parts.
 
         Args:
-            element_size (float): 0.0001 - 1.0, how fine the mesh is.
+            fineness (float): 0.0001 - 1.0, how fine the mesh is.
 
                 - Low numbers are very fine, higher numbers are coarser.
             mesher (str): the mesher to use
@@ -1521,15 +1582,15 @@ class FeaModel(object):
                 - 'cgx': mesh with Calculix cgx, it doesn't allow holes
         """
         if mesher == 'gmsh':
-            self.__mesh_gmsh(element_size)
+            self.__mesh_gmsh(fineness)
         elif mesher == 'cgx':
-            self.__mesh_cgx(element_size)
+            self.__mesh_cgx(fineness)
 
-    def __mesh_gmsh(self, element_size):
+    def __mesh_gmsh(self, fineness):
         """Meshes all parts using the Gmsh mesher.
 
         Args:
-            element_size (float): 0.0001 - 1.0, how fine the mesh is.
+            fineness (float): 0.0001 - 1.0, how fine the mesh is.
 
                 Low numbers are very fine, higher numbers are coarser.
         """
@@ -1540,10 +1601,7 @@ class FeaModel(object):
 
         # write all points
         for pt in self.points:
-            if pt.esize == None:
-                txtline = 'Point(%i) = {%f, %f, %f, %f};' % (pt.id, pt.x, pt.y, 0.0, element_size if self.eshape=='tri' else element_size*2.)
-            else:
-                txtline = 'Point(%i) = {%f, %f, %f, %f};' % (pt.id, pt.x, pt.y, 0.0, pt.esize if self.eshape=='tri' else pt.esize*2.)
+            txtline = 'Point(%i) = {%f, %f, %f};' % (pt.id, pt.x, pt.y, 0.0)
             geo.append(txtline)
 
         # start storing an index number
@@ -1563,6 +1621,21 @@ class FeaModel(object):
                 txtline = 'Line(%i) = {%i,%i};' % (ind, pt1, pt2)
             geo.append(txtline)
 
+            # set division if we have it
+            if line.ediv != None:
+                ndiv = line.ediv+1
+                esize = line.length()/line.ediv
+                if self.eshape == 'quad':
+                    ndiv = line.ediv/2+1
+                    esize = esize*2
+                    # this is needed because quad recombine
+                    # splits 1 element into 2
+                txtline = 'Transfinite Line{%i} = %i;' % (ind, ndiv)
+                print('LINE ELEMENT SIZE: %f, MAKES %i ELEMENTS'
+                      % (line.length()/line.ediv, line.ediv))
+                geo.append(txtline)
+                geo.append('Characteristic Length {%i,%i} = %f;'
+                           % (pt1, pt2, esize))
             ind += 1
 
         # write all areas
@@ -1617,6 +1690,8 @@ class FeaModel(object):
             geo.append(txtline)
 
         # set the meshing options
+        geo.append('Mesh.CharacteristicLengthFactor = '
+                   +str(fineness)+'; //mesh fineness')
         geo.append('Mesh.RecombinationAlgorithm = 1; //blossom')
 
         if self.eshape == 'quad':
@@ -1665,11 +1740,11 @@ class FeaModel(object):
         # read in the calculix mesh
         self.__read_inp(self.fname+'.inp')
 
-    def __mesh_cgx(self, element_size):
+    def __mesh_cgx(self, fineness):
         """Meshes all parts using the Calculix cgx mesher.
 
         Args:
-            element_size (float): 0.0001 - 1.0, how fine the mesh is.
+            fineness (float): 0.0001 - 1.0, how fine the mesh is.
 
                 Low numbers are very fine, higher numbers are coarser.
         """
@@ -1695,8 +1770,8 @@ class FeaModel(object):
         cgx_elements['quad2plstrain'] = 'qu8e'
         cgx_elements['quad1plstrain'] = 'qu4e'
 
-        num = 1.0/element_size
-        emult = int(round(num)) # this converts element_size to mesh multiplier
+        num = 1.0/fineness
+        emult = int(round(num)) # this converts fineness to mesh multiplier
 
         # write all points
         for point in self.points:

@@ -319,6 +319,7 @@ class Face(object):
         """
         self.nmid = nmid
         nmid.add_face(self)
+        self.nodes = [self.nodes[0], self.nmid, self.nodes[-1]]
 
     def __eq__(self, other):
         """Compare this face to other face. True if node lists equal.

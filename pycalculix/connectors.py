@@ -10,7 +10,7 @@ class SurfaceInteraction(base_classes.Idobj):
 
             * 'EXPONENTIAL'
             * 'LINEAR'
-        
+
         *args: following arguments
 
             * int_type = 'EXPONENTIAL'
@@ -20,7 +20,7 @@ class SurfaceInteraction(base_classes.Idobj):
                 * k must be passed
 
     """
-    
+
     def __init__(self, int_type, *args):
         self.int_type = int_type
         self.c0 = None
@@ -32,9 +32,10 @@ class SurfaceInteraction(base_classes.Idobj):
         elif self.int_type == 'LINEAR':
             self.k = args[0]
         base_classes.Idobj.__init__(self)
-    
+
     @property
     def name(self):
+        """SurfaceInteraction name."""
         return 'SI%i' % self.id
 
     def ccx(self):
@@ -50,7 +51,7 @@ class SurfaceInteraction(base_classes.Idobj):
 
 class Contact(base_classes.Idobj):
     """Makes a contact which will be between lines which have faces on them.
-    
+
     Args:
         master_comp (Component): component of master element faces
         slave_comp (Component): component of slave element faces
@@ -58,7 +59,7 @@ class Contact(base_classes.Idobj):
         surf_to_surf (bool): if True surface to surface is used, if False node
             to surface is used
     """
-    
+
     def __init__(self, master_comp, slave_comp, surf_int, surf_to_surf=True):
         self.master_comp = master_comp
         self.slave_comp = slave_comp
@@ -68,6 +69,7 @@ class Contact(base_classes.Idobj):
 
     @property
     def name(self):
+        """Contact name."""
         return 'CONT%i' % self.id
 
     def ccx(self):
