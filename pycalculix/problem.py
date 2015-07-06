@@ -13,12 +13,12 @@ class Problem(base_classes.Idobj):
     """Makes a problem which can be analyzed with Calculix ccx.
 
     Args:
-        feamodel (FeaModel): the parent FeaModel
-        problem_type (str): model type, options:
-
-            - 'struct': structural
-        fname (str): file prefix for the problem .inp and results files
+        - feamodel (FeaModel): the parent FeaModel
+        - problem_type (str): model type, options:
+            -- 'struct': structural
+        - fname (str): file prefix for the problem .inp and results files
             If value is '' it will default to the project name of the FeaModel
+            
     Attributes:
         fea (FeaModel): parent FeaModel
         __ptype (str): problem type, options:
