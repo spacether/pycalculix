@@ -73,17 +73,6 @@ def plot_finish(plt, fname, display):
     # remove all figures
     plt.close()
 
-def plot_set_bounds(plt, axials, radials):
-    """Sets the axial and radial bounds of the shown plot."""
-    vert = max(radials) - min(radials)
-    horiz = max(axials) - min(axials)
-    vadder = (vert)/5
-    hadder = (horiz)/5
-    (vmax, vmin) = (max(radials)+vadder, min(radials)-vadder)
-    (hmax, hmin) = (max(axials)+hadder, min(axials)-hadder)
-    plt.xlim(hmin, hmax)
-    plt.ylim(vmin, vmax)
-
 class Itemlist(list):
     """Makes a custom list used to store lists of non-mesh items.
 

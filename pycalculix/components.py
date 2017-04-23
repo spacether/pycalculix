@@ -21,12 +21,14 @@ class Component(base_classes.Idobj):
             - 'elements': elements
 
         cname (str): component name
+        write (bool): whether to write the component to the inp file
     """
 
-    def __init__(self, item_list, ctype, cname=''):
+    def __init__(self, item_list, ctype, cname='', write=True):
         self.items = item_list
         self.ctype = ctype
         self.name = cname+'_'+ctype
+        self.write = write
         base_classes.Idobj.__init__(self)
 
     def __eq__(self, other):

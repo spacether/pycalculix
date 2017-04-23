@@ -51,8 +51,9 @@ mypt = lines[6].pt(0) # first point of line 8
 part.goto(mypt.x,mypt.y)
 for [drad, dax] in airfoil_loop:
     part.draw_line_delta(drad, dax)
+
 # fillets [[line1, line2, fillet_rad],[
-fillet_list = [[13,0,rad_disk_bot],[12,13,rad_disk_bot],
+fillet_list = [[0,13,rad_disk_bot],[12,13,rad_disk_bot],
                [0,1,rad_disk_top],[11,12,rad_disk_top],
                [1,2,rad_web_bot],[10,11,rad_web_bot],
                [2,3,rad_web_top],[9,10,rad_web_top]]

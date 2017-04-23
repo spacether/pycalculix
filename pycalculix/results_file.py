@@ -156,7 +156,7 @@ class ResultsFile(object):
         # check to see if selected nodes and elements are
         # in the parent model's nodes and elements
         fig = plt.figure()
-        ax_ = fig.add_subplot(111)
+        ax_ = fig.add_subplot(111, aspect='equal')
 
         # need to set tick list here
         vmin = min(zvals)
@@ -248,7 +248,7 @@ class ResultsFile(object):
         plt.title(plot_title)
         plt.xlabel('axial, y'+d_unit)
         plt.ylabel('radial, x'+d_unit)
-        ax_.set_aspect('equal')
+
         if gmult != 1:
             ax_.xaxis.set_ticklabels([])
             ax_.yaxis.set_ticklabels([])
@@ -324,7 +324,7 @@ class ResultsFile(object):
         # in the parent model's nodes and elements
 
         fig = plt.figure()
-        ax_ = fig.add_subplot(111)
+        ax_ = fig.add_subplot(111, aspect='equal')
 
         # need to set tick list here
         vmin = min(zvals)
@@ -407,7 +407,7 @@ class ResultsFile(object):
         plt.title(plot_title)
         plt.xlabel('axial, y'+d_unit)
         plt.ylabel('radial, x'+d_unit)
-        ax_.set_aspect('equal')
+
         if gmult != 1:
             ax_.xaxis.set_ticklabels([])
             ax_.yaxis.set_ticklabels([])

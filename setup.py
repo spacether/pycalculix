@@ -20,7 +20,7 @@ for program in progs:
 setup(
     name = "pycalculix",
     install_requires = ['matplotlib >= 1.3.1', 'numpy', 'dxfgrabber'],
-    version = "0.9.3",
+    version = "1.0.0",
     description = "Python 3 library to build and solve finite element analysis (FEA) models in Calculix.",
     author = "Justin Black",
     author_email = "justin.a.black@gmail.com",

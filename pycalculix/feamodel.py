@@ -6,7 +6,6 @@ objects.
 """
 
 import matplotlib.pyplot as plt
-from matplotlib.collections import PatchCollection  # element plotting
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
 import subprocess # used to launch meshers cgx and gmsh
@@ -24,12 +23,6 @@ from . import mesh
 from . import partmodule
 from . import problem
 from . import selector
-
-# element colors, 0-1, 0=black, 1=whate
-ECOLOR = '.4'
-FCOLOR = '.9'
-CMAP = 'jet' # for results
-GEOM_CMAP = 'Pastel1' # color map for parts or areas
 
 class FeaModel(object):
     """Makes a FeaModel instance.
@@ -131,7 +124,8 @@ class FeaModel(object):
         self.nodes = base_classes.Meshlist()
         self.elements = base_classes.Meshlist()
         self.faces = []
-        self.view = selector.Selector(self)
+        self.focus = selector.Selector(self)
+        self.view = selector.View(self.focus)
         self.time = 1.0 # 0 is model set-up, 1 is first step, etc
         self.eshape = 'quad'
         self.eorder = 2
@@ -379,37 +373,22 @@ class FeaModel(object):
             title (str): the plot's title
             nnum (bool): if True node numbers are plotted
         """
-        nodes = self.view.nodes
+        nodes = self.focus.nodes
         if len(nodes) > 0:
-            # plotting elements
+            # set-up
             fig = plt.figure()
-            axis = fig.add_subplot(111)
+            axis = fig.add_subplot(111, aspect='equal')
 
-            # plot nodes, this is quicker than individual plotting
-            axs = [node.y for node in nodes]
-            rads = [node.x for node in nodes]
-            axis.scatter(axs, rads, s=7, color='black')
-            if nnum:
-                for node in nodes:
-                    node.label(axis)
-
-            # set units
-            [d_unit] = self.get_units('dist')
+            # plotting
+            horiz, vert = self.view.plot_nodes(axis, nnum)
+            xlab, ylab = self.__get_axes()
+            plt.xlabel(xlab)
+            plt.ylabel(ylab)
             plt.title(title)
-            plt.xlabel('axial, y'+d_unit)
-            plt.ylabel('radial, x'+d_unit)
-            plt.axis('scaled')
-
-            # extract max and min for plot window
-            radials = [n.x for n in nodes]
-            axials = [n.y for n in nodes]
-
-            # finish pot
-            base_classes.plot_set_bounds(plt, axials, radials)
+            self.view.set_bounds(plt, horiz, vert)
             base_classes.plot_finish(plt, fname, display)
 
         else:
-            # no elements exist or no elemnts are selected
             res = ''
             if len(self.nodes) == 0:
                 res = 'No nodes exist! Try meshing your parts!'
@@ -430,56 +409,25 @@ class FeaModel(object):
             nshow (bool): True=plot nodes, False=don't plot them
             nnum (bool): if True node numbers are plotted
         """
-        nodes = self.view.nodes
-        elements = self.view.elements
+        elements = self.focus.elements
         if len(elements) > 0:
-            # plotting elements
+            # set-up
             fig = plt.figure()
-            axis = fig.add_subplot(111)
-            polys = []
-            for element in elements:
-                poly = element.get_poly()
-                polys.append(poly)
-            coll = PatchCollection(polys, facecolors=FCOLOR, edgecolors=ECOLOR)
-            axis.add_collection(coll)
+            axis = fig.add_subplot(111, aspect='equal')
+            horiz, vert = self.view.plot_elements(axis, label=enum)
 
-            # plot element numbers
-            if enum:
-                for element in elements:
-                    element.label(axis)
-
-            # plot nodes, this is quicker than individual plotting
+            # plotting
             if nshow:
-                axs = [node.y for node in nodes]
-                rads = [node.x for node in nodes]
-                axis.scatter(axs, rads, s=7, color='black')
-                if nnum:
-                    for node in nodes:
-                        node.label(axis)
-
-            # set units
-            [d_unit] = self.get_units('dist')
+                self.view.plot_nodes(axis, label=nnum)
+            xlab, ylab = self.__get_axes()
+            plt.xlabel(xlab)
+            plt.ylabel(ylab)
             plt.title(title)
-            plt.xlabel('axial, y'+d_unit)
-            plt.ylabel('radial, x'+d_unit)
-            plt.axis('scaled')
-
-            # extract nodes for elements if no nodes are selected
-            if len(nodes) == 0:
-                tmp = set()
-                for element in elements:
-                    tmp.update(element.nodes)
-                nodes = list(tmp)
-            # extract max and min for plot window
-            radials = [n.x for n in nodes]
-            axials = [n.y for n in nodes]
-
-            # finish pot
-            base_classes.plot_set_bounds(plt, axials, radials)
+            self.view.set_bounds(plt, horiz, vert)
             base_classes.plot_finish(plt, fname, display)
 
         else:
-            # no elements exist or no elemnts are selected
+            # no elements exist or no elements are selected
             res = ''
             if len(self.elements) == 0:
                 res = 'No elements exist! Try meshing your parts!'
@@ -499,9 +447,9 @@ class FeaModel(object):
             display (bool): if True, interactive plot will be shown, if False
                 plot will not be shown. Default = True
         """
-        elements = self.view.elements
-        faces = self.view.faces
-        nodes = self.view.nodes
+        elements = self.focus.elements
+        faces = self.focus.faces
+        nodes = self.focus.nodes
 
         # plot all elements and store length, length determins min pressure arrow
         if len(elements) > 0:
@@ -599,11 +547,12 @@ class FeaModel(object):
             base_classes.plot_set_bounds(plt, axials, radials)
 
             # set units and titles
-            [d_unit, p_unit, t_unit] = self.get_units('dist', 'stress', 'time')
-            tstr = 'Pressures %s\nTime=%f%s' % (p_unit, self.time, t_unit)
-            plt.title(tstr)
-            plt.xlabel('axial, y'+d_unit)
-            plt.ylabel('radial, x'+d_unit)
+            [p_unit, t_unit] = self.get_units('stress', 'time')
+            title = 'Pressures %s\nTime=%f%s' % (p_unit, self.time, t_unit)
+            xlab, ylab = self.__get_axes()
+            plt.xlabel(xlab)
+            plt.ylabel(ylab)
+            plt.title(title)
 
             # set the colorbar
             cbar = plt.colorbar(scalarmap, orientation='vertical',
@@ -631,8 +580,8 @@ class FeaModel(object):
             display (bool): if True, interactive plot will be shown, if False
                 plot will not be shown. Default = True
         """
-        elements = self.view.elements
-        nodes = self.view.nodes
+        elements = self.focus.elements
+        nodes = self.focus.nodes
 
         # plot all elements
         if len(elements) > 0:
@@ -729,10 +678,11 @@ class FeaModel(object):
 
             # set units + titles
             [d_unit, t_unit] = self.get_units('dist', 'time')
-            tstr = 'Constraints %s\nTime=%f%s' % (d_unit, self.time, t_unit)
-            plt.title(tstr)
-            plt.xlabel('axial, y'+d_unit)
-            plt.ylabel('radial, x'+d_unit)
+            title = 'Constraints %s\nTime=%f%s' % (d_unit, self.time, t_unit)
+            xlab, ylab = self.__get_axes()
+            plt.xlabel(xlab)
+            plt.ylabel(ylab)
+            plt.title(title)
 
             # set the colorbar
             cbar = plt.colorbar(scalarmap, orientation='vertical',
@@ -751,28 +701,46 @@ class FeaModel(object):
 
     def plot_multiple(self, fname='', display=True, title='',
                       styledict={'labels':['points', 'lines', 'areas', 'parts'],
-                                 'items':['points, lines, areas']}):
+                                 'items':['points', 'lines', 'areas']}):
         """Plots items of type styledict['items'], labels styledict['labels']
 
         Only the items currently selected will be plotted.
+        For an item to be labeled, it must be passed in 'items' and 'labels'
         """
         # http://stackoverflow.com/questions/470690/how-to-automatically-generate-n-distinct-colors/4382138#4382138
         # http://stackoverflow.com/questions/2328339/how-to-generate-n-different-colors-for-any-natural-number-n
         # start plotting
         fig = plt.figure()
-        axis = fig.add_subplot(111)
+        axis = fig.add_subplot(111, aspect='equal')
+        horiz, vert = [], []
+        
+        for item_type in styledict['items']:
+            plot_func = getattr(self.view, 'plot_'+item_type)
+            label = item_type in styledict['labels']
+            hvals, vvals = plot_func(axis, label)
+            horiz += hvals
+            vert += vvals
 
+        # set titles and scaling
+        xlab, ylab = self.__get_axes()
+        plt.xlabel(xlab)
+        plt.ylabel(ylab)
+        plt.title(title)
+        self.view.set_bounds(plt, horiz, vert)
+        base_classes.plot_finish(plt, fname, display)
+
+        """
         # check if we're plotting parts or areas and pick a color map
         colormaker, ids = None, None
         color_plot = False
         if 'parts' in styledict['items']:
             color_plot = True
-            ids = [item.id for item in self.view.parts]
+            ids = [item.id for item in self.focus.parts]
             if 'areas' in styledict['items']:
                 styledict['items'].remove('areas')
         if 'areas' in styledict['items']:
             color_plot = True
-            ids = [item.id for item in self.view.areas]
+            ids = [item.id for item in self.focus.areas]
         if color_plot:
             cmap = plt.get_cmap(GEOM_CMAP)
             norm = colors.Normalize(vmin=min(ids), vmax=max(ids))
@@ -782,7 +750,7 @@ class FeaModel(object):
         for item_type in ['points', 'lines', 'areas', 'parts']:
             plot_on = item_type in styledict['items']
             label_on = item_type in styledict['labels']
-            items = getattr(self.view, item_type)
+            items = getattr(self.focus, item_type)
             if plot_on and label_on:
                 for item in items:
                     if color_plot and item_type in ['areas', 'parts']:
@@ -800,22 +768,7 @@ class FeaModel(object):
             elif label_on:
                 for item in items:
                     item.label(axis)
-
-        # set the horizontal and vertical axes
-        points = self.view.points
-        radials = [point.x for point in points]
-        axials = [point.y for point in points]
-        base_classes.plot_set_bounds(plt, axials, radials)
-
-        # set units
-        [d_unit] = self.get_units('dist')
-
-        # show plot
-        plt.title(title)
-        plt.xlabel('axial, y'+d_unit)
-        plt.ylabel('radial, x'+d_unit)
-        axis.set_aspect('equal')
-        base_classes.plot_finish(plt, fname, display)
+        """
 
     def plot_parts(self, fname='', display=True, title='Parts', label=True):
         """Plots selected parts
@@ -937,6 +890,35 @@ class FeaModel(object):
             styledict['items'].append('areas')
 
         self.plot_multiple(fname, display, title, styledict)
+
+    def __get_axes(self):
+        """Returns a list of axis label strings, [horiz, vert]"""
+
+        horiz = ''
+        vert = ''
+        # loop through areas and check if any have axisym element type
+        axisym = False
+        for area in self.areas:
+            if area.etype == 'axisym':
+                axisym = True
+                break
+        if self.view.orientation == 'xy':
+            horiz = 'X'
+            vert = 'Y'
+            if axisym:
+                horiz += ', radial'
+                vert += ', axial'
+        elif self.view.orientation == 'yx':
+            horiz = 'Y'
+            vert = 'X'
+            if axisym:
+                horiz += ', axial'
+                vert += ', radial'
+        # set units
+        [d_unit] = self.get_units('dist')
+        horiz += d_unit
+        vert += d_unit
+        return [horiz, vert]
 
     @staticmethod
     def __get_cname(items):
@@ -1179,8 +1161,8 @@ class FeaModel(object):
         ctype = 'faces'
         cname = self.__get_cname(items)
 
-        # make compoenet
-        comp = components.Component(items, ctype, cname)
+        # make component
+        comp = components.Component(items, ctype, cname, write=False)
         comp = self.__get_make_comp(comp)
 
         # make load
@@ -1217,12 +1199,14 @@ class FeaModel(object):
         """
         items = self.get_items(items)
         ctype = 'nodes'
+        write = True
         if ltype == 'press':
             ctype = 'faces'
+            write = False
         cname = self.__get_cname(items)
 
-        # make compoenet
-        comp = components.Component(items, ctype, cname)
+        # make component
+        comp = components.Component(items, ctype, cname, write)
         comp = self.__get_make_comp(comp)
 
         # make load
@@ -1305,6 +1289,23 @@ class FeaModel(object):
 
         cont = connectors.Contact(master_comp, slave_comp, surf_int, True)
         self.contacts.append(cont)
+
+    def set_couple(self, item_list, axis):
+        """Couples the nodes in the item list in 'x', 'y', or 'xy'
+
+        The first node of the first item is the master node that all others
+        will be coupled to.
+
+        Args:
+            item_list (list of str or Point or SignLine or SignArc): items to couple
+        """
+        items = self.get_items(item_list)
+        cname = self.__get_cname(items)
+        ctype = 'nodes'
+
+        # make component
+        comp = components.Component(items, ctype, cname, write=False)
+        comp = self.__get_make_comp(comp)
 
 
     def set_eshape(self, eshape='quad', eorder=2):
@@ -1585,7 +1586,7 @@ class FeaModel(object):
         print('Nodes: %i' % len(N))
         print('Done reading Calculix/Abaqus .inp file')
 
-    def mesh(self, size=1.0, meshmode='fineness', mesher='gmsh'):
+    def mesh(self, size=1.0, mesher='gmsh', meshmode='fineness'):
         """Meshes all parts.
 
         Args:
@@ -1595,37 +1596,36 @@ class FeaModel(object):
                     - mesh size is adapted to geometry size
                     - set size = 0.0001 - 1.0, to define how fine the mesh is.
                     - Low numbers are very fine, higher numbers are coarser.
-                
+
                 - if meshmode == 'esize':
                     - element size is kept constant
                     - choose it depending on geometry size
                     - it should be reduced e.g. at arcs with small radius, by calling line.esize function
-                
-            meshmode (str):
-                
-                - 'fineness': adapt mesh size to geometry
-                - 'esize': keep explicitly defined element size
-                
-                meshmode is changed to 'esize' is used if esize property is set to points or lines
-            
+
             mesher (str): the mesher to use
 
                 - 'gmsh': mesh with Gmsh, this is reccomended, it allows holes
                 - 'cgx': mesh with Calculix cgx, it doesn't allow holes
-        """
-        
-        
+
+            meshmode (str):
+
+                - 'fineness': adapt mesh size to geometry
+                - 'esize': keep explicitly defined element size
+
+                meshmode is changed to 'esize' is used if esize property is set to points or lines
+        """        
+
         #check if element size is set to points and change meshmode if necessary
         for pt in self.points:
             if pt.esize != None:
-                if meshmode=='fineness': print('meshmode is changed to esize, because elementsize was defined on points!')
-                meshmode = 'esize'
-                
-        
+                if meshmode=='fineness':
+                    print('meshmode is changed to esize, because elementsize was defined on points!')
+                    meshmode = 'esize'
         #if meshmode esize is chosen: ediv's on lines and arcs are transformed to element sizes on start and end point
         if meshmode == 'esize':
             for line in self.lines:
                 if line.ediv != None:
+                    # do I need a fix here for second order elements? probably
                     line.pt(0).set_esize(line.length()/line.ediv)
                     line.pt(1).set_esize(line.length()/line.ediv)
             

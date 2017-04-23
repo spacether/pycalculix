@@ -3,7 +3,7 @@ pycalculix is a Python 3 library to automate and build finite element analysis (
 Meshing uses Calculix or GMSH.
 Website: http://justinablack.com/pycalculix/
 Source Code: https://github.com/spacether/pycalculix
-Documentation: http://spacether.github.io/pycalculix/pycalculix.html
+Documentation: http://pythonhosted.org/pycalculix/
 
 
 Usefull applications of Pycalculix:
@@ -54,7 +54,7 @@ Loading:
 Force loading
 Constant pressure
 Linearly varying pressure (water pressure)
-Gravity 
+Gravity
 Rotational speed forces
 Displacement constraints
 Loads are stored on geometry primitives (points lines, areas) and can be
@@ -112,7 +112,7 @@ EASIEST INSTALLATION:
 
 WINDOWS:
 1) Install Anaconda* python 3.4:
-http://continuum.io/downloads#py34  
+http://continuum.io/downloads#py34
 This includes required libraries like numpy and matplotlib.
 Note:
 64-bit:
@@ -181,7 +181,7 @@ Anaconda:
 	If you are a Python beginner, I suggest downloading and installing it
 	rather than the separate installers.
 	Url:
-	http://continuum.io/downloads#py34	
+	http://continuum.io/downloads#py34
 
 Optional Software:
 Suggested IDE (program to edit and run python programs):
@@ -189,9 +189,15 @@ Wing IDE:
 	http://wingware.com/downloads/wingide-101
 
 Version Updates:
+1.0.0
+
 0.9.3
+    ADDED: multiple parts with contacts
+        See example files: pipe-crush-elastic.py, pinned-plate.py
     ADDED: Import CAD geometry from dxf file
         See pycalculix.CadImporter
+        Examples:
+        import-dxf.py
     ADDED: Element results plotting added
         Element results plotting:   pycalculix.Problem.rfile.eplot()
         Nodal results plotting:     pycalculix.Problem.rfile.nplot()
@@ -207,7 +213,8 @@ Version Updates:
         Values under and over are greyed out, darker under, lighter over
     ADDED: internal holes in parts
         One can make circular holes, or draw complicated holes.
-        See example 7
+        See examples:
+        hole-in-plate-full.py, multihole.py
     ADDED: Added set_ediv method to FeaModel class.
         This method sets the number of elements on a line.
         line.set_ediv still works.
@@ -216,10 +223,10 @@ Version Updates:
         view.select_all, view.select, view.allsel_under
         All plotting now uses the current selection set
     SYNTAX: updated how parts, materials, problems are made
-        Make part: 
-            pycalculix.FeaModel.make_part or pycalculix.Part    
+        Make part:
+            pycalculix.FeaModel.make_part or pycalculix.Part
         Make material:
-            pycalculix.FeaModel.make_matl or pycalculix.Material    
+            pycalculix.FeaModel.make_matl or pycalculix.Material
         Make problem (previously called model):
             pycalculix.FeaModel.make_problem or pycalculix.Problem
         Make Results File:
@@ -234,6 +241,13 @@ Version Updates:
             Many methods and variables made private to clean up name space.
 
 TODO:
+Adding the model.view.set_orientation
+convert old view into focus
+Add *equation which is coupling
+set_couple('x',['P1', 'P2'])
+set_couple('x',['L1', 'L2'])
+set_couple('x','L1')
+
 Add tutorial videos
 Update pdf
 Improve Pylint Scores:
@@ -266,7 +280,7 @@ Future Goals:
                 Will need to delete some points + make center point
 -Ability to make a new field (% yield etc)
 -Double check effective strain calculation:
-    http://orange.engr.ucdavis.edu/Documentation12.0/120/ans_thry.pdf 
+    http://orange.engr.ucdavis.edu/Documentation12.0/120/ans_thry.pdf
     pg 23 + 24
     https://support.tnodiana.com/manuals/d944/Analys/node405.html
     https://books.google.com/books?id=70vvzjngyQEC&pg=PA21&lpg=PA21&dq=equivalent+strain+principal+strain&source=bl&ots=bPj4dHfddy&sig=X6MAdyeq34X9uNQRZ1poKXHZK9c&hl=en&sa=X&ei=lr2_VL_lM4q4ggS7loHICw&ved=0CFwQ6AEwCQ#v=onepage&q=equivalent%20strain%20principal%20strain&f=false
@@ -296,3 +310,5 @@ Future Goals:
 -Face plotting?
 -Aluminum can model?
     -https://www.youtube.com/watch?v=hUhisi2FBuw
+
+![Justin Analytics](https://ga-beacon.appspot.com/UA-97855011-1/pycalculix_github?pixel)

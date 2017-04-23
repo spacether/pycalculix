@@ -213,7 +213,7 @@ class Problem(base_classes.Idobj):
             # store all node and element components
             for time in load_dict:
                 for load in load_dict[time]:
-                    if load.ltype not in ['press', 'press_fluid']:
+                    if load.comp.write == True:
                         box['components'].add(load.comp)
             for contact in self.fea.contacts:
                 box['components'].add(contact.master_comp)
@@ -223,7 +223,7 @@ class Problem(base_classes.Idobj):
             box['elements'] = self.__get_etxt(box['elements'])
             box['components'] = self.__get_ctxt(box['components'])
 
-            # add text definition for nodes, elelents, components
+            # add text definition for nodes, elements, components
             inp += box['nodes']+['']
             inp += box['elements']+['']
             inp += box['components']+['']

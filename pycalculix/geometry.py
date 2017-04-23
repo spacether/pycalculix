@@ -1,7 +1,6 @@
 """This module stores geometry classes, which are used to make parts.
 """
 from math import atan2, pi, cos, sin, radians, degrees
-from matplotlib.patches import Arc as AArc
 from matplotlib.patches import PathPatch
 from matplotlib.path import Path
 from numpy.linalg import det
@@ -12,33 +11,7 @@ from . import base_classes
 
 #accuracy for small numbers in math below
 ACC = .00001 # original
-
 LDIVS = {}
-
-def get_text_hv(angle):
-    """Returns (ha, va) text horizontal and vertical alignment for line label.
-
-    This makes the line label text inside its area, assuming areas closed CW.
-
-    Args:
-        angle (float): line normal vector in degrees, between 180 and -180
-    """
-    horiz, vert = ('', '')
-    if abs(angle) < 67.5:
-        horiz = 'right'
-    elif 67.5 <= abs(angle) < 112.5:
-        horiz = 'center'
-    elif 112.5 <= abs(angle) <= 180:
-        horiz = 'left'
-    if abs(angle) < 22.5 or abs(angle) > 157.5:
-        vert = 'center'
-    else:
-        if angle > 0:
-            vert = 'top'
-        else:
-            vert = 'bottom'
-    return (horiz, vert)
-
 
 class Point(base_classes.Idobj):
     """Makes a point or vector.
@@ -164,25 +137,6 @@ class Point(base_classes.Idobj):
         """Returns the length of this point or vector."""
         res = (self.x**2 + self.y**2)**0.5
         return res
-
-    def label(self, axis):
-        """Labels the point on a Matplotlib axis.
-
-        Args:
-            axis (Matplotlib Axis): Matplotlib Axis
-        """
-        axis.annotate(self.get_name(), (self.y, self.x))
-
-    def plot(self, axis, label=True):
-        """Plots the point on the passed matplotlib axis.
-
-        Args:
-            axis (Matplotlib axis): plate to plot the point
-            pnum (bool): True turns on point labeling
-        """
-        axis.scatter(self.y, self.x)
-        if label:
-            self.label(axis)
 
     def make_unit(self):
         """Modifies self vector to make it a unit vector."""
@@ -706,34 +660,6 @@ class SignLine(Line, base_classes.Idobj):
             return '-L'+str(self.line.id)
         else:
             return 'L'+str(self.line.id)
-
-    def label(self, ax):
-        """Labels the line on the matplotlib ax axis.
-
-        Args:
-            ax (Matplotlib axis): Matplotlib axis
-        """
-        # find angle of perpendiclar line so we can set text alignment
-        lvect = self.get_perp_vec()
-        ang = lvect.ang_deg()
-        horiz, vert = get_text_hv(ang)
-        axial = self.midpt.y
-        radial = self.midpt.x
-        ax.text(axial, radial, self.get_name(), ha=horiz, va=vert)
-
-    def plot(self, ax, label=True):
-        """Draws and labels the line onto the passed Matplotlib axis.
-
-        Args:
-            ax (Matlotlib axis): Matplotlib axis
-            label (bool): if True label the line
-        """
-        lax = [pt.y for pt in self.points]
-        lrad = [pt.x for pt in self.points]
-        # draw line
-        ax.plot(lax, lrad)
-        if label:
-            self.label(ax)
 
     def signed_copy(self, sign):
         """Returns a SignLine copy of this line."""
@@ -1301,44 +1227,6 @@ class SignArc(Arc, base_classes.Idobj):
             return '-L'+str(self.line.id)
         else:
             return 'L'+str(self.line.id)
-
-    def label(self, ax):
-        """Labels the arc on the matplotlib ax axis.
-
-        Args:
-            ax (Matplotlib axis): Matplotlib axis
-        """
-        lvect = self.get_perp_vec(self.midpt)
-        ang = lvect.ang_deg()
-        horiz, vert = get_text_hv(ang)
-        (axial, radial) = (self.midpt.y, self.midpt.x)
-        ax.text(axial, radial, self.get_name(), ha=horiz, va=vert)
-
-    def plot(self, ax, label=True):
-        """Draws and labels the arc onto the passed Matplotlib axis.
-
-        Args:
-            ax: Matplotlib axis
-            label (bool): if True, label the arc
-        """
-        ctr = self.actr
-        vect1 = None
-        sign = 1
-        if self.concavity == 'concave':
-            vect1 = self.pt(0)-ctr
-        else:
-            sign = -1
-            vect1 = self.pt(1)-ctr
-        rad = self.radius
-        ang1 = (vect1.ang_deg())
-        ang2 = ang1 + sign*self.get_ang()
-
-        # matplotlib assumes ccw arc drawing, calculix assumes cw drawing
-        a = AArc(xy=[ctr.y, ctr.x], width=2*rad, height=2*rad, angle=0,
-                 theta1=ang1, theta2=ang2)
-        ax.add_artist(a)
-        if label:
-            self.label(ax)
 
     def signed_copy(self, sign):
         """Returns a SignArc copy of this arc."""

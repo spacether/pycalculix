@@ -1,6 +1,5 @@
 """This module stores classes that make a finite element analysis mesh.
 """
-from matplotlib.patches import Polygon  # needed for plotting elements
 from . import geometry
 
 class Element(object):
@@ -128,19 +127,6 @@ class Element(object):
     def nodes(self):
         """Returns list of element nodes."""
         return self.node.values()
-
-    def get_poly(self):
-        """Returns a polygon of the element."""
-        nodes = [node for node in self.nodes if node.order == 1]
-        # make a list of [[ax, rad],[... ] for making the polygon
-        xycoords = [[node.y, node.x] for node in nodes]
-        polygon = Polygon(xycoords, closed=True)
-        return polygon
-    
-    def label(self, ax):
-        """Labels the element on the passed matplotlib axis."""
-        ax.text(self.center.y, self.center.x, self.get_name(),
-                ha='center', va='center')
 
     def calc_center(self):
         """Returns the element center as a Point."""
@@ -397,10 +383,6 @@ class Node(object):
             face (Face): face to add to set self.faces
         """
         self.faces.add(face)
-
-    def label(self, ax):
-        """Labels the node on the passed Matplotlib axis."""
-        ax.annotate(self.get_name(), (self.y, self.x))
 
     def __hash__(self):
         """Returns the node id as the hash."""
