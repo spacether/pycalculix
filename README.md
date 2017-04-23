@@ -91,13 +91,13 @@ Files Produced:
 Meshing and solving are done in the background using cgx or gmsh for meshing,
 and Calculix ccx for solving.
 Files Used:
-*.fbd (Calculix cgx gemetry file)
-*.inp (Calculix solver input file, or mesh definition)
-*.geo (Gmsh geometry file)
-*.msh (Gmsh native mesh file)
-*.frd (Calculix ccx nodal results file, values are at nodes and were created
+.fbd (Calculix cgx gemetry file)
+.inp (Calculix solver input file, or mesh definition)
+.geo (Gmsh geometry file)
+.msh (Gmsh native mesh file)
+.frd (Calculix ccx nodal results file, values are at nodes and were created
        by interpolating element integration point results back to the nodes)
-*.dat (Calculix ccx element results file, includes integration point results)
+.dat (Calculix ccx element results file, includes integration point results)
 
 
 Installation:
@@ -119,7 +119,7 @@ Note:
     This is an easier option for 64 bit systems because the binaries of the
     other libraries are harder to find.
 32-bit:
-    *Rather than installing anaconda you can just install python 3+ from the
+    Rather than installing anaconda you can just install python 3+ from the
     python site:
     https://www.python.org/downloads/release/python-343/
     When you install pycalculix in the next step below, the required libraries
@@ -243,7 +243,7 @@ Version Updates:
 TODO:
 Adding the model.view.set_orientation
 convert old view into focus
-Add *equation which is coupling
+Add equation which is coupling
 set_couple('x',['P1', 'P2'])
 set_couple('x',['L1', 'L2'])
 set_couple('x','L1')
