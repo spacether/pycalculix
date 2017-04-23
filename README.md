@@ -84,11 +84,12 @@ https://github.com/spacether/pycalculix/tree/master/examples
     This assumes that python3 is your active python installation
 
   ##### LINUX:
-    - Console:
-      1. cd into the directory with your .py file in it
-      2. type:
-      python3 the_program.py
-      where the_program.py is the name of the file that you are running
+
+  - Console:
+    1. cd into the directory with your .py file in it
+    2. type:
+    python3 the_program.py
+    where the_program.py is the name of the file that you are running
 
 
 ## Files Produced
