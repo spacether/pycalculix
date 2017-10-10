@@ -1,12 +1,6 @@
 from setuptools import setup, find_packages
-import os
 
-progs = ['gmsh', 'calculix']
-oses = ['win32', 'win64', 'linux32', 'linux64']
-folders = []
-for program in progs:
-    for o in oses:
-        folders.append(program+'_'+o)
+from pycalculix import __version__
 
 # platform specific builds
 # http://stackoverflow.com/questions/6469508/is-it-possible-to-express-a-platform-specific-dependency-in-setup-py-without-bui
@@ -20,12 +14,11 @@ for program in progs:
 setup(
     name = "pycalculix",
     install_requires = ['matplotlib >= 1.3.1', 'numpy', 'dxfgrabber'],
-    version = "1.0.0",
+    version = __version__,
     description = "Python 3 library to build and solve finite element analysis (FEA) models in Calculix.",
     author = "Justin Black",
     author_email = "justin.a.black@gmail.com",
     packages = find_packages(),
-    include_package_data=True,
     url = "http://justinablack.com/pycalculix/",
     keywords = ["FEA", "Finite Element Analysis", "Calculix", "Mechanical Engineering", "CAD"],
     classifiers = [

@@ -78,8 +78,8 @@ https://github.com/spacether/pycalculix/tree/master/examples
 
   - Console:
     1. cd into the directory with your .py file in it
-    2. type:
-    python the_program.py
+    2. type:  
+    python the_program.py  
     where the_program.py is the name of the file that you are running
     This assumes that python3 is your active python installation
 
@@ -87,8 +87,8 @@ https://github.com/spacether/pycalculix/tree/master/examples
 
   - Console:
     1. cd into the directory with your .py file in it
-    2. type:
-    python3 the_program.py
+    2. type:  
+    python3 the_program.py  
     where the_program.py is the name of the file that you are running
 
 
@@ -191,6 +191,16 @@ Optional Software:
 Suggested IDE (program to edit and run python programs):
 Wing IDE:
 	http://wingware.com/downloads/wingide-101
+
+## Developer notes to self
+
+- temporarily removed dfxgrabber
+
+1.0.0 will
+- remove gmsh and calculix
+- the license will be converted to a permissive user version
+- moves dist and documentation building into make file
+make_dist, make_doc, and clean_examples should be rolled in  to a make file or a command script
 
 ## Version Updates
 

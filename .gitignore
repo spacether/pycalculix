@@ -1,0 +1,8 @@
+.DS_Store
+.project
+.pydevproject
+*.pyc
+
+venv/
+presentations/
+__pycache__

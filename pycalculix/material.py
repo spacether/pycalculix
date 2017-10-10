@@ -55,8 +55,6 @@ class Material(base_classes.Idobj):
           - density (float): density in mass/volume units
           - pratio (float): poisson's ratio (unitless)
           - youngs (float): young's modulus in Force/area = stress units
-          
-        Kargs:
           - mechtpye (str): mechanical material type
             options: 'linear' or 'nonlinear'
           - exponent (float): exponent of Ramberg-Osgood stress-strain equation
@@ -103,7 +101,7 @@ class Material(base_classes.Idobj):
         """Returns a list of text strings for ccx defining the material."""
         res = []
         res.append('*MATERIAL,NAME='+self.name)
-        
+
         if self.mechtype == 'linear':
             res.append('*ELASTIC')
             res.append(str(self.youngs)+','+str(self.pratio))

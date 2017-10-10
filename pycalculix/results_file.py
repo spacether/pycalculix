@@ -425,17 +425,14 @@ class ResultsFile(object):
         else:
             print('Time %f is not in the loaded times. Valid times are:')
             print(self.steps)
-    
-    
+
     def plot_gradient(self, start_point, end_point, field, fname='', display=True, title='', max_val=None, min_val=None, curve_fitting=True, n_poly=3, n_subpoints=500, legend=True):
         """Create diagram with data projected onto line on the undeformed geometry.
 
         Args:
-            start_point [(float), (float)]: starting point of line. [x, y]
-            end_point [(float), (float)]: end point of line. Example: [x, y]
+            start_point (list): start point of line. [x, y].
+            end_point (list): end point of line. [x, y].
             field (str): results item to plot, examples: 'ux', 'ey', 'Seqv'
-            
-        Kargs:
             fname (str): prefix of png file name, if writing an image
             display (bool): True = interactively show the plot
             title (str): third line in the plot title
@@ -450,7 +447,7 @@ class ResultsFile(object):
             n_subpoints (int): numbers of points the line is subdivided into
             legend (bool): True = legend with fitted equation is shown
         """
-        
+
         # store the selected nodes and elements
         sel = {}
         sel['nodes'] = self.__problem.fea.view.nodes
@@ -463,58 +460,58 @@ class ResultsFile(object):
         # store results at nodes
         node_position = np.zeros((len(sel['nodes']),2))
         field_values = np.zeros(len(sel['nodes']))
-        
+
         for idx, node in enumerate(sel['nodes']):
-            
+
             node_position[idx] = [node.x, node.y]
             field_values[idx] = self.__results[self.__time]['node'][node.id][field]
-            
-        
+
+
         #create subpoints on line
         subpoints = np.zeros((n_subpoints, 3))  #[x, y, line position]
-        
+
         subpoints[:,0] = np.linspace(start_point[0], end_point[0], n_subpoints)
         subpoints[:,1] = np.linspace(start_point[1], end_point[1], n_subpoints)
         subpoints[:,2] = np.arange(n_subpoints) / n_subpoints * np.sqrt(np.sum( (np.array(start_point) - np.array(end_point))**2))
-        
+
         #calculate weighted field value for every subpoint
         wfield = np.zeros(n_subpoints)
-        
+
         for idx in range(n_subpoints):
-            
+
             #calculate inverse of distance from nodes to subpoints
             dist = np.sqrt(np.sum((node_position-subpoints[idx,0:2])**2,axis=1))
-            
+
             #calculte weighted field value
             #dist[dist < 1E-10] = 1E-10
             #inv_dist = 1. / dist**3
             #wfield[idx] = np.average(field_values, weights=inv_dist)
-            
+
             #use nearest value
             wfield[idx] = field_values[min(range(len(dist)),key=dist.__getitem__)]
-            
-            
+
+
         #plot diagram
-        
+
         fig = plt.figure(figsize=(10,6))
         ax_ = fig.add_subplot(111)
-        
+
         plt.plot(subpoints[:,2], wfield, '-r', linewidth=2.5, label=field)
-        
+
         if curve_fitting==True:
             #execute curve fitting if needed
             poly = np.polyfit(subpoints[:,2], wfield, n_poly)
-            
+
             #string for equation of fitted function
             funcstring = [str(np.round(poly[i]))+u'*x^'+str(np.arange(n_poly,0,-1)[i]) for i in range(n_poly)]
             funcstring.append(str(np.round(poly[-1])))
             funcstring = '+'.join(funcstring)
-            
+
             func = np.poly1d(poly)
-            
+
             plt.plot(subpoints[:,2], func(subpoints[:,2]), '--k', linewidth=1.5, label=funcstring)
-        
-        
+
+
         # set units
         alist = self.__problem.fea.get_units(field, 'dist', 'time')
         [f_unit, d_unit, t_unit] = alist
@@ -526,20 +523,20 @@ class ResultsFile(object):
         plt.title(plot_title)
         plt.xlabel('path position'+d_unit)
         plt.ylabel(field + ' ' +f_unit)
-        
+
         #show legend if needed
         if legend == True:
             plt.legend()
-            
+
         #set limits on y-axis
         if min_val!=None:
             plt.gca().set_ylim(bottom=min_val)
         if max_val!=None:
             plt.gca().set_ylim(top=max_val)
-            
+
         plt.grid()
         base_classes.plot_finish(plt, fname, display)
-    
+
     def get_relative_gradient(self, start_point, end_point, field, n_poly=3, n_subpoints=500):
         """Calculte relative stress gradient (gradient/start_value)
 
@@ -547,12 +544,10 @@ class ResultsFile(object):
             start_point [(float), (float)]: starting point of line. [x, y]
             end_point [(float), (float)]: end point of line. Example: [x, y]
             field (str): results item to plot, examples: 'ux', 'ey', 'Seqv'
-            
-        Kargs:
             n_poly (int): numbers of polygons for fitting, min=2
             n_subpoints (int): numbers of points the line is subdivided into
         """
-        
+
         # store the selected nodes and elements
         sel = {}
         sel['nodes'] = self.__problem.fea.view.nodes
@@ -565,42 +560,42 @@ class ResultsFile(object):
         # store results at nodes
         node_position = np.zeros((len(sel['nodes']),2))
         field_values = np.zeros(len(sel['nodes']))
-        
+
         for idx, node in enumerate(sel['nodes']):
-            
+
             node_position[idx] = [node.x, node.y]
             field_values[idx] = self.__results[self.__time]['node'][node.id][field]
-            
-        
+
+
         #create subpoints on line
         subpoints = np.zeros((n_subpoints, 3))  #[x, y, line position]
-        
+
         subpoints[:,0] = np.linspace(start_point[0], end_point[0], n_subpoints)
         subpoints[:,1] = np.linspace(start_point[1], end_point[1], n_subpoints)
         subpoints[:,2] = np.arange(n_subpoints) / n_subpoints * np.sqrt(np.sum( (np.array(start_point) - np.array(end_point))**2))
-        
+
         #calculate weighted field value for every subpoint
         wfield = np.zeros(n_subpoints)
-        
+
         for idx in range(n_subpoints):
-            
+
             #calculate inverse of distance from nodes to subpoints
             dist = np.sqrt(np.sum((node_position-subpoints[idx,0:2])**2,axis=1))
-            
+
             #use nearest value
             wfield[idx] = field_values[min(range(len(dist)),key=dist.__getitem__)]
-            
-            
+
+
         #curve fitting
         poly = np.polyfit(subpoints[:,2], wfield, n_poly)
-        
+
         rel_grad = abs(poly[-2])/abs(poly[-1])
-        
+
         return rel_grad
-        
-        
-        
-        
+
+
+
+
 
     @staticmethod
     def __utot(vals):
