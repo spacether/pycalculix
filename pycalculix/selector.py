@@ -105,11 +105,11 @@ class View(object):
 
     def plot_nodes(self, axis, label=True):
         """Plots selected nodes on the passed axis
-        
+
         Args:
             axis: matplotlib axis to plot on
             label (bool): True to plot labels, False otherwise
-        
+
         Returns:
             list: [horizontals, verticals] used to set plot bounds later
         """
@@ -125,11 +125,11 @@ class View(object):
 
     def plot_elements(self, axis, label=True):
         """Plots selected elements on the passed axis
-        
+
         Args:
             axis: matplotlib axis to plot on
             label (bool): True to plot labels, False otherwise
-        
+
         Returns:
             list: [horizontals, verticals] used to set plot bounds later
         """
@@ -159,11 +159,11 @@ class View(object):
 
     def plot_points(self, axis, label=True):
         """Plots selected points on the passed axis
-        
+
         Args:
             axis: matplotlib axis to plot on
             label (bool): True to plot labels, False otherwise
-        
+
         Returns:
             list: [horizontals, verticals] used to set plot bounds later
         """
@@ -179,11 +179,11 @@ class View(object):
 
     def plot_lines(self, axis, label=True):
         """Plots selected lines on the passed axis
-        
+
         Args:
             axis: matplotlib axis to plot on
             label (bool): True to plot labels, False otherwise
-        
+
         Returns:
             list: [horizontals, verticals] used to set plot bounds later
         """
@@ -207,7 +207,7 @@ class View(object):
                 if det_val < 0:
                     pstart, pend = [pt2, pt1]
                 ang1, ang2 = [pstart - ctr, pend - ctr]
-                ang1, ang2 = [ang1.ang_deg(), ang2.ang_deg()]            
+                ang1, ang2 = [ang1.ang_deg(), ang2.ang_deg()]
                 # matplotlib assumes ccw arc drawing, calculix can be cw or ccw
                 artist = AArc(xy=[ctr.x, ctr.y], width=2*rad, height=2*rad,
                               angle=0, theta1=ang1, theta2=ang2)
@@ -828,4 +828,3 @@ class Selector(object):
             items = getattr(self, sel_type)
             print(' %s: %i selected' % (sel_type, len(items)))
         print(spacer)
-

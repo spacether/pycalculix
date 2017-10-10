@@ -5,4 +5,5 @@
 
 venv/
 presentations/
+pycalculix.egg-info/
 __pycache__

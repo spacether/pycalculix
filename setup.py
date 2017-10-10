@@ -1,6 +1,8 @@
 from setuptools import setup, find_packages
-
-from pycalculix import __version__
+try:
+    from pycalculix import __version__
+except:
+    __version__ = None
 
 # platform specific builds
 # http://stackoverflow.com/questions/6469508/is-it-possible-to-express-a-platform-specific-dependency-in-setup-py-without-bui

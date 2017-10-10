@@ -18,7 +18,7 @@ class Problem(base_classes.Idobj):
             -- 'struct': structural
         - fname (str): file prefix for the problem .inp and results files
             If value is '' it will default to the project name of the FeaModel
-            
+
     Attributes:
         fea (FeaModel): parent FeaModel
         __ptype (str): problem type, options:
@@ -241,7 +241,7 @@ class Problem(base_classes.Idobj):
                     for surf_interaction in self.fea.surfints:
                         inp += surf_interaction.ccx()
                     for contact in self.fea.contacts:
-                        inp += contact.ccx()                        
+                        inp += contact.ccx()
                 else:
                     # only write times >= 1
                     inp.append('*STEP')

@@ -154,7 +154,7 @@ class FeaModel(object):
         items = self.get_items(items)
         for line in items:
             line.set_ediv(ediv)
-            
+
     def set_esize(self, items, esize):
         """Sets the element size on the passed line.
 
@@ -713,7 +713,7 @@ class FeaModel(object):
         fig = plt.figure()
         axis = fig.add_subplot(111, aspect='equal')
         horiz, vert = [], []
-        
+
         for item_type in styledict['items']:
             plot_func = getattr(self.view, 'plot_'+item_type)
             label = item_type in styledict['labels']
@@ -1494,7 +1494,7 @@ class FeaModel(object):
                 sets[set_type][set_name] = []
                 mode = 'set'
         f.close()
-        
+
         # loop through sets and remove empty sets
         # store sets to delete
         todel = []
@@ -1590,8 +1590,8 @@ class FeaModel(object):
         """Meshes all parts.
 
         Args:
-            size (float): 
-            
+            size (float):
+
                 - if meshmode == 'fineness' (default):
                     - mesh size is adapted to geometry size
                     - set size = 0.0001 - 1.0, to define how fine the mesh is.
@@ -1613,7 +1613,7 @@ class FeaModel(object):
                 - 'esize': keep explicitly defined element size
 
                 meshmode is changed to 'esize' is used if esize property is set to points or lines
-        """        
+        """
 
         #check if element size is set to points and change meshmode if necessary
         for pt in self.points:
@@ -1628,8 +1628,8 @@ class FeaModel(object):
                     # do I need a fix here for second order elements? probably
                     line.pt(0).set_esize(line.length()/line.ediv)
                     line.pt(1).set_esize(line.length()/line.ediv)
-            
-        
+
+
         if mesher == 'gmsh':
             self.__mesh_gmsh(size, meshmode)
         elif mesher == 'cgx':
@@ -1639,24 +1639,24 @@ class FeaModel(object):
         """Meshes all parts using the Gmsh mesher.
 
         Args:
-            
-            size (float): 
-            
+
+            size (float):
+
                 - if meshmode == 'fineness' (default):
                     - mesh size is adapted to geometry size
                     - set size = 0.0001 - 1.0, to define how fine the mesh is.
                     - Low numbers are very fine, higher numbers are coarser.
-                
+
                 - if meshmode == 'esize':
                     - element size is kept constant
                     - choose it depending on geometry size
-                
+
             meshmode (str):
-                
+
                 - 'fineness': adapt mesh size to geometry
                 - 'esize': keep explicitly defined element size
-            
-            
+
+
         """
         geo = []
         ids = {}
@@ -1666,7 +1666,7 @@ class FeaModel(object):
         # write all points
         for pt in self.points:
             txtline = 'Point(%i) = {%f, %f, %f};' % (pt.id, pt.x, pt.y, 0.0)
-            
+
             if meshmode == 'esize':
                 #add element size to points
                 if pt.esize == None:
@@ -1817,20 +1817,20 @@ class FeaModel(object):
         """Meshes all parts using the Calculix cgx mesher.
 
         Args:
-            
-            size (float): 
-            
+
+            size (float):
+
                 - if meshmode == 'fineness' (default):
                     - mesh size is adapted to geometry size
                     - set size = 0.0001 - 1.0, to define how fine the mesh is.
                     - Low numbers are very fine, higher numbers are coarser.
-                
+
                 - if meshmode == 'esize':  NOT TESTED WITH CGX
                     - element size is kept constant
                     - choose it depending on geometry size
-                
+
             meshmode (str):
-                
+
                 - 'fineness': adapt mesh size to geometry
                 - 'esize': keep explicitly defined element size  NOT TESTED WITH CGX
         """

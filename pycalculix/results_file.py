@@ -426,13 +426,16 @@ class ResultsFile(object):
             print('Time %f is not in the loaded times. Valid times are:')
             print(self.steps)
 
+
     def plot_gradient(self, start_point, end_point, field, fname='', display=True, title='', max_val=None, min_val=None, curve_fitting=True, n_poly=3, n_subpoints=500, legend=True):
         """Create diagram with data projected onto line on the undeformed geometry.
 
         Args:
-            start_point (list): start point of line. [x, y].
-            end_point (list): end point of line. [x, y].
+            start_point [(float), (float)]: starting point of line. [x, y]
+            end_point [(float), (float)]: end point of line. Example: [x, y]
             field (str): results item to plot, examples: 'ux', 'ey', 'Seqv'
+
+        Kargs:
             fname (str): prefix of png file name, if writing an image
             display (bool): True = interactively show the plot
             title (str): third line in the plot title
@@ -544,6 +547,8 @@ class ResultsFile(object):
             start_point [(float), (float)]: starting point of line. [x, y]
             end_point [(float), (float)]: end point of line. Example: [x, y]
             field (str): results item to plot, examples: 'ux', 'ey', 'Seqv'
+
+        Kargs:
             n_poly (int): numbers of polygons for fitting, min=2
             n_subpoints (int): numbers of points the line is subdivided into
         """

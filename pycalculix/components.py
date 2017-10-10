@@ -87,7 +87,7 @@ class Component(base_classes.Idobj):
             firstline = '*ELSET,ELSET='+self.name
         elif self.ctype == 'faces':
             # face component, contact surface
-            firstline = '*SURFACE,NAME=%s,TYPE=ELEMENT' % self.name            
+            firstline = '*SURFACE,NAME=%s,TYPE=ELEMENT' % self.name
         res.append(firstline)
         items = self.get_children()
         if self.ctype == 'faces':

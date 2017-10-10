@@ -291,7 +291,7 @@ class Part(base_classes.Idobj):
             center_y (float): y-axis hole center
             radius (float): hole radius
             num_arcs (int): number of arcs to use, must be >= 3
-        
+
         Returns:
             loop (geometry.LineLoop): a LineLoop list of SignArc
         """
@@ -544,13 +544,13 @@ class Part(base_classes.Idobj):
             line1 (SignLine): line that the arc starts or ends on, arc is tangent
             line2 (SignLine): line that the arc starts or ends on, arc is tangent
             radius (float): arc radius size
-        
+
         Returns:
             list: [arc, start_point, end_point]
         """
         # this function fillets lines in a part
         # check if the lines are touching
-        tmp = self.__cursor        
+        tmp = self.__cursor
 
         if line1.touches(line2):
             # switch lines if they were passed in reverse order
@@ -595,7 +595,7 @@ class Part(base_classes.Idobj):
             lend.set_pt(0, arc.pt(1))
             # del old pt, store new points for the arc
             self.fea.points.remove(rempt)
-            
+
             return [arc, arc.pt(0), arc.pt(1)]
         else:
             print('Cannot fillet! Lines must touch!')
@@ -604,10 +604,10 @@ class Part(base_classes.Idobj):
 
     def fillet_all(self, radius):
         """Fillets all external lines not within 10 degrees of tangency
-        
+
         Args:
             radius (float): the fillet radius to use
-        
+
         Returns:
             arcs (list): list of SignArc
         """
@@ -660,7 +660,7 @@ class Part(base_classes.Idobj):
         # apply the label
         if label:
             self.label(axis)
-    
+
     def __cut_line(self, point, line):
         """Cuts the passed line at the passed point.
 
@@ -811,7 +811,7 @@ class Part(base_classes.Idobj):
 
     def __cut_with_line(self, cutline, debug):
         """Cuts the part using the passed line.
-        
+
         Args:
             cutline (Line): line to cut the area with
             debug (list): bool for printing, bool for plotting after every cut
@@ -928,7 +928,7 @@ class Part(base_classes.Idobj):
         Args:
             point (Point): the location we are cutting from
             cvect (Point): the vector direction of the cut from pt
-        
+
         Returns:
         cutline (Line): cut line
         """

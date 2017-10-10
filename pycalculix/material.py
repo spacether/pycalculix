@@ -55,6 +55,8 @@ class Material(base_classes.Idobj):
           - density (float): density in mass/volume units
           - pratio (float): poisson's ratio (unitless)
           - youngs (float): young's modulus in Force/area = stress units
+
+        Kargs:
           - mechtpye (str): mechanical material type
             options: 'linear' or 'nonlinear'
           - exponent (float): exponent of Ramberg-Osgood stress-strain equation
