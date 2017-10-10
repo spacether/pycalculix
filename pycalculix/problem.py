@@ -18,7 +18,7 @@ class Problem(base_classes.Idobj):
             -- 'struct': structural
         - fname (str): file prefix for the problem .inp and results files
             If value is '' it will default to the project name of the FeaModel
-
+            
     Attributes:
         fea (FeaModel): parent FeaModel
         __ptype (str): problem type, options:
@@ -213,7 +213,7 @@ class Problem(base_classes.Idobj):
             # store all node and element components
             for time in load_dict:
                 for load in load_dict[time]:
-                    if load.comp.write == True:
+                    if load.ltype not in ['press', 'press_fluid']:
                         box['components'].add(load.comp)
             for contact in self.fea.contacts:
                 box['components'].add(contact.master_comp)
@@ -223,7 +223,7 @@ class Problem(base_classes.Idobj):
             box['elements'] = self.__get_etxt(box['elements'])
             box['components'] = self.__get_ctxt(box['components'])
 
-            # add text definition for nodes, elements, components
+            # add text definition for nodes, elelents, components
             inp += box['nodes']+['']
             inp += box['elements']+['']
             inp += box['components']+['']
@@ -241,7 +241,7 @@ class Problem(base_classes.Idobj):
                     for surf_interaction in self.fea.surfints:
                         inp += surf_interaction.ccx()
                     for contact in self.fea.contacts:
-                        inp += contact.ccx()
+                        inp += contact.ccx()                        
                 else:
                     # only write times >= 1
                     inp.append('*STEP')

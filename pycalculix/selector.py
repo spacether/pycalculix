@@ -1,7 +1,6 @@
-"""This module stores the View and Selector objects
+"""This module stores the Selector object
 
-Selector is used in FeaModel.focus to store the model's selected sets.
-View is used in FeaModel.view to plot items and set orientation.
+Selector is used in FeaModel to store the model's selected set.
 """
 
 from . import partmodule
@@ -9,268 +8,8 @@ from . import geometry
 from . import mesh
 from . import components
 
-from matplotlib.collections import PatchCollection  # element plotting
-from matplotlib.patches import Polygon  # needed for plotting elements
-from matplotlib.patches import Arc as AArc
-from numpy.linalg import det # needed for arc plotting
-
-# element colors, 0-1, 0=black, 1=whate
-ECOLOR = '.4'
-FCOLOR = '.9'
-CMAP = 'jet' # for results
-GEOM_CMAP = 'Pastel1' # color map for parts or areas
-
-def get_text_hv(angle):
-    """Returns (ha, va) text horizontal and vertical alignment for line label.
-
-    This makes the line label text inside its area, assuming areas closed CW.
-
-    Args:
-        angle (float): line normal vector in degrees, between 180 and -180
-    """
-    horiz, vert = ('', '')
-    if abs(angle) < 67.5:
-        horiz = 'right'
-    elif 67.5 <= abs(angle) < 112.5:
-        horiz = 'center'
-    elif 112.5 <= abs(angle) <= 180:
-        horiz = 'left'
-    if abs(angle) < 22.5 or abs(angle) > 157.5:
-        vert = 'center'
-    else:
-        if angle > 0:
-            vert = 'top'
-        else:
-            vert = 'bottom'
-    return (horiz, vert)
-
-
-class View(object):
-    """Makes a view object which allows plotting of all entities.
-
-    View orientation is also stored.
-
-    Args:
-        orientation (str): view orientation
-        focus (Selector): the model's selected items
-
-    Attributes:
-        orientation (str): view orientation
-    """
-
-    def __init__(self, focus):
-        self.__focus = focus
-        self.set_orientation(focus.orientation)
-
-    @staticmethod
-    def __list_x(items):
-        """Private function to return list of xs"""
-        return [item.x for item in items]
-
-    @staticmethod
-    def __list_y(items):
-        """Private function to return list of ys"""
-        return [item.y for item in items]
-
-    @staticmethod
-    def __coords_xy(items):
-        """Private function to return list of [[x1,y1],[x2,y2]...]"""
-        return [[item.x, item.y] for item in items]
-
-    @staticmethod
-    def __coords_yx(items):
-        """Private function to return list of [[y1,x1],[y2,x2]...]"""
-        return [[item.y, item.x] for item in items]
-
-    @staticmethod
-    def __coord_xy(item):
-        """Private function to return Point with x horiz y vert"""
-        return geometry.Point(item.x,item.y,item.z)
-
-    @staticmethod
-    def __coord_yx(item):
-        """Private function to return Point with x horiz y vert"""
-        return geometry.Point(item.y,item.x,item.z)
-
-    def __make_plot_arrows(self, figure, loads):
-        """Plots the passed loads on to the passed figure using set orientation
-
-        Args:
-            figure: matplotlib figure to plot on
-            loads (list of load): pressure, displacement loads
-
-                All passed loads must be of the same type
-        """
-        pass
-
-    def plot_nodes(self, axis, label=True):
-        """Plots selected nodes on the passed axis
-
-        Args:
-            axis: matplotlib axis to plot on
-            label (bool): True to plot labels, False otherwise
-
-        Returns:
-            list: [horizontals, verticals] used to set plot bounds later
-        """
-        items = self.__focus.nodes
-        horiz, vert = self.__horiz(items), self.__vert(items)
-        axis.scatter(horiz, vert, s=7, color='black')
-        if label:
-            names = [node.get_name() for node in items]
-            nlist = list(zip(names, horiz, vert))
-            for (name, hval, vval) in nlist:
-                axis.annotate(name, (hval, vval))
-        return [horiz, vert]
-
-    def plot_elements(self, axis, label=True):
-        """Plots selected elements on the passed axis
-
-        Args:
-            axis: matplotlib axis to plot on
-            label (bool): True to plot labels, False otherwise
-
-        Returns:
-            list: [horizontals, verticals] used to set plot bounds later
-        """
-        items = self.__focus.elements
-        polys = []
-        bound_nodes = set()
-        label_nodes = self.__focus.nodes
-        for element in items:
-            enodes = element.nodes
-            bound_nodes.update(enodes)
-            corner_nodes = [node for node in enodes if node.order == 1]
-            coords = self.__coords(corner_nodes)
-            poly = Polygon(coords, closed=True)
-            polys.append(poly)
-        coll = PatchCollection(polys, facecolors=FCOLOR, edgecolors=ECOLOR)
-        axis.add_collection(coll)
-
-        # plot element numbers
-        if label:
-            for element in items:
-                axis.text(element.center.y, element.center.x,
-                          element.get_name(), ha='center', va='center')
-
-        # return horiz, vert to set bounds with
-        horiz, vert = self.__horiz(bound_nodes), self.__vert(bound_nodes)
-        return [horiz, vert]
-
-    def plot_points(self, axis, label=True):
-        """Plots selected points on the passed axis
-
-        Args:
-            axis: matplotlib axis to plot on
-            label (bool): True to plot labels, False otherwise
-
-        Returns:
-            list: [horizontals, verticals] used to set plot bounds later
-        """
-        items = self.__focus.points
-        horiz, vert = self.__horiz(items), self.__vert(items)
-        axis.scatter(horiz, vert)
-        if label:
-            names = [point.get_name() for point in items]
-            nlist = list(zip(names, horiz, vert))
-            for (name, hval, vval) in nlist:
-                axis.annotate(name, (hval, vval))
-        return [horiz, vert]
-
-    def plot_lines(self, axis, label=True):
-        """Plots selected lines on the passed axis
-
-        Args:
-            axis: matplotlib axis to plot on
-            label (bool): True to plot labels, False otherwise
-
-        Returns:
-            list: [horizontals, verticals] used to set plot bounds later
-        """
-        items = self.__focus.lines
-        points = set()
-        for item in items:
-            if isinstance(item, geometry.SignLine):
-                points.update(item.points)
-                horiz = self.__horiz(item.points)
-                vert = self.__vert(item.points)
-                axis.plot(horiz, vert)
-            elif isinstance(item, geometry.SignArc):
-                points.update(item.points)
-                ctr = self.__coord(item.actr)
-                rad = item.radius
-                pt1 = self.__coord(item.pt(0))
-                pt2 = self.__coord(item.pt(1))
-                pstart, pend = [pt1, pt2]
-                det_val = det([[pt1.x, pt1.y], [pt2.x, pt2.y]])
-                # pos is ccw, neg is cw
-                if det_val < 0:
-                    pstart, pend = [pt2, pt1]
-                ang1, ang2 = [pstart - ctr, pend - ctr]
-                ang1, ang2 = [ang1.ang_deg(), ang2.ang_deg()]
-                # matplotlib assumes ccw arc drawing, calculix can be cw or ccw
-                artist = AArc(xy=[ctr.x, ctr.y], width=2*rad, height=2*rad,
-                              angle=0, theta1=ang1, theta2=ang2)
-                axis.add_artist(artist)
-
-        # label the lines
-        if label:
-            for item in items:
-                coord = self.__coord(item.midpt)
-                lvect = item.get_perp_vec(coord)
-                lvect = self.__coord(lvect)
-                ang = lvect.ang_deg()
-                h_align, v_align = get_text_hv(ang)
-                axis.text(coord.x, coord.y, item.get_name(),
-                          ha=h_align, va=v_align)
-        #return points
-        horiz, vert = self.__horiz(points), self.__vert(points)
-        return [horiz, vert]
-
-    def plot_areas(self, axis, label=True):
-        pass
-
-    def plot_parts(self, axis, label=True):
-        pass
-
-    @staticmethod
-    def set_bounds(plt, axials, radials):
-        """Sets the axial and radial bounds of the shown plot."""
-        vert = max(radials) - min(radials)
-        horiz = max(axials) - min(axials)
-        vadder = (vert)/5
-        hadder = (horiz)/5
-        (vmax, vmin) = (max(radials)+vadder, min(radials)-vadder)
-        (hmax, hmin) = (max(axials)+hadder, min(axials)-hadder)
-        plt.xlim(hmin, hmax)
-        plt.ylim(vmin, vmax)
-
-    def set_orientation(self, orientation):
-        """Sets the view orientation to 'xy' or 'yx' order is horiz, vert
-
-        Args:
-            orientation (str): the view orientation
-
-                'xy': default, x is horizontal, y is vertical
-                'yx': y is horizontal, x is vertical
-
-        """
-        self.orientation = orientation
-        print('Orientation set to '+orientation)
-        if self.orientation == 'xy':
-            self.__horiz = self.__list_x
-            self.__vert = self.__list_y
-            self.__coords = self.__coords_xy
-            self.__coord = self.__coord_xy
-        elif self.orientation == 'xy':
-            self.__horiz = self.__list_y
-            self.__vert = self.__list_x
-            self.__coords = self.__coords_yx
-            self.__coord = self.__coord_yx
-
 class Selector(object):
     """Makes a selector which stores the selected items in the FeaModel.
-    View orientation is also stored.
 
     Args:
         feamodel (FeaModel): the parent FeaModel object
@@ -285,11 +24,6 @@ class Selector(object):
         elements (set): currently selected elements
         faces (set): currently selected faces
         nodes (set): currently selected nodes
-        orientation (str): view orientation
-
-            'xy': default, x is horizontal, y is vertical
-            'yx': y is horizontal, x is vertical
-
         __parts (set): internal storage set of parts
         __areas (set): internal storage set of areas
         __slines (set): internal storage set of signed lines and arcs
@@ -308,7 +42,6 @@ class Selector(object):
         self.__elements = set()
         self.__faces = set()
         self.__nodes = set()
-        self.orientation = 'xy'
 
     @property
     def parts(self):
@@ -727,18 +460,6 @@ class Selector(object):
         elif sel_type == 'nodes':
             self.__add_select(self.__fea.nodes)
 
-    def set_orientation(self, orientation):
-        """Sets the view orientation to 'xy' or 'yx' order is horiz, vert
-
-        Args:
-            orientation (str): the view orientation
-
-                'xy': default, x is horizontal, y is vertical
-                'yx': y is horizontal, x is vertical
-
-        """
-        self.orientation = orientation
-
     def deselect(self, items):
         """Removes the passed item or items from the selection set.
         """
@@ -828,3 +549,4 @@ class Selector(object):
             items = getattr(self, sel_type)
             print(' %s: %i selected' % (sel_type, len(items)))
         print(spacer)
+

@@ -82,7 +82,7 @@ class CadImporter(object):
             if dist < geometry.ACC:
                 return realpoint
         return point
-
+    
     def __get_pts_lines(self, lines, arcs):
         """Returns a set of points, and a list of Lines and Arcs
 
@@ -189,7 +189,7 @@ class CadImporter(object):
         # select two segments
         # draw normal lines
         # find intersections, that is the center
-
+        
     def __load_dxf(self):
         """Loads in a dxf file and returns a list of parts
 

@@ -21,14 +21,12 @@ class Component(base_classes.Idobj):
             - 'elements': elements
 
         cname (str): component name
-        write (bool): whether to write the component to the inp file
     """
 
-    def __init__(self, item_list, ctype, cname='', write=True):
+    def __init__(self, item_list, ctype, cname=''):
         self.items = item_list
         self.ctype = ctype
         self.name = cname+'_'+ctype
-        self.write = write
         base_classes.Idobj.__init__(self)
 
     def __eq__(self, other):
@@ -87,7 +85,7 @@ class Component(base_classes.Idobj):
             firstline = '*ELSET,ELSET='+self.name
         elif self.ctype == 'faces':
             # face component, contact surface
-            firstline = '*SURFACE,NAME=%s,TYPE=ELEMENT' % self.name
+            firstline = '*SURFACE,NAME=%s,TYPE=ELEMENT' % self.name            
         res.append(firstline)
         items = self.get_children()
         if self.ctype == 'faces':

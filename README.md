@@ -194,7 +194,6 @@ Wing IDE:
 
 ## Developer notes to self
 
-- temporarily removed dfxgrabber
 
 1.0.0 will
 - remove gmsh and calculix
