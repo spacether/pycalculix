@@ -27,7 +27,7 @@ The chunker may not always be able to cut areas correctly.
 
 
 ## License
-See LICENSE.txt (GPL v2)
+See LICENSE.txt (Apache 2.0)
 
 
 ## Creator
@@ -78,8 +78,8 @@ https://github.com/spacether/pycalculix/tree/master/examples
 
   - Console:
     1. cd into the directory with your .py file in it
-    2. type:
-    python the_program.py
+    2. type:  
+    python the_program.py  
     where the_program.py is the name of the file that you are running
     This assumes that python3 is your active python installation
 
@@ -87,8 +87,8 @@ https://github.com/spacether/pycalculix/tree/master/examples
 
   - Console:
     1. cd into the directory with your .py file in it
-    2. type:
-    python3 the_program.py
+    2. type:  
+    python3 the_program.py  
     where the_program.py is the name of the file that you are running
 
 
@@ -192,7 +192,13 @@ Suggested IDE (program to edit and run python programs):
 Wing IDE:
 	http://wingware.com/downloads/wingide-101
 
-## Version Updates
+## Change Log
+
+
+### 0.9.4
+- removed gmsh and calculix
+- moved dist and documentation building and example cleanup into make file
+- changed the license to Apache 2.0
 
 ### 0.9.3  
 - ADDED: multiple parts with contacts

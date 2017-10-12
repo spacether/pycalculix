@@ -181,39 +181,3 @@ class LinearLoad(object):
             myline = '%i,P%i,%f' % (face.element.id, face.id, pval)
             res.append(myline)
         return res
-
-class Couple(object):
-    """Couples together nodes under items.
-
-    Args:
-        comp (Component): component of all the nodes that are coupled
-        axes (str): string direction of coupling
-
-            'x': x-motion is identical for all coupled nodes
-            'y': y-motion is identical for all coupled nodes
-            'xy': x and y motion is identical for all coupled nodes
-    """
-
-    def __init__(self, comp, axes='x'):
-        self.comp = comp
-        self.axes = axes
-
-    def ccx(self):
-        """Writes a load for Calculix ccx solver.
-
-        Returns a list strings, where each item is a line to write
-        to a Calculix .inp text file.
-        """
-        res = []
-        res.append('** Coupling on component: '+self.comp.name)
-        nodes = self.comp.get_children()
-        """
-        for face in faces:
-            res.append('*DLOAD')
-            xvals = [getattr(n, self.axis) for n in face.nodes]
-            xavg = sum(xvals)/len(xvals)
-            pval = self.get_val(xavg)
-            myline = '%i,P%i,%f' % (face.element.id, face.id, pval)
-            res.append(myline)
-        """
-        return res

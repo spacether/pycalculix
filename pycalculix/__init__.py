@@ -24,14 +24,14 @@ https://github.com/spacether/pycalculix
 __author__ = "Justin Black"
 __copyright__ = "Copyright 2015, Justin Black"
 __credits__ = ["Justin Black"]
-__license__ = "GPL V2"
-__version__ = "0.9.3"
+__license__ = "Apache 2.0"
 __maintainer__ = "Justin Black"
 __email__ = "justin.a.black[insert~at~sign]gmail.com"
 __status__ = "Beta"
 __all__ = ['environment', 'geometry', 'components', 'loads', 'partmodule',
            'mesh', 'material', 'feamodel', 'problem', 'results_file',
            'cadimporter']
+from .version import __version__
 
 from .feamodel import FeaModel
 from .partmodule import Part

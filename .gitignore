@@ -1,0 +1,9 @@
+.DS_Store
+.project
+.pydevproject
+*.pyc
+
+venv/
+presentations/
+pycalculix.egg-info/
+__pycache__

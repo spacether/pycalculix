@@ -429,31 +429,8 @@ class Part(base_classes.Idobj):
         y = self.__cursor.y + delta_y
         return self.draw_line_to(x, y)
 
-    def draw_line_dx(self, dx_dist):
-        """Draws a line a relative x-axis distance, and adds it to the part.
-
-        Args:
-            dx_dist (float): x-axis delta distance to draw the line
-
-        Returns:
-            list: [line, point_start, point_end]
-        """
-        return self.draw_line_delta(dx_dist, 0.0)
-
-    def draw_line_dy(self, dy_dist):
-        """Draws a line a relative y-axis distance, and adds it to the part.
-
-        Args:
-            dy_dist (float): y-axis delta distance to draw the line
-
-        Returns:
-            list: [line, point_start, point_end]
-        """
-        return self.draw_line_delta(dy_dist, 0.0)
-
     def draw_line_rad(self, dx_rad):
         """Draws a line a relative radial distance, and adds it to the part.
-        This is best used to draw axisymmetric parts.
 
         Args:
             dx_rad (float): x-axis delta distance to draw the line
@@ -465,7 +442,6 @@ class Part(base_classes.Idobj):
 
     def draw_line_ax(self, dy_ax):
         """Draws a line a relative axial distance, and adds it to the part.
-        This is best used to draw axisymmetric parts.
 
         Args:
             dy_ax (float): y-axis delta distance to draw the line
@@ -541,8 +517,8 @@ class Part(base_classes.Idobj):
         This inserts an arc in the part tangent to the two given lines.
 
         Args:
-            line1 (SignLine): line that the arc starts or ends on, arc is tangent
-            line2 (SignLine): line that the arc starts or ends on, arc is tangent
+            line1 (SignLine): line that the arc starts on, arc is tangent
+            line2 (SignLine): line that the ar ends on, arc is tangent
             radius (float): arc radius size
         
         Returns:
@@ -550,33 +526,27 @@ class Part(base_classes.Idobj):
         """
         # this function fillets lines in a part
         # check if the lines are touching
-        tmp = self.__cursor        
+        tmp = self.__cursor
 
         if line1.touches(line2):
-            # switch lines if they were passed in reverse order
-            lstart = line1
-            lend = line2
-            if lstart.pt(1) != lend.pt(0):
-                lstart = line2
-                lend = line1
             # offset the lines, assuming area is being traced clockwise
             # get the intersection point
             magnitude = radius
-            l1_off = lstart.offset(magnitude)
-            l2_off = lend.offset(magnitude)
+            l1_off = line1.offset(magnitude)
+            l2_off = line2.offset(magnitude)
             ctrpt = l1_off.intersects(l2_off)
             if ctrpt == None:
                 # flip the offset direction if lines don't intersect
                 magnitude = -radius
-                l1_off = lstart.offset(magnitude)
-                l2_off = lend.offset(magnitude)
+                l1_off = line1.offset(magnitude)
+                l2_off = line2.offset(magnitude)
                 ctrpt = l1_off.intersects(l2_off)
 
             # now we have an intersecting point
             #print('Arc center pt is: ', ctrpt)
-            p1_new = lstart.arc_tang_intersection(ctrpt, magnitude)
-            p2_new = lend.arc_tang_intersection(ctrpt, magnitude)
-            rempt = lstart.pt(1)
+            p1_new = line1.arc_tang_intersection(ctrpt, magnitude)
+            p2_new = line2.arc_tang_intersection(ctrpt, magnitude)
+            rempt = line1.pt(1)
 
             p1_new = self.__make_get_pt(p1_new.x, p1_new.y)[0]
             ctrpt = self.__make_get_pt(ctrpt.x, ctrpt.y)[0]
@@ -586,13 +556,13 @@ class Part(base_classes.Idobj):
             arc = self.__make_get_sline(geometry.Arc(p1_new, p2_new, ctrpt))[0]
 
             # put the arc in the right location in the area
-            area = lstart.lineloop.parent
-            area.line_insert(lstart, arc)
+            area = line1.lineloop.parent
+            area.line_insert(line1, arc)
             print('Arc inserted into area %i' % (area.id))
 
             # edit the adjacent lines to replace the removed pt
-            lstart.set_pt(1, arc.pt(0))
-            lend.set_pt(0, arc.pt(1))
+            line1.set_pt(1, arc.pt(0))
+            line2.set_pt(0, arc.pt(1))
             # del old pt, store new points for the arc
             self.fea.points.remove(rempt)
             
