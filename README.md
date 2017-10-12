@@ -27,7 +27,7 @@ The chunker may not always be able to cut areas correctly.
 
 
 ## License
-See LICENSE.txt (GPL v2)
+See LICENSE.txt (Apache 2.0)
 
 
 ## Creator
@@ -192,16 +192,13 @@ Suggested IDE (program to edit and run python programs):
 Wing IDE:
 	http://wingware.com/downloads/wingide-101
 
-## Developer notes to self
+## Change Log
 
 
-1.0.0 will
-- remove gmsh and calculix
-- the license will be converted to a permissive user version
-- moves dist and documentation building into make file
-make_dist, make_doc, and clean_examples should be rolled in  to a make file or a command script
-
-## Version Updates
+### 0.9.4
+- removed gmsh and calculix
+- moved dist and documentation building and example cleanup into make file
+- changed the license to Apache 2.0
 
 ### 0.9.3  
 - ADDED: multiple parts with contacts

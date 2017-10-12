@@ -1,8 +1,5 @@
 from setuptools import setup, find_packages
-try:
-    from pycalculix import __version__
-except:
-    __version__ = None
+from pycalculix.version import __version__
 
 # platform specific builds
 # http://stackoverflow.com/questions/6469508/is-it-possible-to-express-a-platform-specific-dependency-in-setup-py-without-bui
@@ -26,11 +23,11 @@ setup(
     classifiers = [
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Development Status :: 4 - Beta",
+        "Development Status :: 7 - Inactive",
         "Intended Audience :: End Users/Desktop",
         "Intended Audience :: Science/Research",
         "Intended Audience :: Education",
-        "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+        "License :: OSI Approved :: Apache Software License",
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
         "Topic :: Software Development :: Libraries :: Python Modules",
