@@ -19,6 +19,10 @@ setup(
     author_email = "justin.a.black@gmail.com",
     packages = find_packages(),
     url = "http://justinablack.com/pycalculix/",
+    entry_points = {
+        'console_scripts': ['pycalculix-add-feaprograms=pycalculix.installer:add',
+                            'pycalculix-remove-feaprograms=pycalculix.installer:remove'],
+    },
     keywords = ["FEA", "Finite Element Analysis", "Calculix", "Mechanical Engineering", "CAD"],
     classifiers = [
         "Programming Language :: Python",

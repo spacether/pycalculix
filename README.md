@@ -112,7 +112,14 @@ pycalculix requires the below software:
 - Calculix (solving)
 - Gmsh (meshing)
 
-## EASIEST INSTALLATION
+## Mac OS X
+1. Install python3, pycalculix and the fea programs that it uses
+```
+brew install python3
+pip3 install pycalculix
+pycalculix-add-feaprograms
+```
+2. You are done! See 'Getting Started'
 
 ##### WINDOWS:
 1. Install Anaconda* python 3.4:  
@@ -134,8 +141,11 @@ pycalculix requires the below software:
     When you install pycalculix in the next step below, the required libraries will autoinstall on your system.
 
 2. In a console window, type:  
-pip install pycalculix  
-Note: This installs the calculix and gmsh programs in sub-folders in the python pycalculix folder.  
+```
+pip install pycalculix
+pycalculix-add-feaprograms
+```
+Note: the second line installs the calculix and gmsh programs on your computer
 Running these included binaries from pycalculix only works for windows.
 
 3. You are done! See 'Getting Started'
@@ -172,11 +182,10 @@ Install Python 3+: https://www.python.org/downloads/release/python-342/
 Install numpy: http://sourceforge.net/projects/numpy/files/NumPy/1.9.1/  
 Install matplotlib: http://matplotlib.org/downloads.html  
 Install Calculix: http://www.calculix.de/  
-- Linux Version: http://www.dhondt.de/  
+- Linux Version: http://www.dhondt.de/
 - Windows Version: http://www.bconverged.com/download.php#calculix
-
 Install Gmsh: http://geuz.org/gmsh/#Download  
-pip install pycalculix  
+Install pycalculix: pip install pycalculix  
 Then pass locations to ccx, cgx, and gmsh per the example on the  
 pycaculix site: http://justinablack.com/pycalculix/  
 
@@ -199,6 +208,7 @@ Wing IDE:
 - removed gmsh and calculix
 - moved dist and documentation building and example cleanup into make file
 - changed the license to Apache 2.0
+- added command line tool to install gmsh and calculix for: osx
 
 ### 0.9.3  
 - ADDED: multiple parts with contacts
