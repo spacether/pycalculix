@@ -1,14 +1,5 @@
 from setuptools import setup, find_packages
-from pycalculix.version import __version__
-
-# platform specific builds
-# http://stackoverflow.com/questions/6469508/is-it-possible-to-express-a-platform-specific-dependency-in-setup-py-without-bui
-# check -format
-# check bdst -format=
-# check -p for platform
-# https://hynek.me/articles/sharing-your-labor-of-love-pypi-quick-and-dirty/
-# version suggestions
-# http://semver.org/
+with open('pycalculix/version.py') as f: exec(f.read())
 
 setup(
     name = "pycalculix",
