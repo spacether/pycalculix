@@ -118,21 +118,6 @@ def windows_add(bitsize):
     else:
         print('calculix (ccx) present')
 
-    # ccx Notes
-    # to get 32 bit and 64 bit can use either:
-    # http://www.bconverged.com/data/content/CalculiX_2_7_win_003.zip
-    # with this, one has to manually pick either 32 or 64bit
-    # eliminated
-    # then I need to add the folder: C:\Program Files (x86)\bConverged\CalculiX\ccx to path
-
-    # https://downloads.sourceforge.net/project/calculixforwin/03.2/CL32-win32bit.zip?r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fcalculixforwin%2Ffiles%2F03.2%2F&ts=1509080746&use_mirror=astuteinternet
-    # from that unzipped file I can move ccx out from C:\Users\Justin\Downloads\CL32-win64bit\CL32-win64\bin\ccx
-    # but keep the dlls too
-    # use mklink or os.symlink to create a link to ccx
-
-    # sourceforge also has a 64 bit version
-    # github does not have a 32 bit version of the binary sadly
-
 def windows_remove(bitsize):
     """Removes programs on windows"""
     gmsh_installed = shutil.which('gmsh')
@@ -143,6 +128,16 @@ def windows_remove(bitsize):
         env_path = os.getenv('VIRTUAL_ENV', sys.exec_prefix)
         scripts_folder = '%s\Scripts\\' % env_path
         remove_like(scripts_folder, 'gmsh')
+    ccx_installed = shutil.which('ccx')
+    if not ccx_installed:
+        print('ccx is not on your system')
+    else:
+        print('Removing ccx')
+        env_path = os.getenv('VIRTUAL_ENV', sys.exec_prefix)
+        scripts_folder = '%s\Scripts\\' % env_path
+        ccx_folder = '%sccx' % scripts_folder
+        add_remove_dll_links(ccx_folder, scripts_folder, add=False)
+        remove_like(scripts_folder, 'ccx')
 
 def remove_like(search_path, name):
     """
@@ -158,15 +153,15 @@ def remove_like(search_path, name):
             shutil.rmtree(path)
 
 def win_add_from_url(bitsize, binaries_url, program_name):
+    """Installs a program from an apache server file listing page"""
     # Needs the user agent header to exist for it to send back the content
     user_agent = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:56.0) '
                   'Gecko/20100101 Firefox/56.0')
     headers = {'User-Agent': user_agent}
 
     zipfile_regex = '.*%s.*' % program_name
-    url_choices = zipfile_by_bitsize(binaries_url, headers, zipfile_regex)
+    zipfile_name = zipfile_by_bitsize(binaries_url, headers, zipfile_regex, bitsize)
 
-    zipfile_name = url_choices[bitsize]
     zipfile_folder_name = zipfile_name.split('.')[0]
     zipfile_url = binaries_url + zipfile_name
     print('Downloading %s from %s' % (program_name, zipfile_url))
@@ -195,7 +190,8 @@ def win_add_from_url(bitsize, binaries_url, program_name):
     subprocess.check_call(command_line, shell=True)
     os.link(exe_loc, exe_link)
 
-def zipfile_by_bitsize(binaries_url, headers, zipfile_regex):
+def zipfile_by_bitsize(binaries_url, headers, zipfile_regex, bitsize):
+    """Returns the url linking to the correct zipfile"""
     req = urllib.request.Request(binaries_url, None, headers)
     html = urllib.request.urlopen(req).read().decode('utf-8')
     urls = re.findall(r'href=[\'"]?([^\'" >]+)', html)
@@ -205,9 +201,10 @@ def zipfile_by_bitsize(binaries_url, headers, zipfile_regex):
     url_choices = {32: urls[0], 64: urls[1]}
     if 'win32' in urls[1] or 'Windows32' in urls[1]:
         url_choices = {32: urls[1], 64: urls[0]}
-    return url_choices
+    return url_choices[bitsize]
 
 def get_direct_url(source_page, headers):
+    """Gets the download link from a sf page"""
     req = urllib.request.Request(source_page, None, headers)
     html = urllib.request.urlopen(req).read().decode('utf-8', 'ignore')
     html = html.replace("\"", "'")
@@ -218,16 +215,18 @@ def get_direct_url(source_page, headers):
     return html[first_char:last_quote]
 
 def win_add_ccx(bitsize, binaries_url, program_name):
+    """Installs ccx on a windows computer"""
     # Needs the user agent header to exist for it to send back the content
     user_agent = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:56.0) '
                   'Gecko/20100101 Firefox/56.0')
     headers = {'User-Agent': user_agent}
 
     zipfile_regex = '.+CL.+win.+zip/download$'
-    url_choices = zipfile_by_bitsize(binaries_url, headers, zipfile_regex)
-    zipfile_name = url_choices[bitsize].split('/')[-2]
+    zipfile_webpage_url = zipfile_by_bitsize(binaries_url, headers, zipfile_regex,
+                                             bitsize)
 
-    zipfile_webpage_url = url_choices[bitsize]
+    zipfile_name = zipfile_webpage_url.split('/')[-2]
+    zipfile_folder_name = zipfile_name.split('.')[0]
     print(zipfile_webpage_url)
     zipfile_url = get_direct_url(zipfile_webpage_url, headers)
     print(zipfile_url)
@@ -243,3 +242,40 @@ def win_add_ccx(bitsize, binaries_url, program_name):
     zip_ref.close()
     print('Removing %s zipfile' % program_name)
     os.remove(zipfile_name)
+
+    folder_from = '%s\\bin\ccx' % zipfile_folder_name
+    env_path = os.getenv('VIRTUAL_ENV', sys.exec_prefix)
+    scripts_path = '%s\Scripts' % env_path
+    folder_to = '%s\%s' % (scripts_path, program_name)
+
+    binary_name = 'ccx212.exe'
+    exe_loc = '%s\%s' % (folder_to, binary_name)
+    exe_link = '%s\%s.exe' % (scripts_path, program_name)
+    paths = [exe_link, folder_to]
+    for path in  paths:
+        if os.path.isfile(path):
+            os.unlink(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
+
+    command_line = "move %s %s" % (folder_from, folder_to)
+    print('Installing %s to %s' % (program_name, folder_to))
+    subprocess.check_call(command_line, shell=True)
+    add_remove_dll_links(folder_to, scripts_path, add=True)
+    os.link(exe_loc, exe_link)
+    shutil.rmtree(zipfile_folder_name)
+
+def add_remove_dll_links(folder_dlls, folder_dll_links, add=True):
+    """
+    Finds all dlls in folder_from and adds hard links to them in folder_to
+    Or removes the hard links if add=False
+    """
+    match_str = '%s\*.dll' % folder_dlls
+    dll_paths = glob.glob(match_str)
+    for dll_path in dll_paths:
+        dll_name = dll_path.split('\\')[-1]
+        dll_link_path = '%s\%s' % (folder_dll_links, dll_name)
+        if add:
+            os.link(dll_path, dll_link_path)
+        elif os.path.isfile(dll_link_path):
+            os.unlink(dll_link_path)
