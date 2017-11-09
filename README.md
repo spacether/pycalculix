@@ -52,7 +52,7 @@ pycalculix-add-feaprograms
 
 ## Usage
 1. To run a pycalcuix file you have to have pycalulix installed,
-see Installation below
+see Installation above
 2. The you can then write your own pycalculix programs or run one of the example
 files in the eamples folder on github:
 https://github.com/spacether/pycalculix/tree/master/examples
