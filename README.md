@@ -13,7 +13,7 @@ Usefull applications of Pycalculix:
 - Learning finite element analyis (FEA) and Python
 
 ## Installation
-## Mac OS X
+### Mac OS X
 1. Install python3, pycalculix and the fea programs that it uses
 ```
 brew install python3
@@ -24,7 +24,7 @@ pycalculix-add-feaprograms
 ```
 2. You are done! See 'Usage'
 
-## WINDOWS:
+### Windows
 1. Install python3 for [32bit machines](https://www.python.org/ftp/python/3.6.3/python-3.6.3-webinstall.exe) or [64 bit machines](https://www.python.org/ftp/python/3.6.3/python-3.6.3-amd64.exe)
 2. In a terminal run the below lines to install needed python libraries, pycalculix, and the fea programs that it uses
 ```
@@ -34,10 +34,10 @@ pip install pycalculix
 pycalculix-add-feaprograms
 ```
 Note: the second line installs the calculix and gmsh programs on your computer
-Running these included binaries from pycalculix only works for windows.
+Running these included binaries from pycalculix only works for windows.  
 3. You are done! See 'Usage'
 
-## LINUX, assumes Ubuntu 16.04
+## Linux, assumes Ubuntu 16.04
 1. Install python3-pip, numpy, matplotlib, pycalculix, and the fea programs that it uses
 ```
 sudo apt-get install python3-pip
