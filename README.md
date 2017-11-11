@@ -52,25 +52,27 @@ pycalculix-add-feaprograms
 
 ## Usage
 1. To run a pycalcuix file you have to have pycalulix installed,
-see Installation above
+see 'Installation' above
 2. The you can then write your own pycalculix programs or run one of the example files here:
 https://github.com/spacether/pycalculix/tree/master/examples
 3. To run a file:
-- WINDOWS:
+- WINDOWS
   - Graphical user interface:
-    1. Double click the file: if the .py extension is associated correctly you can double click it to run the .py program
+    - Double click the file: if the .py extension is associated correctly you can double click it to run the .py program
   - Console:
-    1. cd into the directory with your .py file in it
-    2. type:  
-    python the_program.py  
+    - cd into the directory with your .py file in it, then in the terminal enter
+    ```
+    python the_program.py
+    ```  
     where the_program.py is the name of the file that you are running
     This assumes that python3 is your active python installation
 
-- LINUX/MAC:
+- LINUX/MAC
   - Console:
-    1. cd into the directory with your .py file in it
-    2. type:  
-    python3 the_program.py  
+    - cd into the directory with your .py file in it, then in the terminal enter
+    ```
+    python3 the_program.py
+    ```  
     where the_program.py is the name of the file that you are running
 
 
