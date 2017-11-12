@@ -19,6 +19,7 @@ def add():
     printos = lambda os, bits=bitsize: print('Detected {} {} bit'.format(os, bits))
     if platform == "linux" or platform == "linux2":
         printos('Linux')
+        ubuntu_add()
     elif platform == "darwin":
         printos('Mac OS X')
         mac_add()
@@ -38,6 +39,7 @@ def remove():
     printos = lambda os, bits=bitsize: print('Detected {} {} bit'.format(os, bits))
     if platform == "linux" or platform == "linux2":
         printos('Linux')
+        ubuntu_remove()
     elif platform == "darwin":
         printos('Mac OS X')
         mac_remove()
@@ -48,6 +50,40 @@ def remove():
         printos('Windows')
         windows_remove(bitsize)
     print('Done!')
+
+def ubuntu_add():
+    """Adds programs on ubunut, uses apt"""
+    gmsh_installed = shutil.which('gmsh')
+    if not gmsh_installed:
+        print('Installing gmsh')
+        command_line = "sudo apt-get install gmsh"
+        subprocess.check_call(command_line, shell=True)
+    else:
+        print('gmsh present')
+    ccx_installed = shutil.which('ccx')
+    if not ccx_installed:
+        print('Installing calculix (ccx)')
+        command_line = "sudo apt-get install calculix-ccx"
+        subprocess.check_call(command_line, shell=True)
+    else:
+        print('calculix (ccx) present')
+
+def ubuntu_remove():
+    """Removes programs on ubuntu, uses apt"""
+    ccx_installed = shutil.which('ccx')
+    if not ccx_installed:
+        print('calculix (ccx) is not on your system')
+    else:
+        print('Removing calculix (ccx)')
+        command_line = "sudo apt-get remove calculix-ccx"
+        subprocess.check_call(command_line, shell=True)
+    gmsh_installed = shutil.which('gmsh')
+    if not gmsh_installed:
+        print('gmsh is not on your system')
+    else:
+        print('Removing gmsh')
+        command_line = "sudo apt-get remove gmsh"
+        subprocess.check_call(command_line, shell=True)
 
 def mac_add():
     """Adds programs on mac, uses brew"""
@@ -70,7 +106,7 @@ def mac_add():
         print('Installing calculix (ccx)')
         command_line = "brew install homebrew/science/calculix-ccx"
         subprocess.check_call(command_line, shell=True)
-        # add search here to find the path to the original gmsh program
+        # add search here to find the new ccx before we symlink it
         command = "ln -s /usr/local/bin/ccx_2.12 /usr/local/bin/ccx"
         subprocess.check_call(command_line, shell=True)
     else:
