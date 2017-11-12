@@ -107,10 +107,20 @@ def mac_add():
         command_line = "brew install homebrew/science/calculix-ccx"
         subprocess.check_call(command_line, shell=True)
         # add search here to find the new ccx before we symlink it
-        command = "ln -s /usr/local/bin/ccx_2.12 /usr/local/bin/ccx"
+        ccx_path = mac_find_binary_location('calculix-ccx', 'need recursive ccx here')
+        command = "ln -s %s /usr/local/bin/ccx" % ccx_path
         subprocess.check_call(command_line, shell=True)
     else:
         print('calculix (ccx) present')
+
+def mac_find_binary_location(package_folder, search_string):
+    match_str = '/usr/local/Cellar/%s/%s' % (package_folder,
+                                             search_string)
+    paths = glob.glob(match_str)
+    for path in paths:
+        if os.access(path, os.X_OK)
+            return path
+    return None
 
 def mac_remove():
     """Removes programs on mac, uses brew"""
