@@ -33,8 +33,6 @@ python -mpip install -U matplotlib
 pip install pycalculix
 pycalculix-add-feaprograms
 ```
-Note: the second line installs the calculix and gmsh programs on your computer
-Running these included binaries from pycalculix only works for windows.  
 3. You are done! See 'Usage'
 
 #### Linux, assumes Ubuntu 16.04
