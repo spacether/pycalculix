@@ -201,6 +201,5 @@ Initial Release: December 2014
   - Many methods and variables made private to clean up name space.
 
 ## Developer Todo:
-- installer.py:mac_add search for ccx path before symlinking to it
 - fix the error where FRD files can no longer be read
 - confirm that set_ediv still works, remove the past merge if that broke it
