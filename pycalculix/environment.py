@@ -64,24 +64,9 @@ def get_dpi():
 
 def get_paths():
     """Returns a list of paths to: [ccx, cgx, gmsh]."""
-    # this points the program to the installed location of ccx, cgx, and gmsh
-    bits = '32'
-    mydir = os.path.dirname(__file__)
-    (ccx, cgx, gmsh) = ('', '', '')
-    if sys.maxsize > 2**32:
-        # we are using a 64 bit interpreter
-        bits = '64'
-    if platform.system() == 'Windows':
-        mysys = 'win'+bits
-        ccx = os.path.join(mydir, 'calculix_'+mysys, 'ccx.exe')
-        cgx = os.path.join(mydir, 'calculix_'+mysys, 'cgx.exe')
-        gmsh = os.path.join(mydir, 'gmsh_win32', 'gmsh.exe')
-    elif platform.system() == 'Linux':
-        #mysys = 'linux'+bits
-        # assume that the user has the programs installed separately
-        ccx = 'ccx'
-        cgx = 'cgx'
-        gmsh = 'gmsh'
+    ccx = 'ccx'
+    cgx = 'cgx'
+    gmsh = 'gmsh'
     return [ccx, cgx, gmsh]
 
 DPI = get_dpi()

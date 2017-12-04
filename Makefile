@@ -15,6 +15,9 @@ clean_examples:
 	rm -f ./examples/*.frd
 	rm -f ./examples/*.dat
 	rm -f ./examples/*.png
+	rm -f ./examples/*.cvg
+	rm -f ./examples/*.sta
+	rm -f ./examples/*.out
 
 dist_examples:
 	make clean_examples
