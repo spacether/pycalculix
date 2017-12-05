@@ -1024,7 +1024,7 @@ class ResultsFile(object):
         line = self.__get_first_dataline(infile)
         return [line, mode, rfstr, time]
 
-    def __save_node_displ(self, line, rfstr, time, mode='displ'):
+    def _save_node_displ(self, line, rfstr, time, mode='displ'):
         """Saves node displacement"""
         node, ux_, uy_, uz_ = self.__get_vals(rfstr, line)[1:]
         labs = base_classes.RESFIELDS[mode]
@@ -1035,7 +1035,7 @@ class ResultsFile(object):
         for (label, val) in zip(labs, vals):
             adict[label] = val
 
-    def __save_node_stress(self, line, rfstr, time, mode='stress'):
+    def _save_node_stress(self, line, rfstr, time, mode='stress'):
         """Saves node stress"""
         tmp = self.__get_vals(rfstr, line)
         # [key, node, sx, sy, sz, sxy, syz, szx]
@@ -1050,7 +1050,7 @@ class ResultsFile(object):
         for (label, val) in zip(labs, vals):
             adict[label] = val
 
-    def __save_node_strain(self, line, rfstr, time, mode='strain'):
+    def _save_node_strain(self, line, rfstr, time, mode='strain'):
         """Saves node strain"""
         tmp = self.__get_vals(rfstr, line)
         # [key, node, ex, ey, ez, exy, eyz, ezx]
@@ -1065,7 +1065,7 @@ class ResultsFile(object):
         for (label, val) in zip(labs, vals):
             adict[label] = val
 
-    def __save_node_force(self, line, rfstr, time, mode='force'):
+    def _save_node_force(self, line, rfstr, time, mode='force'):
         """Saves node force"""
         # [key, node, fx, fy, fz]
         node, f_x, f_y, f_z = self.__get_vals(rfstr, line)[1:]
@@ -1075,7 +1075,7 @@ class ResultsFile(object):
         for (label, val) in zip(labs, vals):
             adict[label] = val
 
-    def __save_ele_stress(self, line, rfstr, time,
+    def _save_ele_stress(self, line, rfstr, time,
                                   mode='stress'):
         """Saves element integration point stresses"""
         labels = ['Sx', 'Sy', 'Sz', 'Sxy', 'Sxz', 'Syz']
@@ -1127,17 +1127,8 @@ class ResultsFile(object):
             if not mode:
                 continue
 
-            # replace with getattr code
-            # node_data_saver = getattr(self, '__save_node_'+mode)
-            # node_data_saver(line, rfstr, time)
-            if mode == 'displ':
-                self.__save_node_displ(line, rfstr, time)
-            elif mode == 'stress':
-                self.__save_node_stress(line, rfstr, time)
-            elif mode == 'strain':
-                self.__save_node_strain(line, rfstr, time)
-            elif mode == 'force':
-                self.__save_node_force(line, rfstr, time)
+            node_data_saver = getattr(self, '_save_node_' + mode)
+            node_data_saver(line, rfstr, time)
 
         infile.close()
         print('The following times have been read:')
@@ -1177,7 +1168,7 @@ class ResultsFile(object):
                 continue
 
             # store stress results
-            self.__save_ele_stress(line, rfstr, time)
+            self._save_ele_stress(line, rfstr, time)
 
         infile.close()
 
