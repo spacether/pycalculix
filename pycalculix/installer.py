@@ -12,6 +12,7 @@ import zipfile
 from sys import platform as platform
 
 def add():
+    """Installs the fea tools on windows/mac/linux"""
     osname = None
     is_64bit = sys.maxsize > 2**32
     bitsize_dict = {True: 64, False: 32}
@@ -32,6 +33,7 @@ def add():
     print('Done!')
 
 def remove():
+    """Removes the fea tools on windows/mac/linux"""
     osname = None
     is_64bit = sys.maxsize > 2**32
     bitsize_dict = {True: 64, False: 32}
@@ -115,6 +117,7 @@ def mac_add():
         print('calculix (ccx) present')
 
 def find_brew_binary_location(package_folder, search_string):
+    """Finds the location of a binary installed by homebrew"""
     match_str = '/usr/local/Cellar/%s/**/*%s*' % (package_folder,
                                              search_string)
     paths = glob.glob(match_str, recursive=True)

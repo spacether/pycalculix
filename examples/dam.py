@@ -38,7 +38,7 @@ for [x,y] in pts_ft_water:
 for [x,y] in pts_ft_air:
     [x,y] = [x*0.3048,y*0.3048] # conversion to metric
     [L1,p1,p2] = part.draw_line_to(x, y)
-    air_lines.append(L1)   
+    air_lines.append(L1)
 # make the two arcs
 pts_ft_arcs = [ [[22,73],[146,208]], [[14,98],[41,93]] ]
 for [[x,y],[xc,yc]] in pts_ft_arcs:
@@ -90,4 +90,4 @@ for field in fields:
 smax = prob.rfile.get_nmax('Seqv')
 [fx, fy, fz] = prob.rfile.get_fsum(model.get_item('L9'))
 print('Seqv_max= %3.2f' % (smax))
-print('Reaction forces (fx,fy,fz) = (%12.10f, %12.10f, %12.10f)' % (fx, fy, fz)) 
+print('Reaction forces (fx,fy,fz) = (%12.10f, %12.10f, %12.10f)' % (fx, fy, fz))

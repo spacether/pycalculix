@@ -160,7 +160,7 @@ class FeaModel(object):
         items = self.get_items(items)
         for line in items:
             line.set_ediv(ediv)
-            
+
     def set_esize(self, items, esize):
         """Sets the element size on the passed line.
 
@@ -1493,7 +1493,7 @@ class FeaModel(object):
                 sets[set_type][set_name] = []
                 mode = 'set'
         f.close()
-        
+
         # loop through sets and remove empty sets
         # store sets to delete
         todel = []
@@ -1589,47 +1589,47 @@ class FeaModel(object):
         """Meshes all parts.
 
         Args:
-            size (float): 
-            
+            size (float):
+
                 - if meshmode == 'fineness' (default):
                     - mesh size is adapted to geometry size
                     - set size = 0.0001 - 1.0, to define how fine the mesh is.
                     - Low numbers are very fine, higher numbers are coarser.
-                
+
                 - if meshmode == 'esize':
                     - element size is kept constant
                     - choose it depending on geometry size
                     - it should be reduced e.g. at arcs with small radius, by calling line.esize function
-                
+
             meshmode (str):
-                
+
                 - 'fineness': adapt mesh size to geometry
                 - 'esize': keep explicitly defined element size
-                
+
                 meshmode is changed to 'esize' is used if esize property is set to points or lines
-            
+
             mesher (str): the mesher to use
 
                 - 'gmsh': mesh with Gmsh, this is reccomended, it allows holes
                 - 'cgx': mesh with Calculix cgx, it doesn't allow holes
         """
-        
-        
+
+
         #check if element size is set to points and change meshmode if necessary
         for pt in self.points:
             if pt.esize != None:
                 if meshmode=='fineness': print('meshmode is changed to esize, because elementsize was defined on points!')
                 meshmode = 'esize'
-                
-        
+
+
         #if meshmode esize is chosen: ediv's on lines and arcs are transformed to element sizes on start and end point
         if meshmode == 'esize':
             for line in self.lines:
                 if line.ediv != None:
                     line.pt(0).set_esize(line.length()/line.ediv)
                     line.pt(1).set_esize(line.length()/line.ediv)
-            
-        
+
+
         if mesher == 'gmsh':
             self.__mesh_gmsh(size, meshmode)
         elif mesher == 'cgx':
@@ -1639,24 +1639,24 @@ class FeaModel(object):
         """Meshes all parts using the Gmsh mesher.
 
         Args:
-            
-            size (float): 
-            
+
+            size (float):
+
                 - if meshmode == 'fineness' (default):
                     - mesh size is adapted to geometry size
                     - set size = 0.0001 - 1.0, to define how fine the mesh is.
                     - Low numbers are very fine, higher numbers are coarser.
-                
+
                 - if meshmode == 'esize':
                     - element size is kept constant
                     - choose it depending on geometry size
-                
+
             meshmode (str):
-                
+
                 - 'fineness': adapt mesh size to geometry
                 - 'esize': keep explicitly defined element size
-            
-            
+
+
         """
         geo = []
         ids = {}
@@ -1666,7 +1666,7 @@ class FeaModel(object):
         # write all points
         for pt in self.points:
             txtline = 'Point(%i) = {%f, %f, %f};' % (pt.id, pt.x, pt.y, 0.0)
-            
+
             if meshmode == 'esize':
                 #add element size to points
                 if pt.esize == None:
@@ -1779,8 +1779,8 @@ class FeaModel(object):
         # use this so small circles are meshed finely
         geo.append('Mesh.CharacteristicLengthFromCurvature = 1;')
         geo.append('Mesh.CharacteristicLengthFromPoints = 1;')
-        #geo.append('Mesh.Algorithm = 2; //delauny') #okay for quads
-        geo.append('Mesh.Algorithm = 8; //delquad = delauny for quads')
+        geo.append('Mesh.Algorithm = 2; //delauny') #okay for quads
+        # geo.append('Mesh.Algorithm = 8; //delquad = delauny for quads')
         geo.append('Mesh.ElementOrder = '
                    +str(order)
                    +'; //linear or second set here')
@@ -1817,20 +1817,20 @@ class FeaModel(object):
         """Meshes all parts using the Calculix cgx mesher.
 
         Args:
-            
-            size (float): 
-            
+
+            size (float):
+
                 - if meshmode == 'fineness' (default):
                     - mesh size is adapted to geometry size
                     - set size = 0.0001 - 1.0, to define how fine the mesh is.
                     - Low numbers are very fine, higher numbers are coarser.
-                
+
                 - if meshmode == 'esize':  NOT TESTED WITH CGX
                     - element size is kept constant
                     - choose it depending on geometry size
-                
+
             meshmode (str):
-                
+
                 - 'fineness': adapt mesh size to geometry
                 - 'esize': keep explicitly defined element size  NOT TESTED WITH CGX
         """

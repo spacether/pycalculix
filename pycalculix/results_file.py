@@ -1,14 +1,17 @@
 """This module stores the Results_File class."""
 
+import collections
 import re # used to get info from frd file
 import math # used for metric number conversion
-from numpy.lib.polynomial import roots # need to find S1-S3
-from numpy.core.function_base import linspace # need to make contours
 import os #need to check if results file exists
+
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
 import numpy as np
+from numpy.lib.polynomial import roots # need to find S1-S3
+from numpy.core.function_base import linspace # need to make contours
+
 
 from . import base_classes # needed for RESFIELDS
 from . import mesh
@@ -951,283 +954,266 @@ class ResultsFile(object):
         return res
 
     @staticmethod
-    def __skip_lines(infile, numlines):
-        """Reads forward numlines from infile"""
-        lines = int(numlines)
-        while lines > 0:
-            infile.readline()
-            lines -= 1
+    def __get_first_dataline(infile):
+        """
+        Reads infile until a line with data is found, then returns it
+        A line that starts with ' -1' has data
+        """
+        while True:
+            line = infile.readline()
+            if line[:3] == ' -1':
+                return line
+
+    def __store_time(self, time):
+        """Stores the passed time in the results steps"""
+        if time not in self.__steps:
+            self.__steps.append(time)
+        if time not in self.__results:
+            new_dict = {'node': collections.defaultdict(dict),
+                        'element': collections.defaultdict(dict)}
+            self.__results[time] = new_dict
+
+    def __modearr_estrsresults(self, infile, line):
+        """Returns an array of line, mode, rfstr, time"""
+        words = line.strip().split()
+        # add time if not present
+        time = float(words[-1])
+        self.__store_time(time)
+        # set mode
+        rfstr = "I10,2X,I2,6E14.2"
+        mode = 'stress'
+        infile.readline()
+        line = infile.readline()
+        return [line, mode, rfstr, time]
+
+    def __modearr_nresults(self, infile):
+        """Returns an array of line, mode, rfstr, time"""
+        line = infile.readline()
+        fstr = "1X,' 100','C',6A1,E12.5,I12,20A1,I2,I5,10A1,I2"
+        tmp = self.__get_vals(fstr, line)
+        #[key, code, setname, value, numnod, text, ictype, numstp, analys, format_]
+        time, format_ = tmp[3], tmp[9]
+
+        # set results format to short, long or binary
+        # only short and long are parsed so far
+        if format_ == 0:
+            rfstr = "1X,I2,I5,6E12.5"
+        elif format_ == 1:
+            rfstr = "1X,I2,I10,6E12.5"
+        elif format_ == 2:
+            # binary
+            pass
+
+        # set the time
+        self.__store_time(time)
+
+        # get the name to determine if stress or displ
+        line = infile.readline()
+        fstr = "1X,I2,2X,8A1,2I5"
+        # [key, name, ncomps, irtype]
+        name = self.__get_vals(fstr, line)[1]
+
+        mode_by_name = {'DISP': 'displ',
+                        'STRESS': 'stress',
+                        'TOSTRAIN': 'strain',
+                        'FORC': 'force'}
+        mode = mode_by_name[name]
+        print('Reading '+mode+' storing: '+
+              ','.join(base_classes.RESFIELDS[mode]))
+
+        line = self.__get_first_dataline(infile)
+        return [line, mode, rfstr, time]
+
+    def _save_node_displ(self, line, rfstr, time, mode='displ'):
+        """Saves node displacement"""
+        node, ux_, uy_, uz_ = self.__get_vals(rfstr, line)[1:]
+        labs = base_classes.RESFIELDS[mode]
+        vals = [ux_, uy_, uz_]
+        utot = self.__utot(vals)
+        vals.append(utot)
+        adict = self.__results[time]['node'][node]
+        for (label, val) in zip(labs, vals):
+            adict[label] = val
+
+    def _save_node_stress(self, line, rfstr, time, mode='stress'):
+        """Saves node stress"""
+        tmp = self.__get_vals(rfstr, line)
+        # [key, node, sx, sy, sz, sxy, syz, szx]
+        node, sxx, syy, szz, sxy, syz, szx = tmp[1:]
+        labs = base_classes.RESFIELDS[mode]
+        vals = [sxx, syy, szz, sxy, syz, szx]
+        seqv = self.__seqv(vals)
+        s_1, s_2, s_3 = self.__principals(vals)
+        vals.append(seqv)
+        vals += [s_1, s_2, s_3]
+        adict = self.__results[time]['node'][node]
+        for (label, val) in zip(labs, vals):
+            adict[label] = val
+
+    def _save_node_strain(self, line, rfstr, time, mode='strain'):
+        """Saves node strain"""
+        tmp = self.__get_vals(rfstr, line)
+        # [key, node, ex, ey, ez, exy, eyz, ezx]
+        node, exx, eyy, ezz, exy, eyz, ezx = tmp[1:]
+        labs = base_classes.RESFIELDS[mode]
+        vals = [exx, eyy, ezz, exy, eyz, ezx]
+        eeqv = self.__seqv(vals)
+        e_1, e_2, e_3 = self.__principals(vals)
+        vals.append(eeqv)
+        vals += [e_1, e_2, e_3]
+        adict = self.__results[time]['node'][node]
+        for (label, val) in zip(labs, vals):
+            adict[label] = val
+
+    def _save_node_force(self, line, rfstr, time, mode='force'):
+        """Saves node force"""
+        # [key, node, fx, fy, fz]
+        node, f_x, f_y, f_z = self.__get_vals(rfstr, line)[1:]
+        labs = base_classes.RESFIELDS[mode]
+        vals = [f_x, f_y, f_z]
+        adict = self.__results[time]['node'][node]
+        for (label, val) in zip(labs, vals):
+            adict[label] = val
+
+    def _save_ele_stress(self, line, rfstr, time,
+                                  mode='stress'):
+        """Saves element integration point stresses"""
+        labels = ['Sx', 'Sy', 'Sz', 'Sxy', 'Sxz', 'Syz']
+        vals = self.__get_vals(rfstr, line)
+        # element_number, integration_pt_number
+        enum, ipnum = vals[0], vals[1]
+        stress_vals = vals[2:]
+
+        adict = {}
+        for (label, val) in zip(labels, stress_vals):
+            adict[label] = val
+        if enum not in self.__results[time]['element']:
+            start_val = {'ipoints': {},
+                         'avg': {},
+                         'min': {},
+                         'max': {}}
+            self.__results[time]['element'][enum] = start_val
+        # each line is an integration point result
+        self.__results[time]['element'][enum]['ipoints'][ipnum] = adict
 
     def __read_frd(self):
-        """Reads a ccx frd results file which contains nodal results."""
+        """
+        Reads a ccx frd results file which contains nodal results.
+        The file format is desribed in the cgx docs
+        """
         fname = self.__problem.fname+'.frd'
-        if os.path.isfile(fname):
-
-            print('Reading results file: '+fname)
-            infile = open(fname, 'r')
-            mode = 'off'
-            time = 0.0
-            format_ = None
-            rfstr = ''
-            node_ids = []
-            while True:
-                line = infile.readline()
-                if not line:
-                    break
-
-                #-------------
-                # set the modes
-                #--------------
-                if '2C' in line:
-                    # we are in nodal definition
-                    fstr = "1X,'   2','C',18X,I12,37X,I1"
-                    # [key, code, numnod, format_]
-                    format_ = self.__get_vals(fstr, line)[3]
-
-                    # set results format to short, long or binary
-                    # only short and long are parsed so far
-                    if format_ == 0:
-                        rfstr = "1X,'-1',I5,3E12.5"
-                    elif format_ == 1:
-                        rfstr = "1X,'-1',I10,3E12.5"
-                    elif format_ == 2:
-                        # binary
-                        pass
-
-                    line = infile.readline()
-                    mode = 'nodes'
-                    print('Reading '+mode)
-
-                elif '1PSTEP' in line:
-                    # we are in a results block
-
-                    # next line has the time in it
-                    line = infile.readline()
-                    fstr = "1X,' 100','C',6A1,E12.5,I12,20A1,I2,I5,10A1,I2"
-                    tmp = self.__get_vals(fstr, line)
-                    #[key, code, setname, value, numnod, text, ictype, numstp, analys, format_]
-                    value, format_ = tmp[3], tmp[9]
-
-                    # set results format to short, long or binary
-                    # only short and long are parsed so far
-                    if format_ == 0:
-                        rfstr = "1X,I2,I5,6E12.5"
-                    elif format_ == 1:
-                        rfstr = "1X,I2,I10,6E12.5"
-                    elif format_ == 2:
-                        # binary
-                        pass
-
-                    # set the time
-                    time = value
-                    if time not in self.__steps:
-                        self.__steps.append(time)
-                    if time not in self.__results:
-                        self.__results[time] = {'node':{}, 'element':{}}
-                        for nid in node_ids:
-                            # make dict for each node
-                            self.__results[time]['node'][nid] = {}
-
-                    # get the name to determine if stress or displ
-                    line = infile.readline()
-                    fstr = "1X,I2,2X,8A1,2I5"
-                    # [key, name, ncomps, irtype]
-                    name = self.__get_vals(fstr, line)[1]
-
-                    if name == 'DISPR':
-                        mode = 'displ'
-                        self.__skip_lines(infile, 4)
-                    elif name == 'STRESSR':
-                        mode = 'stress'
-                        self.__skip_lines(infile, 6)
-                    elif name == 'TOSTRAIR':
-                        mode = 'strain'
-                        self.__skip_lines(infile, 6)
-                    elif name == 'FORCR':
-                        mode = 'force'
-                        self.__skip_lines(infile, 4)
-
-                    print('Reading '+mode+' storing: '+
-                          ','.join(base_classes.RESFIELDS[mode]))
-                    line = infile.readline()
-
-                #----------------------------
-                # Store results
-                #----------------------------
-
-                # reset the read mode if we hit an end of record
-                if line[:3] == ' -3':
-                    mode = 'off'
-
-                if mode == 'nodes':
-                    # node definition, store node numbers only
-                    # [key, node, x, y, z]
-                    node = self.__get_vals(rfstr, line)[1]
-                    node_ids.append(node)
-
-                elif mode == 'displ':
-                    # displacements
-                    # [key, node, ux, uy, uz]
-                    [node, ux_, uy_, uz_] = self.__get_vals(rfstr, line)[1:]
-                    labs = base_classes.RESFIELDS[mode]
-                    vals = [ux_, uy_, uz_]
-                    utot = self.__utot(vals)
-                    vals.append(utot)
-                    adict = self.__results[time]['node'][node]
-                    for (label, val) in zip(labs, vals):
-                        adict[label] = val
-
-                elif mode == 'stress':
-                    # stresses
-                    tmp = self.__get_vals(rfstr, line)
-                    # [key, node, sx, sy, sz, sxy, syz, szx]
-                    [node, sxx, syy, szz, sxy, syz, szx] = tmp[1:]
-                    labs = base_classes.RESFIELDS[mode]
-                    vals = [sxx, syy, szz, sxy, syz, szx]
-                    seqv = self.__seqv(vals)
-                    [s_1, s_2, s_3] = self.__principals(vals)
-                    vals.append(seqv)
-                    vals += [s_1, s_2, s_3]
-                    adict = self.__results[time]['node'][node]
-                    for (label, val) in zip(labs, vals):
-                        adict[label] = val
-
-                elif mode == 'strain':
-                    # strains
-                    tmp = self.__get_vals(rfstr, line)
-                    # [key, node, ex, ey, ez, exy, eyz, ezx]
-                    [node, exx, eyy, ezz, exy, eyz, ezx] = tmp[1:]
-                    labs = base_classes.RESFIELDS[mode]
-                    vals = [exx, eyy, ezz, exy, eyz, ezx]
-                    eeqv = self.__seqv(vals)
-                    [e_1, e_2, e_3] = self.__principals(vals)
-                    vals.append(eeqv)
-                    vals += [e_1, e_2, e_3]
-                    adict = self.__results[time]['node'][node]
-                    for (label, val) in zip(labs, vals):
-                        adict[label] = val
-
-                elif mode == 'force':
-                    # reaction forces
-                    # [key, node, fx, fy, fz]
-                    [node, f_x, f_y, f_z] = self.__get_vals(rfstr, line)[1:]
-                    labs = base_classes.RESFIELDS[mode]
-                    vals = [f_x, f_y, f_z]
-                    adict = self.__results[time]['node'][node]
-                    for (label, val) in zip(labs, vals):
-                        adict[label] = val
-
-            infile.close()
-            print('The following times have been read:')
-            print(self.__steps)
-            print('Done reading file: %s' % fname)
-            self.set_time(self.__steps[0])
-
-        else:
+        if not os.path.isfile(fname):
             print("Error: %s file not found" % fname)
+            return
+        infile = open(fname, 'r')
+        print('Loading nodal results from file: '+fname)
+        mode = None
+        time = 0.0
+        rfstr = ''
+        while True:
+            line = infile.readline()
+            if not line:
+                break
+
+            # set the results mode
+            if '1PSTEP' in line:
+                # we are in a results block
+                arr = self.__modearr_nresults(infile)
+                line, mode, rfstr, time = arr
+
+            # set mode to none if we hit the end of a resuls block
+            if line[:3] == ' -3':
+                mode = None
+            if not mode:
+                continue
+
+            node_data_saver = getattr(self, '_save_node_' + mode)
+            node_data_saver(line, rfstr, time)
+
+        infile.close()
+        print('The following times have been read:')
+        print(self.__steps)
+        print('Nodal results from file: %s have been read.' % fname)
+        self.set_time(self.__steps[0])
 
     def __read_dat(self):
-        """Reads ccx dat results file. It has element integration point results.
+        """
+        Reads ccx dat results file.
+        It has element integration point results.
         """
         fname = self.__problem.fname+'.dat'
-        if os.path.isfile(fname):
-
-            infile = open(fname, 'r')
-            mode = 'off'
-            time = 0.0
-            while True:
-                line = infile.readline()
-                if not line:
-                    break
-                line = line.strip()
-
-                # check for read flags for displ or stress
-                if 'stress' in line:
-                    words = line.split()
-                    # add time if not present
-                    time = float(words[-1])
-                    if time not in self.__steps:
-                        self.__steps.append(time)
-                    if time not in self.__results:
-                        self.__results[time] = {'node':{}, 'element':{}}
-                    # set mode
-                    if 'stress' in line:
-                        mode = 'stress'
-                    infile.readline()
-                    line = infile.readline().strip()
-
-                # reset the read type if we hit a blank line
-                if line == '':
-                    mode = 'off'
-
-                if mode == 'stress':
-                    # store stress results
-                    tmp = line.split()
-                    labs = ['Sx', 'Sy', 'Sz', 'Sxy', 'Sxz', 'Syz', 'Seqv']
-                    vals = [float(a) for a in tmp[2:]]
-                    seqv = self.__seqv(vals)
-                    [s_1, s_2, s_3] = self.__principals(vals)
-                    vals.append(seqv)
-                    vals += [s_1, s_2, s_3]
-                    #print(vals)
-                    enum = int(tmp[0])
-                    ipnum = int(tmp[1]) # integration point number
-                    adict = {}
-                    for (label, val) in zip(labs, vals):
-                        adict[label] = val
-                    if enum not in self.__results[time]['element']:
-                        start_val = {'ipoints': {},
-                                     'avg': {},
-                                     'min': {},
-                                     'max': {}}
-                        self.__results[time]['element'][enum] = start_val
-                    # each line is an integration point result
-                    self.__results[time]['element'][enum]['ipoints'][ipnum] = adict
-
-            infile.close()
-
-            # loop over all element results, calculating avg element result
-            # by averaging integration point vals
-            for time in self.__steps:
-                for edict in self.__results[time]['element'].values():
-                    ipoints = edict['ipoints'].values()
-                    labs = ['Sx', 'Sy', 'Sz', 'Sxy', 'Sxz', 'Syz']
-                    field_dict = {}
-                    # set field values in max, min, avg locations
-                    for field in labs:
-                        field_vals = [ipt[field] for ipt in ipoints]
-                        field_avg = sum(field_vals)/len(field_vals)
-                        field_max, field_min = max(field_vals), min(field_vals)
-                        edict['avg'][field] = field_avg
-                        edict['max'][field] = field_max
-                        edict['min'][field] = field_min
-                        field_dict[field] = field_vals
-                    # for each element, caclulate Seqv, S1, S2, S3 at average
-                    locs = ['avg', 'max', 'min']
-                    for loc in locs:
-                        seqv, s_1, s_2, s_3 = None, None, None, None
-                        if loc == 'avg':
-                            vals = [edict[loc][lab] for lab in labs]
-                            seqv = self.__seqv(vals)
-                            [s_1, s_2, s_3] = self.__principals(vals)
-                        elif mode == 'max':
-                            seqv = max(field_dict['Seqv'])
-                            s_1 = max(field_dict['S1'])
-                            s_2 = max(field_dict['S2'])
-                            s_3 = max(field_dict['S3'])
-                        elif mode == 'min':
-                            seqv = min(field_dict['Seqv'])
-                            s_1 = min(field_dict['S1'])
-                            s_2 = min(field_dict['S2'])
-                            s_3 = min(field_dict['S3'])
-                        edict[loc]['Seqv'] = seqv
-                        edict[loc]['S1'] = s_1
-                        edict[loc]['S2'] = s_2
-                        edict[loc]['S3'] = s_3
-
-            print('The following times have been read:')
-            print(self.__steps)
-            print('Results from file: %s have been read.' % fname)
-
-        else:
+        if not os.path.isfile(fname):
             print('Error: %s file not found' % fname)
+            return
+        infile = open(fname, 'r')
+        print('Loading element results from file: '+fname)
+        mode = None
+        rfstr = ''
+        time = 0.0
+        while True:
+            line = infile.readline()
+            if not line:
+                break
+
+            # check for stress, we skip down to the line data when
+            # we call __modearr_estrsresults
+            if 'stress' in line:
+                arr = self.__modearr_estrsresults(infile, line)
+                line, mode, rfstr, time = arr
+
+            # reset the read type if we hit a blank line
+            if line.strip() == '':
+                mode = None
+            if not mode:
+                continue
+
+            # store stress results
+            self._save_ele_stress(line, rfstr, time)
+
+        infile.close()
+
+        # loop over all element results, calculating avg element result
+        # by averaging integration point vals
+        for time in self.__steps:
+            for edict in self.__results[time]['element'].values():
+                ipoints = edict['ipoints'].values()
+                stress_types = ['Sx', 'Sy', 'Sz', 'Sxy', 'Sxz', 'Syz']
+                stresslist_by_stresstype = {}
+                # set stress values in max, min, avg locations
+                for stress in stress_types:
+                    stress_vals = [ipt[stress] for ipt in ipoints]
+                    stress_avg = sum(stress_vals)/len(stress_vals)
+                    stress_max, stress_min = max(stress_vals), min(stress_vals)
+                    edict['avg'][stress] = stress_avg
+                    edict['max'][stress] = stress_max
+                    edict['min'][stress] = stress_min
+                    stresslist_by_stresstype[stress] = stress_vals
+                # for each element, at average calc Seqv, S1, S2, S3
+                # for each element, at max and min use the max and min
+                # of the vals we already found
+                locs = ['avg', 'max', 'min']
+                for loc in locs:
+                    seqv, s_1, s_2, s_3 = None, None, None, None
+                    if loc == 'avg':
+                        vals = [edict[loc][stype] for
+                                stype in stress_types]
+                        seqv = self.__seqv(vals)
+                        [s_1, s_2, s_3] = self.__principals(vals)
+                    elif mode == 'max':
+                        seqv = max(stresslist_by_stresstype['Seqv'])
+                        s_1 = max(stresslist_by_stresstype['S1'])
+                        s_2 = max(stresslist_by_stresstype['S2'])
+                        s_3 = max(stresslist_by_stresstype['S3'])
+                    elif mode == 'min':
+                        seqv = min(stresslist_by_stresstype['Seqv'])
+                        s_1 = min(stresslist_by_stresstype['S1'])
+                        s_2 = min(stresslist_by_stresstype['S2'])
+                        s_3 = min(stresslist_by_stresstype['S3'])
+                    edict[loc]['Seqv'] = seqv
+                    edict[loc]['S1'] = s_1
+                    edict[loc]['S2'] = s_2
+                    edict[loc]['S3'] = s_3
+
+        print('The following times have been read:')
+        print(self.__steps)
+        print('Element results from file: %s have been read.' % fname)
