@@ -276,7 +276,6 @@ def win_add_ccx(bitsize, binaries_url, program_name):
                                              bitsize)
 
     zipfile_name = zipfile_webpage_url.split('/')[-2]
-    zipfile_folder_name = zipfile_name.split('.')[0]
     print(zipfile_webpage_url)
     zipfile_url = get_direct_url(zipfile_webpage_url, headers)
     print(zipfile_url)
@@ -288,11 +287,14 @@ def win_add_ccx(bitsize, binaries_url, program_name):
 
     print('Unzipping %s' % program_name)
     zip_ref = zipfile.ZipFile(zipfile_name, 'r')
+    folders_pre_unzip = {d for d in os.listdir(os.getcwd()) if os.path.isdir(d)}
     zip_ref.extractall(None)
     zip_ref.close()
     print('Removing %s zipfile' % program_name)
     os.remove(zipfile_name)
 
+    folders_post_unzip = {d for d in os.listdir(os.getcwd()) if os.path.isdir(d)}
+    zipfile_folder_name = list(folders_post_unzip - folders_pre_unzip)[0]
     folder_from = '%s\\bin\ccx' % zipfile_folder_name
     env_path = os.getenv('VIRTUAL_ENV', sys.exec_prefix)
     scripts_path = '%s\Scripts' % env_path
