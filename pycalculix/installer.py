@@ -288,13 +288,16 @@ def win_add_ccx(bitsize, binaries_url, program_name):
 
     print('Unzipping %s' % program_name)
     zip_ref = zipfile.ZipFile(zipfile_name, 'r')
-    zipfile_folder_name = zip_ref.namelist()[0]
-    zip_ref.extractall(None)
+    zipfile_folder_name = zip_ref.namelist()[0].split('/')[0]
+    zipfile_ccx_path = zipfile_folder_name + '/bin/ccx'
+    for member in zip_ref.namelist():
+        if zipfile_ccx_path in member:
+            zip_ref.extract(member)
     zip_ref.close()
     print('Removing %s zipfile' % program_name)
     os.remove(zipfile_name)
 
-    folder_from = '%s\\bin\ccx' % zipfile_folder_name
+    folder_from = '%s\\bin\\ccx' % zipfile_folder_name
     env_path = os.getenv('VIRTUAL_ENV', sys.exec_prefix)
     scripts_path = '%s\Scripts' % env_path
     folder_to = '%s\%s' % (scripts_path, program_name)
@@ -311,9 +314,9 @@ def win_add_ccx(bitsize, binaries_url, program_name):
 
     print('Installing %s to %s' % (program_name, folder_to))
     copy_tree(folder_from, folder_to)
+    shutil.rmtree(zipfile_folder_name)
     add_remove_dll_links(folder_to, scripts_path, add=True)
     os.link(exe_loc, exe_link)
-    shutil.rmtree(zipfile_folder_name)
 
 def add_remove_dll_links(folder_dlls, folder_dll_links, add=True):
     """
