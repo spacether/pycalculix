@@ -6,10 +6,11 @@ import shutil
 import shlex
 import subprocess
 import sys
-import urllib
 import zipfile
 
 from sys import platform as platform
+
+import requests
 
 def add():
     """Installs the fea tools on windows/mac/linux"""
@@ -215,9 +216,11 @@ def win_add_from_url(bitsize, binaries_url, program_name):
     zipfile_folder_name = zipfile_name.split('.')[0]
     zipfile_url = binaries_url + zipfile_name
     print('Downloading %s from %s' % (program_name, zipfile_url))
-    req = urllib.request.Request(zipfile_url, None, headers)
-    with urllib.request.urlopen(req) as in_stream, open(zipfile_name, 'wb') as out_file:
-        shutil.copyfileobj(in_stream, out_file)
+    response = requests.get(zipfile_url, stream=True, headers=headers)
+    with open(zipfile_name, 'wb') as out_file:
+        for chunk in response.iter_content(chunk_size=1024):
+            if chunk: # filter out keep-alive new chunks
+                out_file.write(chunk)
     print('Unzipping %s' % program_name)
     zip_ref = zipfile.ZipFile(zipfile_name, 'r')
     zip_ref.extractall(None)
@@ -242,8 +245,8 @@ def win_add_from_url(bitsize, binaries_url, program_name):
 
 def zipfile_by_bitsize(binaries_url, headers, zipfile_regex, bitsize):
     """Returns the url linking to the correct zipfile"""
-    req = urllib.request.Request(binaries_url, None, headers)
-    html = urllib.request.urlopen(req).read().decode('utf-8')
+    res = requests.get(binaries_url, headers=headers)
+    html = res.text
     urls = re.findall(r'href=[\'"]?([^\'" >]+)', html)
     pattern = re.compile(zipfile_regex)
     urls = [url for url in urls if pattern.match(url)]
@@ -255,8 +258,8 @@ def zipfile_by_bitsize(binaries_url, headers, zipfile_regex, bitsize):
 
 def get_direct_url(source_page, headers):
     """Gets the download link from a sf page"""
-    req = urllib.request.Request(source_page, None, headers)
-    html = urllib.request.urlopen(req).read().decode('utf-8', 'ignore')
+    res = requests.get(source_page, headers=headers)
+    html = res.text
     html = html.replace("\"", "'")
     link_text_pos = html.find('direct link')
     href_pos = html[:link_text_pos].rfind('href')
@@ -281,10 +284,11 @@ def win_add_ccx(bitsize, binaries_url, program_name):
     print(zipfile_url)
 
     print('Downloading %s from %s' % (zipfile_name, zipfile_url))
-    req = urllib.request.Request(zipfile_url, None, headers)
-    with urllib.request.urlopen(req) as in_stream, open(zipfile_name, 'wb') as out_file:
-        shutil.copyfileobj(in_stream, out_file)
-
+    response = requests.get(zipfile_url, stream=True, headers=headers)
+    with open(zipfile_name, 'wb') as out_file:
+        for chunk in response.iter_content(chunk_size=1024):
+            if chunk: # filter out keep-alive new chunks
+                out_file.write(chunk)
     print('Unzipping %s' % program_name)
     zip_ref = zipfile.ZipFile(zipfile_name, 'r')
     folders_pre_unzip = {d for d in os.listdir(os.getcwd()) if os.path.isdir(d)}

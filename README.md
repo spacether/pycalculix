@@ -193,6 +193,25 @@ pycalculix-remove-feaprograms
 pip3 uninstall pycalculix
 ```
 
+## Devlopment
+- Download this repo
+```
+git clone git@github.com:spacether/pycalculix.git
+```
+- Make python3 virtual env
+```
+python -m venv venv
+```
+- Activate it
+  - Windows `venv\scripts\activate`
+  - Mac/linux `source venv/bin/activate`
+- Locally install pycalculix
+```
+pip install -e .
+pycalculix-add-feaprograms
+```
+- Now any changes that you make to your local version of pycalculix will be
+  live in your virtual environment
 
 ## License
 See LICENSE.txt (Apache 2.0)
@@ -212,6 +231,7 @@ Initial Release: December 2014
 - added command line tool to install/uninstall gmsh and ccx for windows/mac os x/ubuntu
   - pycalculix-add-feaprograms
   - pycalculix-remove-feaprograms
+- added requests library requirement for pycalculix-add-feaprograms
 - fixed bug where frd files could no longer be read
 
 #### 0.9.3  
