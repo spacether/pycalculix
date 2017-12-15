@@ -7,6 +7,7 @@ import shlex
 import subprocess
 import sys
 import zipfile
+from distutils.dir_util import copy_tree
 
 from sys import platform as platform
 
@@ -291,15 +292,16 @@ def win_add_ccx(bitsize, binaries_url, program_name):
                 out_file.write(chunk)
     print('Unzipping %s' % program_name)
     zip_ref = zipfile.ZipFile(zipfile_name, 'r')
-    folders_pre_unzip = {d for d in os.listdir(os.getcwd()) if os.path.isdir(d)}
-    zip_ref.extractall(None)
+    zipfile_folder_name = zip_ref.namelist()[0].split('/')[0]
+    zipfile_ccx_path = zipfile_folder_name + '/bin/ccx'
+    for member in zip_ref.namelist():
+        if zipfile_ccx_path in member:
+            zip_ref.extract(member)
     zip_ref.close()
     print('Removing %s zipfile' % program_name)
     os.remove(zipfile_name)
 
-    folders_post_unzip = {d for d in os.listdir(os.getcwd()) if os.path.isdir(d)}
-    zipfile_folder_name = list(folders_post_unzip - folders_pre_unzip)[0]
-    folder_from = '%s\\bin\ccx' % zipfile_folder_name
+    folder_from = '%s\\bin\\ccx' % zipfile_folder_name
     env_path = os.getenv('VIRTUAL_ENV', sys.exec_prefix)
     scripts_path = '%s\Scripts' % env_path
     folder_to = '%s\%s' % (scripts_path, program_name)
@@ -314,12 +316,11 @@ def win_add_ccx(bitsize, binaries_url, program_name):
         elif os.path.isdir(path):
             shutil.rmtree(path)
 
-    command_line = "move %s %s" % (folder_from, folder_to)
     print('Installing %s to %s' % (program_name, folder_to))
-    subprocess.check_call(command_line, shell=True)
+    copy_tree(folder_from, folder_to)
+    shutil.rmtree(zipfile_folder_name)
     add_remove_dll_links(folder_to, scripts_path, add=True)
     os.link(exe_loc, exe_link)
-    shutil.rmtree(zipfile_folder_name)
 
 def add_remove_dll_links(folder_dlls, folder_dll_links, add=True):
     """
