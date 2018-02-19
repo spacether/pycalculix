@@ -48,10 +48,13 @@ dist_source:
 	rm -rf *.egg-info
 
 develop:
-	python3 setup.py develop
+	pip3 install -e .
 
 install:
-	python3 setup.py install
+	pip3 install .
 
 uninstall:
 	pip3 uninstall pycalculix
+
+test:
+	pytest tests/

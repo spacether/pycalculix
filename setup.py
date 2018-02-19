@@ -3,7 +3,7 @@ with open('pycalculix/version.py') as f: exec(f.read())
 
 setup(
     name = "pycalculix",
-    install_requires = ['matplotlib >= 1.3.1', 'numpy', 'dxfgrabber', 'requests'],
+    install_requires = ['matplotlib >= 1.3.1', 'numpy', 'dxfgrabber', 'requests', 'pytest'],
     python_requires='>=3',
     version = __version__,
     description = "Python 3 library to build and solve finite element analysis (FEA) models in Calculix.",

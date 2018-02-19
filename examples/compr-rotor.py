@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
+import math
+import sys
+
 import pycalculix as pyc
 import matplotlib.pyplot as plt
-import math
 
 # We'll be modeling a rotating jet engine part
 model_name = 'compr-rotor'
 model = pyc.FeaModel(model_name)
-model.set_units('m')    # this sets dist units to meters, labels our consistent units
+# this sets dist units to meters, labels our consistent units
+model.set_units('m')
+
+# the below boolean sets whether or not to show gui plots
+# testing passes in -nogui
+show_gui = True
+if len(sys.argv) == 2 and sys.argv[-1] == '-nogui':
+    show_gui = False
 
 # problem + geometry constants
 rpm = 1000     # rotor speed in rpm
@@ -32,11 +41,15 @@ web_ht = rad_flowpath - arm_th - diskramp_rad - rad_inner
 flowpath_ax = (web_width + 2*arm_length - airfoil_width) / 2.0
 
 # these are deltas
-disk_loop = [[disk_ht,0],[diskramp_rad,diskramp_ax],[web_ht,0,],[0,-arm_length],
-             [arm_th,0],[0,flowpath_ax],[0,airfoil_width],[0,flowpath_ax],
-             [-arm_th,0],[0,-arm_length],[-web_ht,0],[-diskramp_rad,diskramp_ax],
+disk_loop = [[disk_ht,0],[diskramp_rad,diskramp_ax],
+             [web_ht,0,],[0,-arm_length],
+             [arm_th,0],[0,flowpath_ax],
+             [0,airfoil_width],[0,flowpath_ax],
+             [-arm_th,0],[0,-arm_length],[-web_ht,0],
+             [-diskramp_rad,diskramp_ax],
              [-disk_ht,0],[0,-disk_width]]
-airfoil_loop = [[airfoil_ht,0],[0,airfoil_width],[-airfoil_ht,0],[0,-airfoil_width]]
+airfoil_loop = [[airfoil_ht,0],[0,airfoil_width],
+                [-airfoil_ht,0],[0,-airfoil_width]]
 
 # make part
 part = pyc.Part(model)
@@ -60,7 +73,8 @@ fillet_list = [[0,13,rad_disk_bot],[12,13,rad_disk_bot],
 for [i1, i2, rad] in fillet_list:
     part.fillet_lines(lines[i1], lines[i2], rad)
 # view the geometry
-model.plot_geometry(model_name+'_geom', pnum=False, lnum=False)
+model.plot_geometry(model_name+'_geom', pnum=False, lnum=False,
+                    display=show_gui)
 
 # set loads and constraints
 model.set_rpm(10000, part)
@@ -80,8 +94,9 @@ model.get_item('L6').set_ediv(8)
 model.get_item('L2').set_ediv(24)
 model.get_item('L10').set_ediv(24)
 model.mesh(1.0, 'gmsh') # mesh with 1.0 fineness, smaller is finer
-model.plot_elements(model_name+'_elem') # plot the part elements
-model.plot_constraints(model_name+'_constr')
+# plot the part elements
+model.plot_elements(model_name+'_elem', display=show_gui)
+model.plot_constraints(model_name+'_constr', display=show_gui)
 
 # make and solve the model
 prob = pyc.Problem(model, 'struct')
