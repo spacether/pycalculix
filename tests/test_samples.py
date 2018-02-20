@@ -30,7 +30,7 @@ class TestExamples(unittest.TestCase):
             command_str = 'python3 examples/%s -nogui' % file_name
             output = subprocess.check_output(
                 command_str, stderr=subprocess.STDOUT, shell=True,
-                timeout=120,
+                timeout=60,
                 universal_newlines=True)
         except subprocess.CalledProcessError as ex:
             print("Status : FAIL", ex.returncode, ex.output)
@@ -56,8 +56,40 @@ class TestExamples(unittest.TestCase):
     def test_hole_full(self, file_name='hole-in-plate-full.py'):
         self.example_tester(file_name)
 
+    def test_hole_quarter(self, file_name='hole-in-plate-quarter.py'):
+        # this is not making an input file, when quads are selected it
+        # hangs
+        self.example_tester(file_name)
+
+    def test_hole_kt(self, file_name='hole-kt-study.py'):
+        self.example_tester(file_name)
+
+    def test_import_dxf(self, file_name='import-dxf.py'):
+        self.example_tester(file_name)
+
+    def test_line_loop(self, file_name='line-loop.py'):
+        self.example_tester(file_name)
+
     def test_multihole(self, file_name='multihole.py'):
         self.example_tester(file_name)
+
+    def test_pinned_plate(self, file_name='pinned-plate.py'):
+        self.example_tester(file_name)
+
+    def test_pipe_crush_elastic(self,
+                                file_name='pipe-crush-elastic.py'):
+        self.example_tester(file_name)
+
+    def test_rounded_square_ccw(self,
+                                file_name='rounded-square-ccw.py'):
+        self.example_tester(file_name)
+
+    def test_rounded_square_cw(self,
+                               file_name='rounded-square-cw.py'):
+        self.example_tester(file_name)
+
+    # note, once tests are written, make sure to add travisci file too
+    # to ensure that it works on mac and linux
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
+import sys
+
 import pycalculix as pyc
 
 # Model of a pipe being crushed, quarter-symmetrym plane strain
 proj_name = 'pipe-crush-elastic'
 model = pyc.FeaModel(proj_name)
 model.set_units('m') # this sets dist units to meters
+
+# the below boolean sets whether or not to show gui plots
+# testing passes in -nogui
+show_gui = True
+if len(sys.argv) == 2 and sys.argv[-1] == '-nogui':
+    show_gui = False
 
 # Define variables we'll use to draw part geometry
 rad_outer = 0.1143 # pipe outer radius
@@ -13,7 +21,6 @@ rad_inner = rad_outer - pipe_wall_th
 pipe_length = 10*rad_outer
 wall_elements = 4.0
 e_size = pipe_wall_th/wall_elements
-disp = False
 
 # Draw pipe, x, y = radial, axial
 pipe = pyc.Part(model)
@@ -36,10 +43,10 @@ plate_bottom = plate.draw_line_to(rad_outer, 0.0)[0]
 num_plate_eles = int(round(plate_bottom.length()/e_size,0))
 
 # view model
-model.plot_geometry(proj_name+'_geometry', display=disp)
-model.plot_parts(proj_name+'_parts', display=disp)
-model.plot_areas(proj_name+'_areas', display=disp)
-model.plot_lines(proj_name+'_lines', display=disp)
+model.plot_geometry(proj_name+'_geometry', display=show_gui)
+model.plot_parts(proj_name+'_parts', display=show_gui)
+model.plot_areas(proj_name+'_areas', display=show_gui)
+model.plot_lines(proj_name+'_lines', display=show_gui)
 
 # set loads and constraints
 model.set_constr('fix',pipe.left,'y')
@@ -65,27 +72,28 @@ model.set_contact_linear(plate_bottom, arc_outer, kval)
 model.set_eshape('quad', 2)
 model.set_etype('plstrain', pipe, pipe_length)
 model.set_etype('plstrain', plate, pipe_length)
-model.set_ediv(['L1','L3', 'L4', 'L6'], wall_elements) # set element divisions
+# set element divisions
+model.set_ediv(['L1','L3', 'L4', 'L6'], wall_elements)
 model.set_ediv(['L0','L2'], num_arc_eles) # set element divisions
 model.set_ediv(['L5','L7'], num_plate_eles)
 model.mesh(1.0, 'gmsh') # mesh 1.0 fineness, smaller is finer
-model.plot_elements(proj_name+'_elem', display=disp)   # plot part elements
-model.plot_constraints(proj_name+'_constr', display=disp)
+model.plot_elements(proj_name+'_elem', display=show_gui)
+model.plot_constraints(proj_name+'_constr', display=show_gui)
 
 # make and solve the model
 prob = pyc.Problem(model, 'struct')
 prob.solve()
 
 # Plot results
-fields = 'Sx,Sy,S1,S2,S3,Seqv,ux,uy,utot'    # store the fields to plot
+fields = 'Sx,Sy,S1,S2,S3,Seqv,ux,uy,utot' # store the fields to plot
 fields = fields.split(',')
 for field in fields:
     fname = proj_name+'_'+field
-    prob.rfile.nplot(field, fname, display=disp)
+    prob.rfile.nplot(field, fname, display=False)
 
 model.view.select(pipe)
 model.view.allsel_under('parts')
 
 for field in fields:
     fname = proj_name+'_PIPE_'+field
-    prob.rfile.nplot(field, fname, display=disp)
+    prob.rfile.nplot(field, fname, display=False)
