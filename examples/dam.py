@@ -14,11 +14,14 @@ dam_ht_ft = 115
 water_ht_ft = 109
 length_dam_ft = 580
 
-# the below boolean sets whether or not to show gui plots
-# testing passes in -nogui
+# set whether or not to show gui plots
 show_gui = True
-if len(sys.argv) == 2 and sys.argv[-1] == '-nogui':
+if '-nogui' in sys.argv:
     show_gui = False
+# set element shape
+eshape = 'quad'
+if '-tri' in sys.argv:
+    eshape = 'tri'
 
 # derived dims
 water_ax = (water_ht_ft-22)/math.tan(math.radians(89)) + 12
@@ -71,7 +74,7 @@ mat.set_mech_props(2300, 30000*(10**6), 0.2)
 model.set_matl(mat, part)
 
 # set the element type, line division, and mesh the database
-model.set_eshape('quad', 2)
+model.set_eshape(eshape, 2)
 model.set_etype('plstrain', part, thickness)
 model.get_item('L8').set_ediv(2)
 # mesh with 1.0 or less fineness, smaller is finer

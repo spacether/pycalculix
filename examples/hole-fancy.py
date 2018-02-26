@@ -9,11 +9,14 @@ model = pyc.FeaModel(proj_name)
  # this sets dist units to meters, labels our consistent units
 model.set_units('m')
 
-# the below boolean sets whether or not to show gui plots
-# testing passes in -nogui
+# set whether or not to show gui plots
 show_gui = True
-if len(sys.argv) == 2 and sys.argv[-1] == '-nogui':
+if '-nogui' in sys.argv:
     show_gui = False
+# set element shape
+eshape = 'quad'
+if '-tri' in sys.argv:
+    eshape = 'tri'
 
 # Define variables we'll use to draw part geometry
 length = 8
@@ -49,6 +52,6 @@ part.chunk()
 model.plot_geometry(pnum=False, lnum=False, display=show_gui)
 
 model.set_etype('plstress', part, 0.01)
-model.set_eshape('quad', 2)
+model.set_eshape(eshape, 2)
 model.mesh(0.7, 'gmsh')
 model.plot_elements(display=show_gui)

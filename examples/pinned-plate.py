@@ -9,11 +9,14 @@ proj_name = 'pinned-plate'
 model = pyc.FeaModel(proj_name)
 model.set_units('in')
 
-# the below boolean sets whether or not to show gui plots
-# testing passes in -nogui
+# set whether or not to show gui plots
 show_gui = True
-if len(sys.argv) == 2 and sys.argv[-1] == '-nogui':
+if '-nogui' in sys.argv:
     show_gui = False
+# set element shape
+eshape = 'quad'
+if '-tri' in sys.argv:
+    eshape = 'tri'
 
 # pin locations
 pin1 = [0, 0]
@@ -103,7 +106,7 @@ for (pin, hole) in zip(pins, holes):
     model.set_contact_linear(pin, hole, kval, True)
 
 # mesh the model
-model.set_eshape('tri', 2)
+model.set_eshape(eshape, 2)
 model.set_etype('plstress', part, 0.1)
 model.set_etype('plstress', pin_parts, 0.1)
 model.mesh(0.5, 'gmsh')

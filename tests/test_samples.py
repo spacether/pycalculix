@@ -24,10 +24,11 @@ class TestExamples(unittest.TestCase):
             if extension in extenstion_to_del:
                 os.unlink(local_file)
 
-    def example_tester(self, file_name):
+    def example_tester(self, file_name, args=['-tri', '-nogui']):
         ex = None
         try:
-            command_str = 'python3 examples/%s -nogui' % file_name
+            command_str = 'python3 examples/%s %s' % (file_name,
+                                                      ' '.join(args))
             output = subprocess.check_output(
                 command_str, stderr=subprocess.STDOUT, shell=True,
                 timeout=60,

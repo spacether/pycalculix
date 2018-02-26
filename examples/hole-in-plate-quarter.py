@@ -8,11 +8,14 @@ proj_name = 'hole-in-plate-quarter'
 model = pyc.FeaModel(proj_name)
 model.set_units('m') # this sets dist units to meters
 
-# the below boolean sets whether or not to show gui plots
-# testing passes in -nogui
+# set whether or not to show gui plots
 show_gui = True
-if len(sys.argv) == 2 and sys.argv[-1] == '-nogui':
+if '-nogui' in sys.argv:
     show_gui = False
+# set element shape
+eshape = 'quad'
+if '-tri' in sys.argv:
+    eshape = 'tri'
 
 # Define variables we'll use to draw part geometry
 diam = 2.000 # hole diam
@@ -48,7 +51,7 @@ mat.set_mech_props(7800, 210*(10**9), 0.3)
 model.set_matl(mat, part)
 
 # set the element type and mesh database
-model.set_eshape('quad', 2)
+model.set_eshape(eshape, 2)
 model.set_etype('plstress', part, 0.1)
 model.set_ediv('L0', 20) # set element divisions
 model.mesh(1.0, 'gmsh') # mesh 1.0 fineness, smaller is finer

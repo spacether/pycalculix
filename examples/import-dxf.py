@@ -8,11 +8,14 @@ model_name = 'import-dxf'
 model = pyc.FeaModel(model_name)
 model.set_units('m')
 
-# the below boolean sets whether or not to show gui plots
-# testing passes in -nogui
+# set whether or not to show gui plots
 show_gui = True
-if len(sys.argv) == 2 and sys.argv[-1] == '-nogui':
+if '-nogui' in sys.argv:
     show_gui = False
+# set element shape
+eshape = 'quad'
+if '-tri' in sys.argv:
+    eshape = 'tri'
 
 #fname = 'test.dxf'
 abs_path = os.path.dirname(os.path.abspath(__file__))
@@ -31,7 +34,7 @@ model.plot_geometry(model_name+'_chunked_points', anum=False,
 model.view.print_summary()
 
 model.set_etype('axisym', parts)
-model.set_eshape('quad', 2)
+model.set_eshape(eshape, 2)
 model.mesh(1.0, 'gmsh')
 model.plot_elements(model_name+'_elements', display=show_gui)
 model.view.print_summary()

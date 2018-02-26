@@ -8,11 +8,14 @@ proj_name = 'pipe-crush-elastic'
 model = pyc.FeaModel(proj_name)
 model.set_units('m') # this sets dist units to meters
 
-# the below boolean sets whether or not to show gui plots
-# testing passes in -nogui
+# set whether or not to show gui plots
 show_gui = True
-if len(sys.argv) == 2 and sys.argv[-1] == '-nogui':
+if '-nogui' in sys.argv:
     show_gui = False
+# set element shape
+eshape = 'quad'
+if '-tri' in sys.argv:
+    eshape = 'tri'
 
 # Define variables we'll use to draw part geometry
 rad_outer = 0.1143 # pipe outer radius
@@ -69,7 +72,7 @@ kval = youngs*factor
 model.set_contact_linear(plate_bottom, arc_outer, kval)
 
 # set the element type and mesh database
-model.set_eshape('quad', 2)
+model.set_eshape(eshape, 2)
 model.set_etype('plstrain', pipe, pipe_length)
 model.set_etype('plstrain', plate, pipe_length)
 # set element divisions

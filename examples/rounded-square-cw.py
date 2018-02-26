@@ -7,11 +7,14 @@ model_name = 'rounded-square-cw'
 model = pyc.FeaModel(model_name)
 model.set_units('m')
 
-# the below boolean sets whether or not to show gui plots
-# testing passes in -nogui
+# set whether or not to show gui plots
 show_gui = True
-if len(sys.argv) == 2 and sys.argv[-1] == '-nogui':
+if '-nogui' in sys.argv:
     show_gui = False
+# set element shape
+eshape = 'quad'
+if '-tri' in sys.argv:
+    eshape = 'tri'
 
 length = 2
 thickness = 1
@@ -35,6 +38,7 @@ model.plot_geometry(model_name + '_chunked', display=show_gui)
 model.view.print_summary()
 
 model.set_etype('axisym', part)
+model.set_eshape(eshape, 2)
 model.mesh(1.0, 'gmsh')
 model.plot_elements(model_name+'_elements', display=show_gui)
 model.view.print_summary()

@@ -11,11 +11,14 @@ model = pyc.FeaModel(model_name)
 # this sets dist units to meters, labels our consistent units
 model.set_units('m')
 
-# the below boolean sets whether or not to show gui plots
-# testing passes in -nogui
+# set whether or not to show gui plots
 show_gui = True
-if len(sys.argv) == 2 and sys.argv[-1] == '-nogui':
+if '-nogui' in sys.argv:
     show_gui = False
+# set element shape
+eshape = 'quad'
+if '-tri' in sys.argv:
+    eshape = 'tri'
 
 # problem + geometry constants
 rpm = 1000     # rotor speed in rpm
@@ -86,7 +89,7 @@ mat.set_mech_props(8220, 208*10**9, 0.3)
 model.set_matl(mat, part)
 
 # mesh model
-model.set_eshape('quad', 2)
+model.set_eshape(eshape, 2)
 model.set_etype('axisym', 'A0')
 model.set_etype('plstress', 'A1', 0.1)
 model.get_item('L15').set_ediv(8)

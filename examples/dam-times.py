@@ -12,11 +12,14 @@ model = pyc.FeaModel(model_name)
 # this sets dist units to meters, labels our consistent units
 model.set_units('m')
 
-# the below boolean sets whether or not to show gui plots
-# testing passes in -nogui
+# set whether or not to show gui plots
 show_gui = True
-if len(sys.argv) == 2 and sys.argv[-1] == '-nogui':
+if '-nogui' in sys.argv:
     show_gui = False
+# set element shape
+eshape = 'quad'
+if '-tri' in sys.argv:
+    eshape = 'tri'
 
 # Problem constants
 grav = 9.81 # m/s^2
