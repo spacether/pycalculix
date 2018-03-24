@@ -25,19 +25,13 @@ class TestExamples(unittest.TestCase):
                 os.unlink(local_file)
 
     def example_tester(self, file_name, args=['-tri', '-nogui']):
-        ex = None
-        try:
-            command_str = 'python3 examples/%s %s' % (file_name,
-                                                      ' '.join(args))
-            output = subprocess.check_output(
-                command_str, stderr=subprocess.STDOUT, shell=True,
-                timeout=60,
-                universal_newlines=True)
-        except subprocess.CalledProcessError as ex:
-            print("Status : FAIL", ex.returncode, ex.output)
-        else:
-            print("Output: \n{}\n".format(output))
-        self.assertIsNone(ex)
+        command_str = 'python3 examples/%s %s' % (file_name,
+                                                  ' '.join(args))
+        output = subprocess.check_output(
+            command_str, stderr=subprocess.STDOUT, shell=True,
+            timeout=60,
+            universal_newlines=True)
+        # this raises subprocess.CalledProcessError if it fails
 
     def test_compr_rotor(self, file_name='compr-rotor.py'):
         self.example_tester(file_name)

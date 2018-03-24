@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-import pycalculix as pyc
-import matplotlib.pyplot as plt
 import math
 import numpy as np
+import sys
+
+import pycalculix as pyc
+import matplotlib.pyplot as plt
 
 # set whether or not to show gui plots
 show_gui = True

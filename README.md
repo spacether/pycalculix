@@ -284,6 +284,18 @@ Initial Release: December 2014
   - Many methods and variables made private to clean up name space.
 
 ## Developer Todo:
+- fix issue where some examples no longer work
+- 8/15 failing: F....FFFF..FFF.
+  - TestExamples.test_compr_rotor
+    - `feamodel.py", line 1541, in __read_inp\n    area.elements = sets[\'E\'][aname]\nKeyError: \'A0\'\n'`
+  - TestExamples.test_import_dxf
+    - `startangle = arc.startangle*sign\nAttributeError: 'Arc' object has no attribute 'startangle'\n"`
+  - TestExamples.test_rounded_square_ccw
+    - `/partmodule.py", line 778, in __get_cut_line\n    end = points[1][\'point\']\nIndexError: list index out of range\n'`
+  - This appears to be a problem where ccx is not seeing the material
+  that I set on plane stress with thickness areas `*SOLID SECTION`
+  - My solid line should be written before the step tags but it is
+  written after
 - confirm that set_ediv still works, remove the past merge if that broke it
 - add images to the readme
 - add new release on github release branch
