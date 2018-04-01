@@ -285,9 +285,8 @@ Initial Release: December 2014
 
 ## Developer Todo:
 - fix issue where some examples no longer work
-- 2/15 failing: F....FFFF..FFF.
+- 2/15 failing: F............F.  
   - TestExamples.test_import_dxf
-    - `startangle = arc.startangle*sign\nAttributeError: 'Arc' object has no attribute 'startangle'\n"`
     - Added timeout to the meshing calls
     - Why is quad meshing not working for this example?
   - TestExamples.test_compr_rotor
