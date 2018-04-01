@@ -1635,7 +1635,7 @@ class FeaModel(object):
         elif mesher == 'cgx':
             self.__mesh_cgx(size)
 
-    def __mesh_gmsh(self, size, meshmode):
+    def __mesh_gmsh(self, size, meshmode, timeout=20):
         """Meshes all parts using the Gmsh mesher.
 
         Args:
@@ -1656,6 +1656,8 @@ class FeaModel(object):
                 - 'fineness': adapt mesh size to geometry
                 - 'esize': keep explicitly defined element size
 
+            timeout (int): time in seconds before the process throws a
+                subprocess.TimeoutExpired
 
         """
         geo = []
@@ -1798,16 +1800,18 @@ class FeaModel(object):
         outfile.close()
         print('File: %s was written' % fname)
 
-        # run file in bg mode, -2 is 2d mesh
+        # run file in bg mode, -2 is 2d mesh, makes required inp file
         runstr = "%s %s -2 -o %s" % (environment.GMSH, fname, fout)
         print(runstr)
-        subprocess.call(runstr, shell=True)
+        subprocess.call(runstr, shell=True, timeout=timeout)
         print('File: %s was written' % fout)
         print('Meshing done!')
 
-        # write gmsh msh file
-        runstr = "%s %s -2 -o %s" % (environment.GMSH, fname, self.fname+'.msh')
-        subprocess.call(runstr, shell=True)
+        # write gmsh msh file, for manual checking only
+        # not required by pycalculix
+        runstr = "%s %s -2 -o %s" % (environment.GMSH, fname,
+                                     self.fname+'.msh')
+        subprocess.call(runstr, shell=True, timeout=timeout)
         print('File: %s.msh was written' % self.fname)
 
         # read in the calculix mesh

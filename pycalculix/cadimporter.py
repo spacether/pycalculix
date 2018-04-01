@@ -82,7 +82,7 @@ class CadImporter(object):
             if dist < geometry.ACC:
                 return realpoint
         return point
-    
+
     def __get_pts_lines(self, lines, arcs):
         """Returns a set of points, and a list of Lines and Arcs
 
@@ -113,10 +113,10 @@ class CadImporter(object):
                 sign = -1
             center = self.__fix_point(center)
             point_set.add(center)
-            startangle = arc.startangle*sign
-            endangle = arc.endangle*sign
+            startangle = arc.start_angle*sign
+            endangle = arc.end_angle*sign
             angle = endangle - startangle
-            if arc.endangle < arc.startangle:
+            if arc.end_angle < arc.start_angle:
                 angle = angle + 360*sign
             """
             print('---------------------------------------')
@@ -129,11 +129,11 @@ class CadImporter(object):
             start_vect = geometry.Point(0, arc.radius)
             if self.__swapxy == False:
                 start_vect = geometry.Point(arc.radius, 0)
-            start_vect.rot_ccw_deg(arc.startangle*sign)
+            start_vect.rot_ccw_deg(arc.start_angle*sign)
             end_vect = geometry.Point(0, arc.radius)
             if self.__swapxy == False:
                 end_vect = geometry.Point(arc.radius, 0)
-            end_vect.rot_ccw_deg(arc.endangle*sign)
+            end_vect.rot_ccw_deg(arc.end_angle*sign)
             start = center + start_vect
             end = center + end_vect
             start = self.__get_pt(point_set, start)
@@ -189,7 +189,7 @@ class CadImporter(object):
         # select two segments
         # draw normal lines
         # find intersections, that is the center
-        
+
     def __load_dxf(self):
         """Loads in a dxf file and returns a list of parts
 
