@@ -1781,8 +1781,8 @@ class FeaModel(object):
         # use this so small circles are meshed finely
         geo.append('Mesh.CharacteristicLengthFromCurvature = 1;')
         geo.append('Mesh.CharacteristicLengthFromPoints = 1;')
-        geo.append('Mesh.Algorithm = 2; //delauny') #okay for quads
-        # geo.append('Mesh.Algorithm = 8; //delquad = delauny for quads')
+        # geo.append('Mesh.Algorithm = 2; //delauny') #okay for quads
+        geo.append('Mesh.Algorithm = 8; //delquad = delauny for quads')
         geo.append('Mesh.ElementOrder = '
                    +str(order)
                    +'; //linear or second set here')

@@ -108,7 +108,7 @@ def mac_add():
     ccx_installed = shutil.which('ccx')
     if not ccx_installed:
         print('Installing calculix (ccx)')
-        command_line = "brew install homebrew/science/calculix-ccx"
+        command_line = "brew install brewsci/science/calculix-ccx"
         subprocess.check_call(command_line, shell=True)
         ccx_path = find_brew_binary_location('calculix-ccx', 'ccx')
         if not ccx_path:
@@ -144,7 +144,7 @@ def mac_remove():
         print('Removing calculix (ccx)')
         command_line = "rm /usr/local/bin/ccx"
         subprocess.check_call(command_line, shell=True)
-        command_line = "brew uninstall homebrew/science/calculix-ccx"
+        command_line = "brew uninstall calculix-ccx"
         subprocess.check_call(command_line, shell=True)
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
