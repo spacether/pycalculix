@@ -22,7 +22,7 @@ abs_path = os.path.dirname(os.path.abspath(__file__))
 fname = os.path.join(abs_path, 'kontrola.dxf')
 importer = pyc.CadImporter(model, fname, swapxy=True)
 parts = importer.load()
-model.plot_geometry(model_name+'_imported')
+model.plot_geometry(model_name+'_imported', display=show_gui)
 #parts[0].chunk()
 model.plot_geometry(model_name+'_chunked_areas', pnum=False,
                     lnum=False, display=show_gui)

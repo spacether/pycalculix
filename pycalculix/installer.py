@@ -60,7 +60,7 @@ def ubuntu_add():
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('Installing gmsh')
-        command_line = "sudo apt-get install gmsh"
+        command_line = "sudo apt-get install gmsh.rb"
         subprocess.check_call(command_line, shell=True)
     else:
         print('gmsh present')
@@ -101,8 +101,10 @@ def mac_add():
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('Installing gmsh')
-        command_line = "brew install gmsh"
+        command_line = "./dmginstall.sh http://gmsh.info/bin/MacOSX/gmsh-3.0.5-MacOSX.dmg"
+        print('command_line=%s' % command_line)
         subprocess.check_call(command_line, shell=True)
+        # need to add link to gmsh from the gui app
     else:
         print('gmsh present')
     ccx_installed = shutil.which('ccx')
@@ -151,7 +153,8 @@ def mac_remove():
         print('gmsh is not on your system')
     else:
         print('Removing gmsh')
-        command_line = "brew uninstall gmsh"
+        # need to add line to remove the linked location to the app
+        command_line = "rm -rf /Applications/Gmsh.app"
         subprocess.check_call(command_line, shell=True)
 
 def windows_add(bitsize):

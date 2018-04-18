@@ -285,14 +285,23 @@ Initial Release: December 2014
 
 ## Developer Todo:
 - fix issue where some examples no longer work
-- 2/15 failing: F............F.  
+- 2/15 failing: F..F.........F.
   - TestExamples.test_import_dxf
-    - Added timeout to the meshing calls
-    - Why is quad meshing not working for this example?
+    - Why is meshing hanging for this example?
+    - Because gmsh v3.0.6 only throws a segfault:11 error on quad meshing only
+    - Why are my tests not detecting the failure? because samples are try meshing
+    - Gmsh 3.0.5 works. I had to install it from a dmg, there are no old brew formulas for it that I can get to
+    - I should copy down this file here: https://github.com/Homebrew/homebrew-core/blob/master/Formula/gmsh.rb
+    - or use the old one from: https://github.com/Homebrew/homebrew-science/blob/23d8fd3b84df902d549c0a4cde9dfec369676d18/gmsh.rb
+    - See the tutorial here: https://github.com/Homebrew/brew/blob/master/docs/Formula-Cookbook.md
+    - it installs to /Applications/Gmsh.app/Contents/MacOS/gmsh
+    - turn the gui off
   - TestExamples.test_compr_rotor
     - `feamodel.py", line 1541, in __read_inp\n    area.elements = sets[\'E\'][aname]\nKeyError: \'A0\'\n'`
   - TestExamples.test_rounded_square_ccw
     - `/partmodule.py", line 778, in __get_cut_line\n    end = points[1][\'point\']\nIndexError: list index out of range\n'`
+  - TestExamples.test_dam_times
+    - `Command 'gmsh dam-times.geo -2 -o dam-times.msh' timed out after 20 seconds`
 - confirm that set_ediv still works, remove the past merge if that broke it
 - add images to the readme
 - add new release on github release branch
