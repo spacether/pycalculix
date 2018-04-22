@@ -24,12 +24,12 @@ class TestMeshing(unittest.TestCase):
             if extension in extenstion_to_del:
                 os.unlink(local_file)
 
-    def most_are_type(self, elements, el_shape):
+    def most_are_type(self, elements, el_shape, min_percent=90):
         min_num_nodes = 3
         if el_shape == 'quad':
             min_num_nodes = 4
         # require 90% be asked type
-        passing_qty = 0.9*len(elements)
+        passing_qty = (min_percent/100.0)*len(elements)
         type_count = 0
         for element in elements:
             if len(element.nodes) % min_num_nodes == 0:

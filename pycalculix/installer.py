@@ -101,7 +101,9 @@ def mac_add():
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('Installing gmsh')
-        command_line = "./dmginstall.sh http://gmsh.info/bin/MacOSX/gmsh-3.0.5-MacOSX.dmg"
+        folder_path = os.path.dirname(os.path.abspath(__file__))
+        dmginstall_path = os.path.join(folder_path, 'dmginstall.sh')
+        command_line = "%s http://gmsh.info/bin/MacOSX/gmsh-3.0.5-MacOSX.dmg" % dmginstall_path
         print('command_line=%s' % command_line)
         subprocess.check_call(command_line, shell=True)
         # need to add link to gmsh from the gui app

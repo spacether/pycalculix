@@ -224,6 +224,21 @@ Initial Release: December 2014
 
 ## Change Log
 
+#### 0.9.5 (github only for now)
+- Currently in branch 'feature/adds_samples_testing'
+- Adds tests: sample tests at tests/test_samples.py
+- Adds tests: meshing tests at tests/test_meshing.py
+- Adds solving and meshing timeout exception to capture when they hang
+- Fixes dxf import feature, syntax updates to use dfxgrabber >= 0.8.0, Issue 32
+- Adds requirement for dfxgrabber >= 0.8.0 to ensure that dxf import works
+- Switches mac gmsh version to gmsh == 3.0.5 because version 3.0.6 throws segault errors when meshing
+- Fixes a bug where solver input file does not write material before time steps, Issue 32
+- TODO: add link when installing gmsh
+- TODO: when solving, require a whitelisted version of gmsh and ccx
+    - ccx >= ??? to make 0.9.4 fix work?
+    - does gmsh 3.0.6 fail on other Operating systems or just Mac os x?
+- Local TODO: install CLT so I can build gcc + install ccx: https://github.com/Homebrew/homebrew-core/issues/2502
+
 #### 0.9.4 (github only)
 - removed gmsh and calculix
 - moved dist and documentation building and example cleanup into make file
