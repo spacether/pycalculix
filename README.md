@@ -240,6 +240,7 @@ Initial Release: December 2014
   throws segault errors when meshing
 - Fixes a bug where solver input file does not write material before
   time steps, Issue 32
+- TODO: fix ccx installer on Windows
 - TODO: when solving/meshing, require a whitelisted version of gmsh and
   ccx
     - ccx >= ??? to make 0.9.4 fix work, Issue30 reports that ccx v2.10
