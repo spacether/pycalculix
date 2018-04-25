@@ -165,20 +165,24 @@ Setting element divisions on lines is supported
 - Gravity
 - Rotational speed forces
 - Displacement constraints
-- Loads are stored on geometry primitives (points lines, areas) and can be
-applied before or after meshing.
+- Loads are stored on geometry primitives (points lines, areas) and
+can be applied before or after meshing.
 
 
 ## Files Produced
-Meshing and solving are done in the background using cgx or gmsh for meshing, and Calculix ccx for solving.
+Meshing and solving are done in the background using cgx or gmsh for
+meshing, and Calculix ccx for solving.
 
 Files Used:
 - .fbd (Calculix cgx gemetry file)
 - .inp (Calculix solver input file, or mesh definition)
 - .geo (Gmsh geometry file)
 - .msh (Gmsh native mesh file)
-- .frd (Calculix ccx nodal results file, values are at nodes and were created by interpolating element integration point results back to the nodes)
-- .dat (Calculix ccx element results file, includes integration point results)
+- .frd (Calculix ccx nodal results file, values are at nodes and were
+  created by interpolating element integration point results back to
+  the nodes)
+- .dat (Calculix ccx element results file, includes integration point
+  results)
 
 
 ## Uninstall
@@ -210,8 +214,8 @@ python -m venv venv
 pip install -e .
 pycalculix-add-feaprograms
 ```
-- Now any changes that you make to your local version of pycalculix will be
-  live in your virtual environment
+- Now any changes that you make to your local version of pycalculix
+  will be live in your virtual environment
 
 ## License
 See LICENSE.txt (Apache 2.0)
@@ -229,25 +233,34 @@ Initial Release: December 2014
 - Adds tests: sample tests at tests/test_samples.py
 - Adds tests: meshing tests at tests/test_meshing.py
 - Adds solving and meshing timeout exception to capture when they hang
-- Fixes dxf import feature, syntax updates to use dfxgrabber >= 0.8.0, Issue 32
+- Fixes dxf import feature, syntax updates to use dfxgrabber >= 0.8.0,
+  Issue 32
 - Adds requirement for dfxgrabber >= 0.8.0 to ensure that dxf import works
-- Switches mac gmsh version to gmsh == 3.0.5 because version 3.0.6 throws segault errors when meshing
-- Fixes a bug where solver input file does not write material before time steps, Issue 32
-- TODO: add link when installing gmsh
-- TODO: when solving, require a whitelisted version of gmsh and ccx
-    - ccx >= ??? to make 0.9.4 fix work?
+- Switches mac gmsh version to gmsh == 3.0.5 because version 3.0.6
+  throws segault errors when meshing
+- Fixes a bug where solver input file does not write material before
+  time steps, Issue 32
+- TODO: when solving/meshing, require a whitelisted version of gmsh and
+  ccx
+    - ccx >= ??? to make 0.9.4 fix work, Issue30 reports that ccx v2.10
+      has different frd formatting
     - does gmsh 3.0.6 fail on other Operating systems or just Mac os x?
-- Local TODO: install CLT so I can build gcc + install ccx: https://github.com/Homebrew/homebrew-core/issues/2502
+- TODO: fix bug where ccw and cw meshing isn't working
+- TODO: conditionally handle incorrectly formatted calculix results
+  files https://github.com/Homebrew/homebrew-core/issues/2502
 
 #### 0.9.4 (github only)
 - removed gmsh and calculix
-- moved dist and documentation building and example cleanup into make file
+- moved dist and documentation building and example cleanup into make
+  file
 - changed the license to Apache 2.0
-- added command line tool to install/uninstall gmsh and ccx for windows/mac os x/ubuntu
+- added command line tool to install/uninstall gmsh and ccx for
+  windows/mac os x/ubuntu
   - pycalculix-add-feaprograms
   - pycalculix-remove-feaprograms
 - added requests library requirement for pycalculix-add-feaprograms
-- fixed bug where frd files could no longer be read
+- fixed bug where frd files could no longer be read because Calculix
+  results keywords changed since initial 2014 release
 
 #### 0.9.3  
 - ADDED: multiple parts with contacts
@@ -289,10 +302,12 @@ Initial Release: December 2014
       - pycalculix.FeaModel.make_problem or pycalculix.Problem
     - Make Results File:
       - pycalculix.Problem.rfile or pycalculix.ResultsFile(problem)
-- FIX: Plotting fix, closing triangles in the correct direction in matplotlib
+- FIX: Plotting fix, closing triangles in the correct direction in
+  matplotlib
 - DOC: All code separated into modules for clarity.
 - DOC: Docstrings added to all classes + methods + functions
-- PLOTTING: Closed areas are now filled in yellow when plotting geometry.
+- PLOTTING: Closed areas are now filled in yellow when plotting
+  geometry.
 - PLOTTING: Signed line names are shown and internal to the area.
 - BACKEND: Implemented signed line and signed arc class.
   - Pressures can now be applied on these signed lines.
@@ -315,8 +330,6 @@ Initial Release: December 2014
     - `feamodel.py", line 1541, in __read_inp\n    area.elements = sets[\'E\'][aname]\nKeyError: \'A0\'\n'`
   - TestExamples.test_rounded_square_ccw
     - `/partmodule.py", line 778, in __get_cut_line\n    end = points[1][\'point\']\nIndexError: list index out of range\n'`
-  - TestExamples.test_dam_times
-    - `Command 'gmsh dam-times.geo -2 -o dam-times.msh' timed out after 20 seconds`
 - confirm that set_ediv still works, remove the past merge if that broke it
 - add images to the readme
 - add new release on github release branch

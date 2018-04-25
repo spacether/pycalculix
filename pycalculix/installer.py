@@ -106,7 +106,9 @@ def mac_add():
         command_line = "%s http://gmsh.info/bin/MacOSX/gmsh-3.0.5-MacOSX.dmg" % dmginstall_path
         print('command_line=%s' % command_line)
         subprocess.check_call(command_line, shell=True)
-        # need to add link to gmsh from the gui app
+        gmsh_path = '/Applications/Gmsh.app/Contents/MacOS/gmsh'
+        command_line = "ln -s %s /usr/local/bin/gmsh" % gmsh_path
+        subprocess.check_call(command_line, shell=True)
     else:
         print('gmsh present')
     ccx_installed = shutil.which('ccx')
@@ -155,9 +157,11 @@ def mac_remove():
         print('gmsh is not on your system')
     else:
         print('Removing gmsh')
-        # need to add line to remove the linked location to the app
+        command_line = "rm /usr/local/bin/gmsh"
+        subprocess.check_call(command_line, shell=True)
         command_line = "rm -rf /Applications/Gmsh.app"
         subprocess.check_call(command_line, shell=True)
+
 
 def windows_add(bitsize):
     """Adds programs on windows"""
