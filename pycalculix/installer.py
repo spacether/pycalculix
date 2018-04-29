@@ -6,6 +6,8 @@ import shutil
 import shlex
 import subprocess
 import sys
+from urllib.parse import urlparse
+from urllib.parse import ParseResult
 import zipfile
 from distutils.dir_util import copy_tree
 
@@ -266,16 +268,39 @@ def zipfile_by_bitsize(binaries_url, headers, zipfile_regex, bitsize):
         url_choices = {32: urls[1], 64: urls[0]}
     return url_choices[bitsize]
 
-def get_direct_url(source_page, headers):
-    """Gets the download link from a sf page"""
-    res = requests.get(source_page, headers=headers)
-    html = res.text
-    html = html.replace("\"", "'")
-    link_text_pos = html.find('direct link')
+def href_from_link_text(url, headers, link_text):
+    response = requests.get(url, headers=headers)
+    html = response.text.replace("\"", "'")
+    link_text_pos = html.find(link_text)
+    if link_text_pos == -1:
+        raise ValueError('Unable to download file because there was not a link '
+                         'with text=%s on the page at url=%s' %
+                         (link_text, url))
     href_pos = html[:link_text_pos].rfind('href')
     first_char = html.find("'", href_pos)+1
-    last_quote = html.find("'", first_char)
-    return html[first_char:last_quote]
+    last_char = html.find("'", first_char)
+    return html[first_char:last_char]
+
+def get_direct_url(url, headers):
+    """Gets the download link from a host project page"""
+    direct_download_url = href_from_link_text(url,
+                                              headers,
+                                              'Problems Downloading')
+    parsed_download_url = urlparse(direct_download_url)
+    if parsed_download_url.scheme not in ['http', 'https']:
+        # url is relative, and is missing the scheme and netloc
+        parsed_parent_url = urlparse(url)
+        parsed_download_url = ParseResult(parsed_parent_url.scheme,
+                                          parsed_parent_url.netloc,
+                                          parsed_download_url.path,
+                                          parsed_download_url.params,
+                                          parsed_download_url.query,
+                                          parsed_download_url.fragment)
+        direct_download_url = parsed_download_url.geturl()
+    direct_download_url = href_from_link_text(direct_download_url,
+                                              headers,
+                                              'direct link')
+    return direct_download_url
 
 def win_add_ccx(bitsize, binaries_url, program_name):
     """Installs ccx on a windows computer"""
@@ -289,9 +314,7 @@ def win_add_ccx(bitsize, binaries_url, program_name):
                                              bitsize)
 
     zipfile_name = zipfile_webpage_url.split('/')[-2]
-    print(zipfile_webpage_url)
     zipfile_url = get_direct_url(zipfile_webpage_url, headers)
-    print(zipfile_url)
 
     print('Downloading %s from %s' % (zipfile_name, zipfile_url))
     response = requests.get(zipfile_url, stream=True, headers=headers)
