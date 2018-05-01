@@ -240,12 +240,11 @@ Initial Release: December 2014
   throws segault errors when meshing
 - Fixes a bug where solver input file does not write material before
   time steps, Issue 32
-- Fixed ccx installer on Windows
-- TODO: when solving/meshing, require a whitelisted version of gmsh and
-  ccx
-    - ccx >= ??? to make 0.9.4 fix work, Issue30 reports that ccx v2.10
-      has different frd formatting
-    - does gmsh 3.0.6 fail on other Operating systems or just Mac os x?
+- Fixed gmsh installer on Windows, gmsh zip file is now found and
+  downloaded
+- TODO: peg installed windows gmsh to working binaries
+- TODO: peg installed mac gmsh to working binaries
+- TODO: peg installed linux gmsh to working binaries
 - TODO: fix bug where ccw and cw meshing isn't working
 - TODO: conditionally handle incorrectly formatted calculix results
   files https://github.com/Homebrew/homebrew-core/issues/2502

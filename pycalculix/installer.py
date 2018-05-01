@@ -265,9 +265,7 @@ def win_add_from_url(bitsize, binaries_url, program_name):
 
 def zipfile_by_bitsize(binaries_url, headers, zipfile_regex, bitsize):
     """Returns the url linking to the correct zipfile"""
-    # need to add code here to get the latest version that isn't blacklisted
-    # omit the git versions
-    # make it look for versions <= a max_version tested
+    # need to add code here to peg us to a whitelisted version of ccx + gmsh
     # this is used by ccx and gmsh
     res = requests.get(binaries_url, headers=headers)
     html = res.text
