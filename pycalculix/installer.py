@@ -229,6 +229,7 @@ def win_add_from_url(bitsize, binaries_url, program_name):
     headers = {'User-Agent': user_agent}
 
     zipfile_regex = '.*%s.*' % program_name
+    # Windows 10 64 bit, gmsh version: Gmsh 3.0.7-git-35176e26 hangs
     zipfile_name = zipfile_by_bitsize(binaries_url, headers, zipfile_regex,
                                       bitsize)
 
@@ -264,6 +265,10 @@ def win_add_from_url(bitsize, binaries_url, program_name):
 
 def zipfile_by_bitsize(binaries_url, headers, zipfile_regex, bitsize):
     """Returns the url linking to the correct zipfile"""
+    # need to add code here to get the latest version that isn't blacklisted
+    # omit the git versions
+    # make it look for versions <= a max_version tested
+    # this is used by ccx and gmsh
     res = requests.get(binaries_url, headers=headers)
     html = res.text
     urls = re.findall(r'href=[\'"]?([^\'" >]+)', html)
