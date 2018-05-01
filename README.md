@@ -240,7 +240,7 @@ Initial Release: December 2014
   throws segault errors when meshing
 - Fixes a bug where solver input file does not write material before
   time steps, Issue 32
-- Fixed gmsh installer on Windows, gmsh zip file is now found and
+- Fixed ccx installer on Windows: zip file is now found and
   downloaded
 - TODO: peg installed windows gmsh to working binaries
 - TODO: peg installed mac gmsh to working binaries
