@@ -1,6 +1,7 @@
 
 import glob
 import os
+import pdb
 import re
 import shutil
 import shlex
@@ -175,15 +176,16 @@ def windows_add(bitsize):
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('Installing gmsh')
-        win_add_from_url(bitsize, 'http://gmsh.info/bin/Windows/', 'gmsh')
+        url = 'http://gmsh.info/bin/Windows/'
+        win_add_gmsh(bitsize, url, 'gmsh', '3.0.5')
     else:
         print('gmsh present')
 
     ccx_installed = shutil.which('ccx')
     if not ccx_installed:
         print('Installing calculix (ccx)')
-        url = "https://sourceforge.net/projects/calculixforwin/files/03.2/"
-        win_add_ccx(bitsize, url, "ccx")
+        url = 'https://sourceforge.net/projects/calculixforwin/files/03.2/'
+        win_add_ccx(bitsize, url, 'ccx')
     else:
         print('calculix (ccx) present')
 
@@ -221,19 +223,18 @@ def remove_like(search_path, name):
         elif os.path.isdir(path):
             shutil.rmtree(path)
 
-def win_add_from_url(bitsize, binaries_url, program_name):
+def win_add_gmsh(bitsize, binaries_url, program_name, version_str):
     """Installs a program from an apache server file listing page"""
     # Needs the user agent header to exist for it to send back the content
     user_agent = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:56.0) '
                   'Gecko/20100101 Firefox/56.0')
     headers = {'User-Agent': user_agent}
 
-    zipfile_regex = '.*%s.*' % program_name
+    zipfile_regex = '.*%s-%s.*' % (program_name, version_str)
     # Windows 10 64 bit, gmsh version: Gmsh 3.0.7-git-35176e26 hangs
     zipfile_name = zipfile_by_bitsize(binaries_url, headers, zipfile_regex,
                                       bitsize)
 
-    zipfile_folder_name = zipfile_name.split('.')[0]
     zipfile_url = binaries_url + zipfile_name
     print('Downloading %s from %s' % (program_name, zipfile_url))
     response = requests.get(zipfile_url, stream=True, headers=headers)
@@ -243,6 +244,7 @@ def win_add_from_url(bitsize, binaries_url, program_name):
                 out_file.write(chunk)
     print('Unzipping %s' % program_name)
     zip_ref = zipfile.ZipFile(zipfile_name, 'r')
+    zipfile_folder_name = os.path.dirname(zip_ref.namelist()[0])
     zip_ref.extractall(None)
     zip_ref.close()
     print('Removing %s zipfile' % program_name)
@@ -265,7 +267,6 @@ def win_add_from_url(bitsize, binaries_url, program_name):
 
 def zipfile_by_bitsize(binaries_url, headers, zipfile_regex, bitsize):
     """Returns the url linking to the correct zipfile"""
-    # need to add code here to peg us to a whitelisted version of ccx + gmsh
     # this is used by ccx and gmsh
     res = requests.get(binaries_url, headers=headers)
     html = res.text
