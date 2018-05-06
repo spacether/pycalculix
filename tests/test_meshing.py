@@ -57,7 +57,7 @@ class TestMeshing(unittest.TestCase):
         # set the element type and mesh database
         model.set_eshape(el_shape, 2)
         model.mesh(1.0, 'gmsh') # mesh 1.0 fineness, smaller is finer
-        model.plot_elements(proj_name+'_elem')   # plot part elements
+        # model.plot_elements(proj_name+'_elem')   # plot part elements
         self.assertTrue(self.most_are_type(part.elements, el_shape))
 
     def test_quad_mesh(self, el_shape='quad'):
@@ -77,7 +77,7 @@ class TestMeshing(unittest.TestCase):
         # set the element type and mesh database
         model.set_eshape(el_shape, 2)
         model.mesh(1.0, 'gmsh') # mesh 1.0 fineness, smaller is finer
-        model.plot_elements(proj_name+'_elem')   # plot part elements
+        # model.plot_elements(proj_name+'_elem')   # plot part elements
         self.assertTrue(self.most_are_type(part.elements, el_shape))
 
     # add tests of fineness here

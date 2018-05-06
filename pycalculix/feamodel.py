@@ -1803,7 +1803,7 @@ class FeaModel(object):
         # run file in bg mode, -2 is 2d mesh, makes required inp file
         runstr = "%s %s -2 -o %s" % (environment.GMSH, fname, fout)
         print(runstr)
-        subprocess.check_call(runstr, timeout=timeout)
+        subprocess.check_call(runstr, timeout=timeout, shell=True)
         print('File: %s was written' % fout)
         print('Meshing done!')
 
@@ -1811,7 +1811,7 @@ class FeaModel(object):
         # not required by pycalculix
         runstr = "%s %s -2 -o %s" % (environment.GMSH, fname,
                                      self.fname+'.msh')
-        subprocess.check_call(runstr, timeout=timeout)
+        subprocess.check_call(runstr, timeout=timeout, shell=True)
         print('File: %s.msh was written' % self.fname)
 
         # read in the calculix mesh
@@ -1965,7 +1965,7 @@ class FeaModel(object):
 
         # run file in bg mode
         runstr = "%s -bg %s" % (environment.CGX, fname)
-        p = subprocess.check_call(runstr, timeout=timeout)
+        p = subprocess.check_call(runstr, timeout=timeout, shell=True)
         print('Meshing done!')
 
         # assemble the output files into a ccx input file

@@ -274,7 +274,7 @@ class Problem(base_classes.Idobj):
             # run file
             runstr = "%s %s" % (environment.CCX, self.fname)
             print(runstr)
-            subprocess.call(runstr, shell=True)
+            subprocess.check_call(runstr, shell=True)
             print('Solving done!')
 
             # select the probem's parts and load the results file
