@@ -61,11 +61,11 @@ def remove():
     print('Done!')
 
 def ubuntu_add():
-    """Adds programs on ubunut, uses apt"""
+    """Adds programs on ubuntu 16.04, uses apt"""
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('Installing gmsh')
-        command_line = "sudo apt-get install gmsh.rb"
+        command_line = "sudo apt-get install gmsh"
         subprocess.check_call(command_line, shell=True)
     else:
         print('gmsh present')
