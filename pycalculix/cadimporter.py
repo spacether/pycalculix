@@ -1,7 +1,9 @@
 """This module stores the CadImporter class, which is used to load CAD parts."""
 
+import collections
 import math
 import os
+import pdb
 # needed to prevent dxfgrabber from crashing on import
 os.environ['DXFGRABBER_CYTHON'] = 'OFF'
 import dxfgrabber # needed for dxf files
@@ -48,25 +50,25 @@ class CadImporter(object):
         if self.__fname == '':
             print('You must pass in a file name to load!')
             return []
-        else:
-            fname_list = self.__fname.split('.')
-            ext = fname_list[1]
-            first_pt = None
-            if len(self.__fea.points) > 0:
-                first_pt = self.__fea.points[0]
-            if ext == 'dxf':
-                parts = self.__load_dxf()
-            elif ext in ['brep', 'brp', 'iges', 'igs', 'step', 'stp']:
-                self.__make_geo()
-                parts = self.__load_geo()
-            last_pt = None
-            if first_pt != None:
-                if len(self.__fea.points) > 2:
-                    last_pt = self.__fea.points[-1]
-            if self.__scale != '':
-                # call scale
-                pass
-            return parts
+
+        fname_list = self.__fname.split('.')
+        ext = fname_list[1]
+        first_pt = None
+        if len(self.__fea.points) > 0:
+            first_pt = self.__fea.points[0]
+        if ext == 'dxf':
+            parts = self.__load_dxf()
+        elif ext in ['brep', 'brp', 'iges', 'igs', 'step', 'stp']:
+            self.__make_geo()
+            parts = self.__load_geo()
+        last_pt = None
+        if first_pt != None:
+            if len(self.__fea.points) > 2:
+                last_pt = self.__fea.points[-1]
+        if self.__scale != '':
+            # call scale
+            pass
+        return parts
 
     def __fix_point(self, point):
         """Adjusts the point to be in the right plane (yx)"""
@@ -91,7 +93,7 @@ class CadImporter(object):
             arcs (dxfgrabber ARC list): dxf arcs
 
         Returns:
-            list: [points, list of Line and Arc]
+            list: [list of points, list of Line and Arc]
         """
         # store unique points
         point_set = set()
@@ -143,26 +145,28 @@ class CadImporter(object):
             if abs(angle) <= 90:
                 arc = geometry.Arc(start, end, center)
                 all_lines.append(arc)
-                #print('1 arc made')
+                print('1 arc made')
+                continue
                 #print(' %s' % arc)
-            else:
-                pieces = math.ceil(abs(angle)/90)
-                #print('%i arcs being made' % pieces)
-                points = [start, end]
-                # 2 pieces need 3 points, we have start + end already --> 1 pt
-                inserts = pieces + 1 - 2
-                piece_ang = angle/pieces
-                #print('piece_ang = %f' % piece_ang)
-                while inserts > 0:
-                    rvect.rot_ccw_deg(piece_ang)
-                    point = center + rvect
-                    points.insert(-1, point)
-                    inserts = inserts - 1
-                for ind in range(len(points)-1):
-                    point_set.update([points[ind], points[ind+1]])
-                    arc = geometry.Arc(points[ind], points[ind+1], center)
-                    #print(' %s' % arc)
-                    all_lines.append(arc)
+            pieces = math.ceil(abs(angle)/90)
+            print('%i arcs being made' % pieces)
+            points = [start, end]
+            # 2 pieces need 3 points, we have start + end already --> 1 pt
+            inserts = pieces + 1 - 2
+            piece_ang = angle/pieces
+            #print('piece_ang = %f' % piece_ang)
+            while inserts > 0:
+                rvect.rot_ccw_deg(piece_ang)
+                point = center + rvect
+                points.insert(-1, point)
+                inserts = inserts - 1
+            for ind in range(len(points)-1):
+                point_set.update([points[ind], points[ind+1]])
+                arc = geometry.Arc(points[ind], points[ind+1], center)
+                #print(' %s' % arc)
+                all_lines.append(arc)
+        for line in all_lines:
+            line.save_to_points()
         return [list(point_set), all_lines]
 
     def __make_geo(self):
@@ -190,12 +194,18 @@ class CadImporter(object):
         # draw normal lines
         # find intersections, that is the center
 
+    @staticmethod
+    def __dangling_points(all_points):
+        return [point for point in all_points
+                if len(point.lines) == 1 and not point.arc_center]
+
     def __load_dxf(self):
         """Loads in a dxf file and returns a list of parts
 
         Returns:
             list: list of Part
         """
+        # pdb.set_trace()
         print('Loading file: %s' % self.__fname)
         dwg = dxfgrabber.readfile(self.__fname)
         lines = [item for item in dwg.entities if item.dxftype == 'LINE']
@@ -208,18 +218,30 @@ class CadImporter(object):
         print('Loaded %i arcs' % len(arcs))
 
         # get all points and Line and Arc using pycalculix entities
+        print('Converting to pycalculix lines arcs and points ...')
         all_points, all_lines = self.__get_pts_lines(lines, arcs)
-        # the index of the point in the set can be used as a hash
-        lines_from_ptind = {}
-        for line in all_lines:
-            ind1 = all_points.index(line.pt(0))
-            ind2 = all_points.index(line.pt(1))
-            for ind in [ind1, ind2]:
-                if ind not in lines_from_ptind:
-                    lines_from_ptind[ind] = [line]
-                else:
-                    if line not in lines_from_ptind[ind]:
-                        lines_from_ptind[ind].append(line)
+        print('Loaded %i line segments, lines or arcs' % len(all_lines))
+        print('Loaded %i points' % len(all_points))
+        for point in all_points:
+            print('%s %s' % (point, point.lines))
+
+        # remove all lines that are not part of areas
+        dangling_points = self.__dangling_points(all_points)
+        # pdb.set_trace()
+        pruned_geometry = bool(dangling_points)
+        while dangling_points:
+            for point in dangling_points:
+                all_points.remove(point)
+                print('Removed point= %s' % point)
+                dangling_line = list(point.lines)[0]
+                point.unset_line(dangling_line)
+                if dangling_line in all_lines:
+                    all_lines.remove(dangling_line)
+                    print('Removed line= %s' % dangling_line)
+            dangling_points = self.__dangling_points(all_points)
+        if pruned_geometry:
+            print('Remaining line segments: %i' % len(all_lines))
+            print('Remaining points: %i' % len(all_points))
 
         # make line loops now
         loops = []
@@ -227,25 +249,26 @@ class CadImporter(object):
         this_loop = geometry.LineLoop()
         while len(all_lines) > 0:
             this_loop.append(line)
-            if line in all_lines:
-                all_lines.remove(line)
-            point = line.pt(1)
-            ind = all_points.index(point)
-            pt_lines = lines_from_ptind[ind]
-            if line in pt_lines:
-                pt_lines.remove(line)
-            if len(pt_lines) == 1:
-                # we have the next line
-                next_line = pt_lines[0]
-                if line.pt(1) != next_line.pt(0):
-                    next_line.reverse()
-                line = next_line
-            elif len(pt_lines) > 1:
-                print('One point was connected to > 2 lines.')
-                print('Only import simple part loops, or surfaces.')
+            all_lines.remove(line)
             if this_loop.closed == True:
                 loops.append(this_loop)
                 this_loop = geometry.LineLoop()
+                if all_lines:
+                    line = all_lines[0]
+                continue
+            point = line.pt(1)
+            other_lines = point.lines - set([line])
+            if len(other_lines) > 1:
+                # note: one could exclude connected segment nodes
+                # make disconnected line loops, then have another
+                # loop to connect thos disconnected line loops
+                print('One point was connected to > 2 lines.')
+                print('Only import simple part loops, or surfaces.')
+                raise Exception('Import geometry is too complex')
+            next_line = list(other_lines)[0]
+            if line.pt(1) != next_line.pt(0):
+                next_line.reverse()
+            line = next_line
 
         # check loops to see if one is inside another
         # if no loops inside self, then self is a part
