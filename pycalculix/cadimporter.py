@@ -224,6 +224,8 @@ class CadImporter(object):
         print('Loaded %i points' % len(all_points))
         for point in all_points:
             print('%s %s' % (point, point.lines))
+        for line in all_lines:
+            print('%s %s' % (line, point.points))
 
         # remove all lines that are not part of areas
         dangling_points = self.__dangling_points(all_points)
