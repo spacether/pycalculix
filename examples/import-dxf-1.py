@@ -4,7 +4,7 @@ import sys
 
 import pycalculix as pyc
 
-model_name = 'import-dxf'
+model_name = 'import-dxf-1'
 model = pyc.FeaModel(model_name)
 model.set_units('m')
 
@@ -19,17 +19,18 @@ if '-tri' in sys.argv:
 
 #fname = 'test.dxf'
 abs_path = os.path.dirname(os.path.abspath(__file__))
-fname = os.path.join(abs_path, 'var-thick_REHex_parametic_low-res.dxf')
+fname = os.path.join(abs_path, '%s.dxf' % model_name)
 importer = pyc.CadImporter(model, fname, swapxy=True)
 parts = importer.load()
 model.plot_geometry(model_name+'_imported', display=show_gui)
 #parts[0].chunk()
-model.plot_geometry(model_name+'_chunked_areas', pnum=False,
+model.plot_geometry(model_name+'_areas', pnum=False,
                     lnum=False, display=show_gui)
-model.plot_geometry(model_name+'_chunked_lines', anum=False,
+model.plot_geometry(model_name+'_lines', anum=False,
                     pnum=False, display=show_gui)
-model.plot_geometry(model_name+'_chunked_points', anum=False,
+model.plot_geometry(model_name+'_points', anum=False,
                     lnum=False, display=show_gui)
+
 
 model.view.print_summary()
 
