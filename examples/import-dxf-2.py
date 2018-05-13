@@ -24,14 +24,12 @@ importer = pyc.CadImporter(model, fname, swapxy=True)
 parts = importer.load()
 model.plot_geometry(model_name+'_imported', display=show_gui)
 #parts[0].chunk()
-model.plot_geometry(model_name+'_chunked_areas', pnum=False,
+model.plot_geometry(model_name+'_areas', pnum=False,
                     lnum=False, display=show_gui)
-model.plot_geometry(model_name+'_chunked_lines', anum=False,
+model.plot_geometry(model_name+'_lines', anum=False,
                     pnum=False, display=show_gui)
-model.plot_geometry(model_name+'_chunked_points', anum=False,
+model.plot_geometry(model_name+'_points', anum=False,
                     lnum=False, display=show_gui)
-model.plot_lines(model_name+'_lines_unlabled', display=show_gui,
-                 label=False)
 
 
 model.view.print_summary()
