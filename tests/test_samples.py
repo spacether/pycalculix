@@ -52,14 +52,15 @@ class TestExamples(unittest.TestCase):
         self.example_tester(file_name)
 
     def test_hole_quarter(self, file_name='hole-in-plate-quarter.py'):
-        # this is not making an input file, when quads are selected it
-        # hangs
         self.example_tester(file_name)
 
     def test_hole_kt(self, file_name='hole-kt-study.py'):
         self.example_tester(file_name)
 
-    def test_import_dxf(self, file_name='import-dxf.py'):
+    def test_import_dxf1(self, file_name='import-dxf-1.py'):
+        self.example_tester(file_name)
+
+    def test_import_dxf2(self, file_name='import-dxf-2.py'):
         self.example_tester(file_name)
 
     def test_line_loop(self, file_name='line-loop.py'):
