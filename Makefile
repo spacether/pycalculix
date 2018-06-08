@@ -19,6 +19,19 @@ clean_examples:
 	rm -f ./examples/*.sta
 	rm -f ./examples/*.out
 
+clean:
+	rm -f ./*.fbd
+	rm -f ./*.inp
+	rm -f ./*.geo
+	rm -f ./*.msh
+	rm -f ./*.frd
+	rm -f ./*.dat
+	rm -f ./*.png
+	rm -f ./*.cvg
+	rm -f ./*.sta
+	rm -f ./*.out
+
+
 dist_examples:
 	make clean_examples
 	zip -r examples.zip examples
