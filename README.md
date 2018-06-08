@@ -314,6 +314,36 @@ Initial Release: December 2014
   - Many methods and variables made private to clean up name space.
 
 ## Developer Todo:
+- Note per 2.14 CCX it lists the real components of displacement as DISP rathe than DISPR
+  - this changed from STRESSR and FORCR DISPR
+  - https://github.com/spacether/pycalculix/commit/413a9a26e3419b1c5a680b934c9745d4d5915edb#diff-c705ae85decd46a4e686f46deb5d1b60
+  - current 2.14
+  - original Dec 24, 2015
+    - latest release then was 2.9 per https://web.archive.org/web/20151126213843/http://www.dhondt.de/new_calc.htm
+    - 2.7 (old format)
+      - DISPR and DISPI
+      - FORC and FORCI
+      - Confirmed that pycalculix v 0.9.3 version include ccx 2.7, it says 'this is version 2.7'
+    - 2.8 per `*NODE FILE`
+      - DISP and DISPI
+      - FORC and FORCI
+    - Need to check what version is installed in original pycalculix and if it in fact outputs above names
+    - 2.8p2 (but calculix for windows) when I released (pg 367)
+      - DISP and DISPI
+      - FORC and FORCI
+    - 2.9 (pg 373)
+      - DISP and DISPI
+      - FORC and FORCI
+    - 2.10 (pg 373)
+      - DISP and DISPI
+      - FORC and FORCI
+    - 2.11 (pg 394)
+      - DISP and DISPI
+      - FORC and FORCI
+    - 2.12
+    - 2.13
+    - 2.14 (new flags)
+  - https://web.archive.org/web/20150101000000*/http://www.dhondt.de/new_calc.htm
 - fix issue where some examples no longer work
 - 2/15 failing: F..F.........F.
   - TestExamples.test_import_dxf
@@ -330,7 +360,10 @@ Initial Release: December 2014
     - `feamodel.py", line 1541, in __read_inp\n    area.elements = sets[\'E\'][aname]\nKeyError: \'A0\'\n'`
   - TestExamples.test_rounded_square_ccw
     - `/partmodule.py", line 778, in __get_cut_line\n    end = points[1][\'point\']\nIndexError: list index out of range\n'`
-- confirm that set_ediv still works, remove the past merge if that broke it
+- confirm that set_ediv still works
+- For windows do we ant to install from GE calculix?
+  - https://github.com/GeneralElectric/CalculiX
+  - version is older, 2.10
 - add images to the readme
 - add new release on github release branch
 - add new release on pypi
