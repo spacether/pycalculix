@@ -229,7 +229,6 @@ Initial Release: December 2014
 ## Change Log
 
 #### 0.9.5 (github only)
-- Currently in branch 'feature/adds_samples_testing'
 - Adds tests: sample tests at tests/test_samples.py
 - Adds tests: meshing tests at tests/test_meshing.py
 - Adds solving and meshing timeout exception to capture when they hang
