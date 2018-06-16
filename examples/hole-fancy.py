@@ -1,10 +1,22 @@
 #!/usr/bin/env python3
+import sys
+
 import pycalculix as pyc
 
 # arc test sample
 proj_name = 'hole-fancy'
 model = pyc.FeaModel(proj_name)
-model.set_units('m')    # this sets dist units to meters, labels our consistent units
+ # this sets dist units to meters, labels our consistent units
+model.set_units('m')
+
+# set whether or not to show gui plots
+show_gui = True
+if '-nogui' in sys.argv:
+    show_gui = False
+# set element shape
+eshape = 'quad'
+if '-tri' in sys.argv:
+    eshape = 'tri'
 
 # Define variables we'll use to draw part geometry
 length = 8
@@ -13,7 +25,8 @@ radius = 1
 hole_width = width - 2*radius
 hole_length = length - 2*radius
 
-# Draw part geometry, you must draw the part CLOCKWISE, x, y = radial, axial
+# Draw part geometry, you must draw the part CLOCKWISE
+# x, y = radial, axial
 part = pyc.Part(model)
 part.goto(length*0.5, -width*0.5)
 part.draw_line_ax(width)
@@ -35,9 +48,10 @@ arcs.append(part.fillet_lines(l_right, l_top, radius)[0])
 model.set_ediv(arcs, 10)
 
 part.chunk()
-model.plot_geometry(pnum=False, lnum=False) # view the geometry
+# view the geometry
+model.plot_geometry(pnum=False, lnum=False, display=show_gui)
 
 model.set_etype('plstress', part, 0.01)
-model.set_eshape('quad', 2)
+model.set_eshape(eshape, 2)
 model.mesh(0.7, 'gmsh')
-model.plot_elements()
+model.plot_elements(display=show_gui)

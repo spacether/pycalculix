@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import sys
+
 import pycalculix as pyc
 
 # Model of a pinned plate with 3 pins
@@ -6,6 +8,15 @@ import pycalculix as pyc
 proj_name = 'pinned-plate'
 model = pyc.FeaModel(proj_name)
 model.set_units('in')
+
+# set whether or not to show gui plots
+show_gui = True
+if '-nogui' in sys.argv:
+    show_gui = False
+# set element shape
+eshape = 'quad'
+if '-tri' in sys.argv:
+    eshape = 'tri'
 
 # pin locations
 pin1 = [0, 0]
@@ -61,12 +72,13 @@ all_arcs = fillet_arcs + hole_arcs + pin_arcs
 model.set_ediv(all_arcs, 10)
 
 # plot model
-model.plot_areas(proj_name+'_prechunk_areas', label=False)
+model.plot_areas(proj_name+'_prechunk_areas', label=False,
+                 display=show_gui)
 part.chunk('ext')
-model.plot_areas(proj_name+'_areas', label=False)
-model.plot_parts(proj_name+'_parts')
-model.plot_points(proj_name+'_points')
-model.plot_lines(proj_name+'_points', label=False)
+model.plot_areas(proj_name+'_areas', label=False, display=show_gui)
+model.plot_parts(proj_name+'_parts', display=show_gui)
+model.plot_points(proj_name+'_points', display=show_gui)
+model.plot_lines(proj_name+'_points', label=False, display=show_gui)
 
 # set loads and constraints
 pin_vert_pts = model.get_items(['P40','P42', 'P45', 'P47'])
@@ -94,19 +106,19 @@ for (pin, hole) in zip(pins, holes):
     model.set_contact_linear(pin, hole, kval, True)
 
 # mesh the model
-model.set_eshape('tri', 2)
+model.set_eshape(eshape, 2)
 model.set_etype('plstress', part, 0.1)
 model.set_etype('plstress', pin_parts, 0.1)
 model.mesh(0.5, 'gmsh')
-model.plot_elements(proj_name+'_elem')   # plot part elements
-model.plot_constraints(proj_name+'_constr')
+model.plot_elements(proj_name+'_elem', display=show_gui)
+model.plot_constraints(proj_name+'_constr', display=show_gui)
 
 # make and solve the model
 prob = pyc.Problem(model, 'struct')
 prob.solve()
 
 # Plot results
-fields = 'Sx,Sy,S1,S2,S3,Seqv,ux,uy,utot'    # store the fields to plot
+fields = 'Sx,Sy,S1,S2,S3,Seqv,ux,uy,utot' # store the fields to plot
 fields = fields.split(',')
 for field in fields:
     fname = proj_name+'_'+field

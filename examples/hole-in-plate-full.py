@@ -1,10 +1,21 @@
 #!/usr/bin/env python3
+import sys
+
 import pycalculix as pyc
 
 # Vertical hole in plate model, make model
 proj_name = 'hole-in-plate-full'
 model = pyc.FeaModel(proj_name)
 model.set_units('m') # this sets dist units to meters
+
+# set whether or not to show gui plots
+show_gui = True
+if '-nogui' in sys.argv:
+    show_gui = False
+# set element shape
+eshape = 'quad'
+if '-tri' in sys.argv:
+    eshape = 'tri'
 
 # Define variables we'll use to draw part geometry
 diam = 2.0 # hole diam
@@ -13,7 +24,8 @@ width = diam/ratio   #plate width
 print('D=%f, H=%f, D/H=%f' % (diam, width, diam/width))
 length = 2*width  #plate length
 
-# Draw part geometry, you must draw the part CLOCKWISE, x, y = radial, axial
+# Draw part geometry, you must draw the part CLOCKWISE,
+# x, y = radial, axial
 part = pyc.Part(model)
 part.goto(length*0.5, -width*0.5)
 part.draw_line_ax(width)
@@ -23,7 +35,8 @@ part.draw_line_rad(length)
 hole_lines = part.draw_hole(0, 0, diam*0.5, filled=False)
 model.set_ediv(hole_lines, 10)
 part.chunk()
-model.plot_geometry(proj_name+'_geom') # view the geometry
+# view the geometry
+model.plot_geometry(proj_name+'_geom', display=show_gui)
 
 # set loads and constraints
 pressure = -1000
@@ -38,12 +51,12 @@ mat.set_mech_props(7800, 210*(10**9), 0.3)
 model.set_matl(mat, part)
 
 # set the element type and mesh database
-model.set_eshape('quad', 2)
+model.set_eshape(eshape, 2)
 model.set_etype('plstress', part, 0.1)
 model.mesh(1.0, 'gmsh') # mesh 1.0 fineness, smaller is finer
-model.plot_elements(proj_name+'_elem')   # plot part elements
-model.plot_pressures(proj_name+'_press')
-model.plot_constraints(proj_name+'_constr')
+model.plot_elements(proj_name+'_elem', display=show_gui)
+model.plot_pressures(proj_name+'_press', display=show_gui)
+model.plot_constraints(proj_name+'_constr', display=show_gui)
 
 # make and solve the model
 prob = pyc.Problem(model, 'struct')
@@ -54,7 +67,8 @@ sx = prob.rfile.get_nmax('Sx')
 print('Sx_max: %f' % sx)
 
 # Plot results
-fields = 'Sx,Sy,S1,S2,S3,Seqv,ux,uy,utot,ex'    # store the fields to plot
+# store the fields to plot
+fields = 'Sx,Sy,S1,S2,S3,Seqv,ux,uy,utot,ex'
 fields = fields.split(',')
 for field in fields:
     fname = proj_name+'_'+field

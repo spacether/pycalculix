@@ -1,7 +1,9 @@
 """This module stores the CadImporter class, which is used to load CAD parts."""
 
+import collections
 import math
 import os
+import pdb
 # needed to prevent dxfgrabber from crashing on import
 os.environ['DXFGRABBER_CYTHON'] = 'OFF'
 import dxfgrabber # needed for dxf files
@@ -48,41 +50,49 @@ class CadImporter(object):
         if self.__fname == '':
             print('You must pass in a file name to load!')
             return []
-        else:
-            fname_list = self.__fname.split('.')
-            ext = fname_list[1]
-            first_pt = None
-            if len(self.__fea.points) > 0:
-                first_pt = self.__fea.points[0]
-            if ext == 'dxf':
-                parts = self.__load_dxf()
-            elif ext in ['brep', 'brp', 'iges', 'igs', 'step', 'stp']:
-                self.__make_geo()
-                parts = self.__load_geo()
-            last_pt = None
-            if first_pt != None:
-                if len(self.__fea.points) > 2:
-                    last_pt = self.__fea.points[-1]
-            if self.__scale != '':
-                # call scale
-                pass
-            return parts
 
-    def __fix_point(self, point):
+        fname_list = self.__fname.split('.')
+        ext = fname_list[1]
+        first_pt = None
+        if len(self.__fea.points) > 0:
+            first_pt = self.__fea.points[0]
+        if ext == 'dxf':
+            parts = self.__load_dxf()
+        elif ext in ['brep', 'brp', 'iges', 'igs', 'step', 'stp']:
+            self.__make_geo()
+            parts = self.__load_geo()
+        last_pt = None
+        if first_pt != None:
+            if len(self.__fea.points) > 2:
+                last_pt = self.__fea.points[-1]
+        if self.__scale != '':
+            # call scale
+            pass
+        return parts
+
+    def __fix_tuple(self, xy_tup):
         """Adjusts the point to be in the right plane (yx)"""
         if self.__swapxy:
-            return geometry.Point(point.y, point.x)
-        return point
+            return xy_tup[::-1]
+        return xy_tup
 
-    def __get_pt(self, points, point):
-        """Returns a point if it is within accuracy of point in points"""
-        for realpoint in points:
-            dist = point - realpoint
-            dist = dist.length()
+    @staticmethod
+    def __find_make_pt(xy_tup, points_dict):
+        """
+        Returns a point if it exists within geometry.ACC
+        or makes, stores and returns the point if it doesn't exist
+        """
+        point = points_dict.get(xy_tup)
+        if point is not None:
+            return point
+        xy_point = geometry.Point(xy_tup[0], xy_tup[1])
+        for realpoint in points_dict.values():
+            dist = (xy_point - realpoint).length()
             if dist < geometry.ACC:
                 return realpoint
-        return point
-    
+        points_dict[xy_tup] = xy_point
+        return xy_point
+
     def __get_pts_lines(self, lines, arcs):
         """Returns a set of points, and a list of Lines and Arcs
 
@@ -91,32 +101,31 @@ class CadImporter(object):
             arcs (dxfgrabber ARC list): dxf arcs
 
         Returns:
-            list: [points, list of Line and Arc]
+            list: [list of points, list of Line and Arc]
         """
         # store unique points
-        point_set = set()
+        points_dict = {}
         all_lines = []
         for ind, line in enumerate(lines):
-            start = geometry.Point(line.start[0], line.start[1])
-            end = geometry.Point(line.end[0], line.end[1])
-            start, end = self.__fix_point(start), self.__fix_point(end)
-            point_set.update([start, end])
+            tup = self.__fix_tuple((line.start[0], line.start[1]))
+            start = self.__find_make_pt(tup, points_dict)
+            tup = self.__fix_tuple((line.end[0], line.end[1]))
+            end = self.__find_make_pt(tup, points_dict)
             line = geometry.Line(start, end)
             all_lines.append(line)
         for ind, arc in enumerate(arcs):
             # dxfgrabber arcs are stored ccw when looking at xy plane
             # x horizontal
             # y vertical
-            center = geometry.Point(arc.center[0], arc.center[1])
-            sign = 1
-            if self.__swapxy == False:
-                sign = -1
-            center = self.__fix_point(center)
-            point_set.add(center)
-            startangle = arc.startangle*sign
-            endangle = arc.endangle*sign
+            tup = self.__fix_tuple((arc.center[0], arc.center[1]))
+            center = self.__find_make_pt(tup, points_dict)
+            sign = -1
+            if self.__swapxy:
+                sign = 1
+            startangle = arc.start_angle*sign
+            endangle = arc.end_angle*sign
             angle = endangle - startangle
-            if arc.endangle < arc.startangle:
+            if arc.end_angle < arc.start_angle:
                 angle = angle + 360*sign
             """
             print('---------------------------------------')
@@ -129,41 +138,45 @@ class CadImporter(object):
             start_vect = geometry.Point(0, arc.radius)
             if self.__swapxy == False:
                 start_vect = geometry.Point(arc.radius, 0)
-            start_vect.rot_ccw_deg(arc.startangle*sign)
+            start_vect.rot_ccw_deg(arc.start_angle*sign)
             end_vect = geometry.Point(0, arc.radius)
             if self.__swapxy == False:
                 end_vect = geometry.Point(arc.radius, 0)
-            end_vect.rot_ccw_deg(arc.endangle*sign)
+            end_vect.rot_ccw_deg(arc.end_angle*sign)
             start = center + start_vect
+            start_tup = (start.x, start.y)
             end = center + end_vect
-            start = self.__get_pt(point_set, start)
-            end = self.__get_pt(point_set, end)
-            point_set.update([start, end])
+            end_tup = (end.x, end.y)
+            start = self.__find_make_pt(start_tup, points_dict)
+            end = self.__find_make_pt(end_tup, points_dict)
             rvect = start - center
             if abs(angle) <= 90:
                 arc = geometry.Arc(start, end, center)
                 all_lines.append(arc)
-                #print('1 arc made')
+                print('1 arc made')
+                continue
                 #print(' %s' % arc)
-            else:
-                pieces = math.ceil(abs(angle)/90)
-                #print('%i arcs being made' % pieces)
-                points = [start, end]
-                # 2 pieces need 3 points, we have start + end already --> 1 pt
-                inserts = pieces + 1 - 2
-                piece_ang = angle/pieces
-                #print('piece_ang = %f' % piece_ang)
-                while inserts > 0:
-                    rvect.rot_ccw_deg(piece_ang)
-                    point = center + rvect
-                    points.insert(-1, point)
-                    inserts = inserts - 1
-                for ind in range(len(points)-1):
-                    point_set.update([points[ind], points[ind+1]])
-                    arc = geometry.Arc(points[ind], points[ind+1], center)
-                    #print(' %s' % arc)
-                    all_lines.append(arc)
-        return [list(point_set), all_lines]
+            pieces = math.ceil(abs(angle)/90)
+            print('%i arcs being made' % pieces)
+            points = [start, end]
+            # 2 pieces need 3 points, we have start + end already --> 1 pt
+            inserts = pieces + 1 - 2
+            piece_ang = angle/pieces
+            #print('piece_ang = %f' % piece_ang)
+            while inserts > 0:
+                rvect.rot_ccw_deg(piece_ang)
+                point = center + rvect
+                tup = (point.x, point.y)
+                point = self.__find_make_pt(tup, points_dict)
+                points.insert(-1, point)
+                inserts = inserts - 1
+            for ind in range(len(points)-1):
+                #print(' %s' % arc)
+                arc = geometry.Arc(points[ind], points[ind+1], center)
+                all_lines.append(arc)
+        for line in all_lines:
+            line.save_to_points()
+        return [list(points_dict.values()), all_lines]
 
     def __make_geo(self):
         """Makes a gmsh geo file given a step, iges, or brep input"""
@@ -189,13 +202,19 @@ class CadImporter(object):
         # select two segments
         # draw normal lines
         # find intersections, that is the center
-        
+
+    @staticmethod
+    def __dangling_points(all_points):
+        return [point for point in all_points
+                if len(point.lines) == 1 and not point.arc_center]
+
     def __load_dxf(self):
         """Loads in a dxf file and returns a list of parts
 
         Returns:
             list: list of Part
         """
+        # pdb.set_trace()
         print('Loading file: %s' % self.__fname)
         dwg = dxfgrabber.readfile(self.__fname)
         lines = [item for item in dwg.entities if item.dxftype == 'LINE']
@@ -206,53 +225,68 @@ class CadImporter(object):
         print('File read.')
         print('Loaded %i lines' % len(lines))
         print('Loaded %i arcs' % len(arcs))
-
+        print('Loaded %i line segments, lines or arcs' %
+              (len(lines)+len(arcs)))
         # get all points and Line and Arc using pycalculix entities
+        print('Converting to pycalculix lines arcs and points ...')
         all_points, all_lines = self.__get_pts_lines(lines, arcs)
-        # the index of the point in the set can be used as a hash
-        lines_from_ptind = {}
-        for line in all_lines:
-            ind1 = all_points.index(line.pt(0))
-            ind2 = all_points.index(line.pt(1))
-            for ind in [ind1, ind2]:
-                if ind not in lines_from_ptind:
-                    lines_from_ptind[ind] = [line]
-                else:
-                    if line not in lines_from_ptind[ind]:
-                        lines_from_ptind[ind].append(line)
+        print('Loaded %i line segments, lines or arcs' % len(all_lines))
+        print('Loaded %i points' % len(all_points))
+        # for point in all_points:
+        #     print('%s %s' % (point, point.lines))
+        # for line in all_lines:
+        #     print('%s %s' % (line, line.points))
 
-        # make line loops now
-        loops = []
+        # remove all lines that are not part of areas
+        dangling_points = self.__dangling_points(all_points)
+        # pdb.set_trace()
+        pruned_geometry = bool(dangling_points)
+        while dangling_points:
+            for point in dangling_points:
+                all_points.remove(point)
+                print('Removed point= %s' % point)
+                dangling_line = list(point.lines)[0]
+                point.unset_line(dangling_line)
+                if dangling_line in all_lines:
+                    all_lines.remove(dangling_line)
+                    print('Removed line= %s' % dangling_line)
+            dangling_points = self.__dangling_points(all_points)
+        if pruned_geometry:
+            print('Remaining line segments: %i' % len(all_lines))
+            print('Remaining points: %i' % len(all_points))
+
+        # make line all_loops now
+        all_loops = []
         line = all_lines[0]
         this_loop = geometry.LineLoop()
         while len(all_lines) > 0:
             this_loop.append(line)
-            if line in all_lines:
-                all_lines.remove(line)
-            point = line.pt(1)
-            ind = all_points.index(point)
-            pt_lines = lines_from_ptind[ind]
-            if line in pt_lines:
-                pt_lines.remove(line)
-            if len(pt_lines) == 1:
-                # we have the next line
-                next_line = pt_lines[0]
-                if line.pt(1) != next_line.pt(0):
-                    next_line.reverse()
-                line = next_line
-            elif len(pt_lines) > 1:
-                print('One point was connected to > 2 lines.')
-                print('Only import simple part loops, or surfaces.')
+            all_lines.remove(line)
             if this_loop.closed == True:
-                loops.append(this_loop)
+                all_loops.append(this_loop)
                 this_loop = geometry.LineLoop()
+                if all_lines:
+                    line = all_lines[0]
+                continue
+            point = line.pt(1)
+            other_lines = point.lines - set([line])
+            if len(other_lines) > 1:
+                # note: one could exclude connected segment nodes
+                # make disconnected line all_loops, then have another
+                # loop to connect thos disconnected line all_loops
+                print('One point was connected to > 2 lines.')
+                print('Only import simple part all_loops, or surfaces.')
+                raise Exception('Import geometry is too complex')
+            next_line = list(other_lines)[0]
+            if line.pt(1) != next_line.pt(0):
+                next_line.reverse()
+            line = next_line
 
-        # check loops to see if one is inside another
-        # if no loops inside self, then self is a part
-        # each part in parts is a list of line loops [exterior, hole1, hole2]
-        parts = []
-        for ind, loop in enumerate(loops):
-            other_loops = loops[ind+1:]
+        # find exterior loops
+        exterior_loops = []
+        for ind, loop in enumerate(all_loops):
+            other_loops = all_loops[ind+1:]
+            other_loops.extend(exterior_loops)
             is_exterior = True
             for other_loop in other_loops:
                 if loop.inside(other_loop):
@@ -260,29 +294,29 @@ class CadImporter(object):
                     break
             if is_exterior:
                 # exterior must be clockwise
-                if loop.ccw == True:
+                if loop.ccw:
                     loop.reverse()
-                parts.append(loop)
-        # remove the exterior loops from our loops list
-        for loop in parts:
-            loops.remove(loop)
-        # now place the child loops under the part exterior loops
-        for ind in range(len(parts)):
-            exterior_loop = parts[ind]
-            holes = []
+                exterior_loops.append(loop)
+        # remove the found part exterior loops from all_loops
+        for exterior_loop in exterior_loops:
+            all_loops.remove(exterior_loop)
+        # each part in parts is a list of line all_loops
+        # [exterior, hole1, hole2]
+        parts = [[exterior_loop] for exterior_loop in exterior_loops]
+        # now place the child hole loops after the part exterior loop
+        for part_loops in parts:
+            exterior_loop = part_loops[0]
             # find child holes
-            for loop in loops:
-                if loop.inside(exterior_loop):
+            for hole_loop in all_loops:
+                if hole_loop.inside(exterior_loop):
+                    hole_loop.hole = True
                     # holes must be ccw
-                    loop.hole = True
-                    if loop.ccw == False:
-                        loop.reverse()
-                    holes.append(loop)
-            loop_list = [exterior_loop] + holes
-            parts[ind] = loop_list
+                    if not hole_loop.ccw:
+                        hole_loop.reverse()
+                    part_loops.append(hole_loop)
             # remove child holes from loop list
-            for hole in holes:
-                loops.remove(hole)
+            for hole_loop in part_loops[1:]:
+                all_loops.remove(hole_loop)
 
         # make parts
         parts_list = []

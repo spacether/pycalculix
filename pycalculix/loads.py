@@ -108,7 +108,8 @@ class ConstLoad(object):
             res.append('%s,CENTRIF,%f,0.,0.,0.,0.,1.,0.' % (cname, radsq))
         elif self.ltype == 'matl':
             mat = self.val.name
-            res.append('*SOLID SECTION,ELSET='+cname+',MATERIAL='+mat)
+            res.append('*SOLID SECTION,ELSET=%s,MATERIAL=%s' %
+                       (cname, mat))
 
         return res
 

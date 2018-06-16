@@ -1,14 +1,24 @@
 #!/usr/bin/env python3
-import pycalculix as pyc
-import matplotlib.pyplot as plt
 import math
 import numpy as np
+import sys
+
+import pycalculix as pyc
+import matplotlib.pyplot as plt
+
+# set whether or not to show gui plots
+show_gui = True
+if '-nogui' in sys.argv:
+    show_gui = False
+# set element shape
+eshape = 'quad'
+if '-tri' in sys.argv:
+    eshape = 'tri'
 
 # Stress and geometry constants
 stress_val = 1000
 diam = 1.0
 thickness = 0.01
-disp = False # sets whether or not to display images
 
 # Make a list of geometry ratios, diam_hole/width_plate
 ratios = np.arange(0,.5,.05)
@@ -38,7 +48,7 @@ for ratio in ratios:
     model_name = 'hole-kt-study'
     model = pyc.FeaModel(model_name)
     model.set_units('m')    # this sets dist units to meters
-    
+
     # make part, coordinates are x, y = radial, axial
     part = pyc.Part(model)
     part.goto(0.0,rad)
@@ -48,32 +58,33 @@ for ratio in ratios:
     part.draw_line_rad(-right*.5)
     part.draw_line_rad(-right*.5) #this point lets us chunks our area
     part.draw_line_ax(-bot)
-    # part.plot_geometry('hole_kt_prechunk', display=disp) # view geometry
+    # part.plot_geometry('hole_kt_prechunk', display=disp)
     part.chunk()
-    model.plot_geometry(model_name+'_chunked', display=disp) # view geometry
-    
+    model.plot_geometry(model_name+'_chunked', display=False)
+
     # set loads and constraints
     model.set_load('press',part.top,-1*stress_val)
     model.set_constr('fix',part.left,'y')
     model.set_constr('fix',part.bottom,'x')
-    
+
     # set part material
     mat = pyc.Material('steel')
     mat.set_mech_props(7800, 210000, 0.3)
-    model.set_matl(mat, part)    
-    
+    model.set_matl(mat, part)
+
     # set the element type, line division, and mesh the database
     ediv = 19
     model.set_ediv('L0',ediv) # sets # of elements on the arc
-    
-    model.set_eshape('tri', 2)
+
+    model.set_eshape(eshape, 2)
     model.set_etype('plstress', part, thickness)
-    model.mesh(1.0, 'gmsh')               # mesh with 1.0 fineness, smaller is finer
-    model.plot_elements('%s_elem_%.3f' % (model_name, ratio), display=disp)
-    model.plot_pressures('%s_press' % (model_name), display=disp)
+    model.mesh(1.0, 'gmsh') # mesh with 1.0 fineness, smaller is finer
+    model.plot_elements('%s_elem_%.3f' % (model_name, ratio),
+                        display=False)
+    model.plot_pressures('%s_press' % (model_name), display=False)
 
     # make model and solve it
-    prob = pyc.Problem(model, 'struct') 
+    prob = pyc.Problem(model, 'struct')
     prob.solve()
 
     # query results and store them
@@ -83,7 +94,7 @@ for ratio in ratios:
     ktg_pet.append(kt_peterson(ratio))
     error = 100*(kt_fea/kt_peterson(ratio) - 1)
     err.append(error)
-    print('For ratio %3f, Kt_g = %3.2f' % (ratio, kt_fea))        
+    print('For ratio %3f, Kt_g = %3.2f' % (ratio, kt_fea))
 
 # plot results
 fig, ax = plt.subplots()
@@ -94,7 +105,8 @@ plt.legend(loc='lower right')
 plt.title('Tension Hole in Plate Stress Concentration Factor, Ktg')
 plt.xlabel('D/h')
 plt.ylabel('Ktg')
-pyc.base_classes.plot_finish(plt, fname=model_name+'_kts', display=True)
+pyc.base_classes.plot_finish(plt, fname=model_name+'_kts',
+                             display=show_gui)
 
 # plot error
 fig, ax = plt.subplots()
@@ -104,4 +116,5 @@ plt.legend(loc='lower right')
 plt.title('Tension Hole in Plate Ktg Error, FEA vs Peterson')
 plt.xlabel('D/h')
 plt.ylabel('Error (%)')
-pyc.base_classes.plot_finish(plt, fname=model_name+'_error', display=True)
+pyc.base_classes.plot_finish(plt, fname=model_name+'_error',
+                             display=show_gui)

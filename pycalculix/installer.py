@@ -1,11 +1,14 @@
 
 import glob
 import os
+import pdb
 import re
 import shutil
 import shlex
 import subprocess
 import sys
+from urllib.parse import urlparse
+from urllib.parse import ParseResult
 import zipfile
 from distutils.dir_util import copy_tree
 
@@ -13,24 +16,27 @@ from sys import platform as platform
 
 import requests
 
+def printos(os, bits):
+    """Prints the operating system and bit size"""
+    print('Detected {} {} bit'.format(os, bits))
+
 def add():
     """Installs the fea tools on windows/mac/linux"""
     osname = None
     is_64bit = sys.maxsize > 2**32
     bitsize_dict = {True: 64, False: 32}
     bitsize = bitsize_dict[is_64bit]
-    printos = lambda os, bits=bitsize: print('Detected {} {} bit'.format(os, bits))
     if platform == "linux" or platform == "linux2":
-        printos('Linux')
+        printos('Linux', bitsize)
         ubuntu_add()
     elif platform == "darwin":
-        printos('Mac OS X')
+        printos('Mac OS X', bitsize)
         mac_add()
     elif platform == "win32":
-        printos('Windows')
+        printos('Windows', bitsize)
         windows_add(bitsize)
     elif platform == "win64":
-        printos('Windows')
+        printos('Windows', bitsize)
         windows_add(bitsize)
     print('Done!')
 
@@ -40,23 +46,22 @@ def remove():
     is_64bit = sys.maxsize > 2**32
     bitsize_dict = {True: 64, False: 32}
     bitsize = bitsize_dict[is_64bit]
-    printos = lambda os, bits=bitsize: print('Detected {} {} bit'.format(os, bits))
     if platform == "linux" or platform == "linux2":
-        printos('Linux')
+        printos('Linux', bitsize)
         ubuntu_remove()
     elif platform == "darwin":
-        printos('Mac OS X')
+        printos('Mac OS X', bitsize)
         mac_remove()
     elif platform == "win32":
-        printos('Windows')
+        printos('Windows', bitsize)
         windows_remove(bitsize)
     elif platform == "win64":
-        printos('Windows')
+        printos('Windows', bitsize)
         windows_remove(bitsize)
     print('Done!')
 
 def ubuntu_add():
-    """Adds programs on ubunut, uses apt"""
+    """Adds ccx and gmsh programs on ubuntu, uses apt"""
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('Installing gmsh')
@@ -73,7 +78,7 @@ def ubuntu_add():
         print('calculix (ccx) present')
 
 def ubuntu_remove():
-    """Removes programs on ubuntu, uses apt"""
+    """Removes ccx and gmsh programs on ubuntu, uses apt"""
     ccx_installed = shutil.which('ccx')
     if not ccx_installed:
         print('calculix (ccx) is not on your system')
@@ -90,25 +95,33 @@ def ubuntu_remove():
         subprocess.check_call(command_line, shell=True)
 
 def mac_add():
-    """Adds programs on mac, uses brew"""
+    """Adds ccx and gmsh programs on mac, uses brew"""
     brew_installed = shutil.which('brew')
     if not brew_installed:
         print('Installing brew')
-        command_line = "/usr/bin/ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\""
+        url = 'https://raw.githubusercontent.com/Homebrew/install/master/install'
+        command_line = "/usr/bin/ruby -e \"$(curl -fsSL %s)\"" % url
         subprocess.check_call(command_line, shell=True)
     else:
         print('brew present')
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('Installing gmsh')
-        command_line = "brew install gmsh"
+        folder_path = os.path.dirname(os.path.abspath(__file__))
+        dmginstall_path = os.path.join(folder_path, 'dmginstall.sh')
+        url = 'http://gmsh.info/bin/MacOSX/gmsh-3.0.5-MacOSX.dmg'
+        command_line = '%s %s' % (dmginstall_path, url)
+        print('command_line=%s' % command_line)
+        subprocess.check_call(command_line, shell=True)
+        gmsh_path = '/Applications/Gmsh.app/Contents/MacOS/gmsh'
+        command_line = "ln -s %s /usr/local/bin/gmsh" % gmsh_path
         subprocess.check_call(command_line, shell=True)
     else:
         print('gmsh present')
     ccx_installed = shutil.which('ccx')
     if not ccx_installed:
         print('Installing calculix (ccx)')
-        command_line = "brew install homebrew/science/calculix-ccx"
+        command_line = "brew install brewsci/science/calculix-ccx"
         subprocess.check_call(command_line, shell=True)
         ccx_path = find_brew_binary_location('calculix-ccx', 'ccx')
         if not ccx_path:
@@ -129,11 +142,12 @@ def find_brew_binary_location(package_folder, search_string):
     return None
 
 def mac_remove():
-    """Removes programs on mac, uses brew"""
+    """Removes ccx and gmsh programs on mac, uses brew"""
     brew_installed = shutil.which('brew')
     if not brew_installed:
         print('Installing brew')
-        command_line = "/usr/bin/ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\""
+        url = 'https://raw.githubusercontent.com/Homebrew/install/master/install'
+        command_line = "/usr/bin/ruby -e \"$(curl -fsSL %s)\"" % url
         subprocess.check_call(command_line, shell=True)
     else:
         print('brew present')
@@ -144,34 +158,39 @@ def mac_remove():
         print('Removing calculix (ccx)')
         command_line = "rm /usr/local/bin/ccx"
         subprocess.check_call(command_line, shell=True)
-        command_line = "brew uninstall homebrew/science/calculix-ccx"
+        command_line = "brew uninstall calculix-ccx"
         subprocess.check_call(command_line, shell=True)
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('gmsh is not on your system')
     else:
         print('Removing gmsh')
-        command_line = "brew uninstall gmsh"
+        command_line = "rm /usr/local/bin/gmsh"
+        subprocess.check_call(command_line, shell=True)
+        command_line = "rm -rf /Applications/Gmsh.app"
         subprocess.check_call(command_line, shell=True)
 
+
 def windows_add(bitsize):
-    """Adds programs on windows"""
+    """Adds ccx and gmsh programs on windows"""
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('Installing gmsh')
-        win_add_from_url(bitsize, 'http://gmsh.info/bin/Windows/', 'gmsh')
+        url = 'http://gmsh.info/bin/Windows/'
+        win_add_gmsh(bitsize, url, 'gmsh', '3.0.5')
     else:
         print('gmsh present')
 
     ccx_installed = shutil.which('ccx')
     if not ccx_installed:
         print('Installing calculix (ccx)')
-        win_add_ccx(bitsize, "https://sourceforge.net/projects/calculixforwin/files/03.2/", "ccx")
+        url = 'https://sourceforge.net/projects/calculixforwin/files/03.2/'
+        win_add_ccx(bitsize, url, 'ccx')
     else:
         print('calculix (ccx) present')
 
 def windows_remove(bitsize):
-    """Removes programs on windows"""
+    """Removes ccx and gmh programs on windows"""
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('gmsh is not on your system')
@@ -204,17 +223,18 @@ def remove_like(search_path, name):
         elif os.path.isdir(path):
             shutil.rmtree(path)
 
-def win_add_from_url(bitsize, binaries_url, program_name):
+def win_add_gmsh(bitsize, binaries_url, program_name, version_str):
     """Installs a program from an apache server file listing page"""
     # Needs the user agent header to exist for it to send back the content
     user_agent = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:56.0) '
                   'Gecko/20100101 Firefox/56.0')
     headers = {'User-Agent': user_agent}
 
-    zipfile_regex = '.*%s.*' % program_name
-    zipfile_name = zipfile_by_bitsize(binaries_url, headers, zipfile_regex, bitsize)
+    zipfile_regex = '.*%s-%s.*' % (program_name, version_str)
+    # Windows 10 64 bit, gmsh version: Gmsh 3.0.7-git-35176e26 hangs
+    zipfile_name = zipfile_by_bitsize(binaries_url, headers, zipfile_regex,
+                                      bitsize)
 
-    zipfile_folder_name = zipfile_name.split('.')[0]
     zipfile_url = binaries_url + zipfile_name
     print('Downloading %s from %s' % (program_name, zipfile_url))
     response = requests.get(zipfile_url, stream=True, headers=headers)
@@ -224,6 +244,7 @@ def win_add_from_url(bitsize, binaries_url, program_name):
                 out_file.write(chunk)
     print('Unzipping %s' % program_name)
     zip_ref = zipfile.ZipFile(zipfile_name, 'r')
+    zipfile_folder_name = os.path.dirname(zip_ref.namelist()[0])
     zip_ref.extractall(None)
     zip_ref.close()
     print('Removing %s zipfile' % program_name)
@@ -246,6 +267,7 @@ def win_add_from_url(bitsize, binaries_url, program_name):
 
 def zipfile_by_bitsize(binaries_url, headers, zipfile_regex, bitsize):
     """Returns the url linking to the correct zipfile"""
+    # this is used by ccx and gmsh
     res = requests.get(binaries_url, headers=headers)
     html = res.text
     urls = re.findall(r'href=[\'"]?([^\'" >]+)', html)
@@ -257,16 +279,49 @@ def zipfile_by_bitsize(binaries_url, headers, zipfile_regex, bitsize):
         url_choices = {32: urls[1], 64: urls[0]}
     return url_choices[bitsize]
 
-def get_direct_url(source_page, headers):
-    """Gets the download link from a sf page"""
-    res = requests.get(source_page, headers=headers)
-    html = res.text
-    html = html.replace("\"", "'")
-    link_text_pos = html.find('direct link')
+def href_from_link_text(url, headers, link_text):
+    """
+    Returns the url for a link with link_text description, if this
+    function fails, it raises an error with tells the users a link
+    which creates an issue on the pycalculix repo
+    """
+    response = requests.get(url, headers=headers)
+    html = response.text.replace("\"", "'")
+    link_text_pos = html.find(link_text)
+    if link_text_pos == -1:
+        issue_url = ('https://github.com/spacether/pycalculix/issues/new?title='
+                     'CCX%20zip%20download%20fails%20on%20windows&body=Please%2'
+                     '0update%20the%20installer.py%20get_direct_url%20function.'
+                     '%20It%20no%20longer%20works')
+        raise ValueError('Unable to download file because there was not a link '
+                         'with text=\'%s\' on the page at url=%s\nTo fix this, '
+                         'please click the \'Submit new issue\' button '
+                         'here:\n%s' % (link_text, url, issue_url))
     href_pos = html[:link_text_pos].rfind('href')
     first_char = html.find("'", href_pos)+1
-    last_quote = html.find("'", first_char)
-    return html[first_char:last_quote]
+    last_char = html.find("'", first_char)
+    return html[first_char:last_char]
+
+def get_direct_url(url, headers):
+    """Gets the zip direct download link from the project download page"""
+    direct_download_url = href_from_link_text(url,
+                                              headers,
+                                              'Problems Downloading')
+    parsed_download_url = urlparse(direct_download_url)
+    if parsed_download_url.scheme not in ['http', 'https']:
+        # url is relative, and is missing the scheme and netloc
+        parsed_parent_url = urlparse(url)
+        parsed_download_url = ParseResult(parsed_parent_url.scheme,
+                                          parsed_parent_url.netloc,
+                                          parsed_download_url.path,
+                                          parsed_download_url.params,
+                                          parsed_download_url.query,
+                                          parsed_download_url.fragment)
+        direct_download_url = parsed_download_url.geturl()
+    direct_download_url = href_from_link_text(direct_download_url,
+                                              headers,
+                                              'direct link')
+    return direct_download_url
 
 def win_add_ccx(bitsize, binaries_url, program_name):
     """Installs ccx on a windows computer"""
@@ -276,13 +331,11 @@ def win_add_ccx(bitsize, binaries_url, program_name):
     headers = {'User-Agent': user_agent}
 
     zipfile_regex = '.+CL.+win.+zip/download$'
-    zipfile_webpage_url = zipfile_by_bitsize(binaries_url, headers, zipfile_regex,
-                                             bitsize)
+    zipfile_webpage_url = zipfile_by_bitsize(binaries_url, headers,
+                                             zipfile_regex, bitsize)
 
     zipfile_name = zipfile_webpage_url.split('/')[-2]
-    print(zipfile_webpage_url)
     zipfile_url = get_direct_url(zipfile_webpage_url, headers)
-    print(zipfile_url)
 
     print('Downloading %s from %s' % (zipfile_name, zipfile_url))
     response = requests.get(zipfile_url, stream=True, headers=headers)

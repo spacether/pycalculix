@@ -165,20 +165,24 @@ Setting element divisions on lines is supported
 - Gravity
 - Rotational speed forces
 - Displacement constraints
-- Loads are stored on geometry primitives (points lines, areas) and can be
-applied before or after meshing.
+- Loads are stored on geometry primitives (points lines, areas) and
+can be applied before or after meshing.
 
 
 ## Files Produced
-Meshing and solving are done in the background using cgx or gmsh for meshing, and Calculix ccx for solving.
+Meshing and solving are done in the background using cgx or gmsh for
+meshing, and Calculix ccx for solving.
 
 Files Used:
 - .fbd (Calculix cgx gemetry file)
 - .inp (Calculix solver input file, or mesh definition)
 - .geo (Gmsh geometry file)
 - .msh (Gmsh native mesh file)
-- .frd (Calculix ccx nodal results file, values are at nodes and were created by interpolating element integration point results back to the nodes)
-- .dat (Calculix ccx element results file, includes integration point results)
+- .frd (Calculix ccx nodal results file, values are at nodes and were
+  created by interpolating element integration point results back to
+  the nodes)
+- .dat (Calculix ccx element results file, includes integration point
+  results)
 
 
 ## Uninstall
@@ -210,8 +214,8 @@ python -m venv venv
 pip install -e .
 pycalculix-add-feaprograms
 ```
-- Now any changes that you make to your local version of pycalculix will be
-  live in your virtual environment
+- Now any changes that you make to your local version of pycalculix
+  will be live in your virtual environment
 
 ## License
 See LICENSE.txt (Apache 2.0)
@@ -224,15 +228,43 @@ Initial Release: December 2014
 
 ## Change Log
 
+#### 0.9.5 (github only)
+- Currently in branch 'feature/adds_samples_testing'
+- Adds tests: sample tests at tests/test_samples.py
+- Adds tests: meshing tests at tests/test_meshing.py
+- Adds solving and meshing timeout exception to capture when they hang
+- Fixes dxf import feature, syntax updates to use dfxgrabber >= 0.8.0,
+  Issue 32
+- Adds requirement for dfxgrabber >= 0.8.0 to ensure that dxf import works
+- Pegs Mac gmsh version to gmsh == 3.0.5 because version 3.0.6
+  throws segault errors when meshing
+- Fixes a bug where solver input file does not write material before
+  time steps, Issue 32
+- Fixed ccx installer on Windows: zip file is now found and
+  downloaded
+- Throws an exception if ccx version is too old, v 2.7 and earlier is
+  too old
+- Pegs Win gmsh install version to 3.0.5
+- Updates the calculation for element Seqv, S1, S2, and S3 avg max
+  and min values. Now calculates Seqv and principal stresses at all
+  integration points, then calculates the avg max and min of those
+  values
+- Win pegged ccx to version 2.12
+- Mac brew brewsci/science/calculix-ccx is currently at ccx version 2.13
+- Ubuntu apt-get calculix-ccx is currently is currently at version 2.11
+
 #### 0.9.4 (github only)
 - removed gmsh and calculix
-- moved dist and documentation building and example cleanup into make file
+- moved dist and documentation building and example cleanup into make
+  file
 - changed the license to Apache 2.0
-- added command line tool to install/uninstall gmsh and ccx for windows/mac os x/ubuntu
+- added command line tool to install/uninstall gmsh and ccx for
+  windows/mac os x/ubuntu
   - pycalculix-add-feaprograms
   - pycalculix-remove-feaprograms
 - added requests library requirement for pycalculix-add-feaprograms
-- fixed bug where frd files could no longer be read
+- fixed bug where frd files could no longer be read because Calculix
+  results keywords changed since initial 2014 release
 
 #### 0.9.3  
 - ADDED: multiple parts with contacts
@@ -274,17 +306,13 @@ Initial Release: December 2014
       - pycalculix.FeaModel.make_problem or pycalculix.Problem
     - Make Results File:
       - pycalculix.Problem.rfile or pycalculix.ResultsFile(problem)
-- FIX: Plotting fix, closing triangles in the correct direction in matplotlib
+- FIX: Plotting fix, closing triangles in the correct direction in
+  matplotlib
 - DOC: All code separated into modules for clarity.
 - DOC: Docstrings added to all classes + methods + functions
-- PLOTTING: Closed areas are now filled in yellow when plotting geometry.
+- PLOTTING: Closed areas are now filled in yellow when plotting
+  geometry.
 - PLOTTING: Signed line names are shown and internal to the area.
 - BACKEND: Implemented signed line and signed arc class.
   - Pressures can now be applied on these signed lines.
   - Many methods and variables made private to clean up name space.
-
-## Developer Todo:
-- confirm that set_ediv still works, remove the past merge if that broke it
-- add images to the readme
-- add new release on github release branch
-- add new release on pypi

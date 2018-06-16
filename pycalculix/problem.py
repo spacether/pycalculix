@@ -2,8 +2,8 @@
 of analysis.
 """
 
-import subprocess # used to launch ccx solver
 import os # used to see if there is a results file
+import subprocess # used to launch ccx solver
 
 from . import environment
 from . import base_classes
@@ -18,7 +18,7 @@ class Problem(base_classes.Idobj):
             -- 'struct': structural
         - fname (str): file prefix for the problem .inp and results files
             If value is '' it will default to the project name of the FeaModel
-            
+
     Attributes:
         fea (FeaModel): parent FeaModel
         __ptype (str): problem type, options:
@@ -233,15 +233,15 @@ class Problem(base_classes.Idobj):
                 inp += matl.ccx()
 
             # write all steps and loads
-            for time in load_dict:
-                if time == 0:
+            for time in sorted(load_dict.keys()):
+                if time == 0.0:
                     # this is for thicknesses and materials
                     for load in load_dict[time]:
                         inp += load.ccx()
                     for surf_interaction in self.fea.surfints:
                         inp += surf_interaction.ccx()
                     for contact in self.fea.contacts:
-                        inp += contact.ccx()                        
+                        inp += contact.ccx()
                 else:
                     # only write times >= 1
                     inp.append('*STEP')
@@ -274,7 +274,7 @@ class Problem(base_classes.Idobj):
             # run file
             runstr = "%s %s" % (environment.CCX, self.fname)
             print(runstr)
-            subprocess.call(runstr, shell=True)
+            subprocess.check_call(runstr, shell=True)
             print('Solving done!')
 
             # select the probem's parts and load the results file

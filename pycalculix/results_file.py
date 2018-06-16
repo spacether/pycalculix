@@ -1,9 +1,10 @@
 """This module stores the Results_File class."""
 
 import collections
-import re # used to get info from frd file
 import math # used for metric number conversion
 import os #need to check if results file exists
+import re # used to get info from frd file
+import subprocess # used to check ccx version
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
@@ -14,6 +15,7 @@ from numpy.core.function_base import linspace # need to make contours
 
 
 from . import base_classes # needed for RESFIELDS
+from . import environment
 from . import mesh
 
 CMAP = 'jet'
@@ -1096,6 +1098,27 @@ class ResultsFile(object):
         # each line is an integration point result
         self.__results[time]['element'][enum]['ipoints'][ipnum] = adict
 
+    def check_ccx_version(self, timeout=1):
+        """Raises an exception of the calculix ccx version is too old"""
+        runstr = "%s -version; exit 0" % (environment.CCX)
+        output_str = subprocess.check_output(runstr,
+                                             timeout=timeout,
+                                             shell=True)
+        output_str = str(output_str, 'utf-8')
+        matches = re.findall('\d+\.\d+', output_str)
+        version_number = matches[-1]
+        print('Using Calculix ccx version=%s '
+              '(trailing characters like the p in 2.8p are omitted)'
+              % version_number)
+        major_version, minor_version = [int(f) for f
+                                        in version_number.split('.')]
+        if major_version <= 2 and minor_version <= 8:
+            raise Exception('Your version of calculix ccx is too old! '
+                            'Please update it to version >=2.8 with '
+                            'the command:\npycalculix-add-feaprograms')
+        version = float(output_str.strip().split()[-1])
+        # extract version with regex
+
     def __read_frd(self):
         """
         Reads a ccx frd results file which contains nodal results.
@@ -1105,6 +1128,9 @@ class ResultsFile(object):
         if not os.path.isfile(fname):
             print("Error: %s file not found" % fname)
             return
+        # frd reading uses formatting from ccx 2.8 or higher so
+        # throw an exception if our version is too old
+        self.check_ccx_version(timeout=1)
         infile = open(fname, 'r')
         print('Loading nodal results from file: '+fname)
         mode = None
@@ -1178,41 +1204,41 @@ class ResultsFile(object):
             for edict in self.__results[time]['element'].values():
                 ipoints = edict['ipoints'].values()
                 stress_types = ['Sx', 'Sy', 'Sz', 'Sxy', 'Sxz', 'Syz']
-                stresslist_by_stresstype = {}
+                strslist_by_strstype = collections.defaultdict(list)
                 # set stress values in max, min, avg locations
-                for stress in stress_types:
-                    stress_vals = [ipt[stress] for ipt in ipoints]
+                # of non-summary stress components
+                for stress_type in stress_types:
+                    stress_vals = [ipt[stress_type] for ipt in ipoints]
                     stress_avg = sum(stress_vals)/len(stress_vals)
-                    stress_max, stress_min = max(stress_vals), min(stress_vals)
-                    edict['avg'][stress] = stress_avg
-                    edict['max'][stress] = stress_max
-                    edict['min'][stress] = stress_min
-                    stresslist_by_stresstype[stress] = stress_vals
-                # for each element, at average calc Seqv, S1, S2, S3
-                # for each element, at max and min use the max and min
-                # of the vals we already found
-                locs = ['avg', 'max', 'min']
-                for loc in locs:
-                    seqv, s_1, s_2, s_3 = None, None, None, None
-                    if loc == 'avg':
-                        vals = [edict[loc][stype] for
-                                stype in stress_types]
-                        seqv = self.__seqv(vals)
-                        [s_1, s_2, s_3] = self.__principals(vals)
-                    elif mode == 'max':
-                        seqv = max(stresslist_by_stresstype['Seqv'])
-                        s_1 = max(stresslist_by_stresstype['S1'])
-                        s_2 = max(stresslist_by_stresstype['S2'])
-                        s_3 = max(stresslist_by_stresstype['S3'])
-                    elif mode == 'min':
-                        seqv = min(stresslist_by_stresstype['Seqv'])
-                        s_1 = min(stresslist_by_stresstype['S1'])
-                        s_2 = min(stresslist_by_stresstype['S2'])
-                        s_3 = min(stresslist_by_stresstype['S3'])
-                    edict[loc]['Seqv'] = seqv
-                    edict[loc]['S1'] = s_1
-                    edict[loc]['S2'] = s_2
-                    edict[loc]['S3'] = s_3
+                    stress_max = max(stress_vals)
+                    stress_min =  min(stress_vals)
+                    edict['avg'][stress_type] = stress_avg
+                    edict['max'][stress_type] = stress_max
+                    edict['min'][stress_type] = stress_min
+                    strslist_by_strstype[stress_type] = stress_vals
+                # for each element, calc Seqv, S1, S2, S3
+                # at each integration point
+                for ipt in ipoints:
+                    stress_vals = [ipt[stress_type] for stress_type
+                                   in stress_types]
+                    seqv = self.__seqv(stress_vals)
+                    [s_1, s_2, s_3] = self.__principals(stress_vals)
+                    strslist_by_strstype['Seqv'].append(seqv)
+                    strslist_by_strstype['S1'].append(s_1)
+                    strslist_by_strstype['S2'].append(s_2)
+                    strslist_by_strstype['S3'].append(s_3)
+                # now at the element level, store the avg, max, and min
+                # of the Seqv and principal stresses we found at
+                # integration points
+                for stress_type in ['Seqv', 'S1', 'S2', 'S3']:
+                    stress_vals = strslist_by_strstype[stress_type]
+                    stress_avg = sum(stress_vals)/len(stress_vals)
+                    stress_max = max(stress_vals)
+                    stress_min =  min(stress_vals)
+                    edict['avg'][stress_type] = stress_avg
+                    edict['max'][stress_type] = stress_max
+                    edict['min'][stress_type] = stress_min
+
 
         print('The following times have been read:')
         print(self.__steps)

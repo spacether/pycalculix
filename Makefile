@@ -19,6 +19,19 @@ clean_examples:
 	rm -f ./examples/*.sta
 	rm -f ./examples/*.out
 
+clean:
+	rm -f ./*.fbd
+	rm -f ./*.inp
+	rm -f ./*.geo
+	rm -f ./*.msh
+	rm -f ./*.frd
+	rm -f ./*.dat
+	rm -f ./*.png
+	rm -f ./*.cvg
+	rm -f ./*.sta
+	rm -f ./*.out
+
+
 dist_examples:
 	make clean_examples
 	zip -r examples.zip examples
@@ -28,6 +41,7 @@ dist_docs:
 	rm -rf docs
 	rm -rf documentation
 	sphinx-apidoc -F -A "Justin Black" -o docs pycalculix
+	echo ' ' >> docs/conf.py
 	echo 'from pycalculix.version import __version__' >> docs/conf.py
 	echo 'version = __version__' >> docs/conf.py
 	echo 'release = version' >> docs/conf.py
@@ -48,10 +62,13 @@ dist_source:
 	rm -rf *.egg-info
 
 develop:
-	python3 setup.py develop
+	pip3 install -e .
 
 install:
-	python3 setup.py install
+	pip3 install .
 
 uninstall:
 	pip3 uninstall pycalculix
+
+test:
+	pytest tests/

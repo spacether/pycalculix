@@ -8,6 +8,5 @@ presentations/
 pycalculix.egg-info/
 __pycache__
 
-# calculix docs
-ccx_2.13.pdf
-cgx_2.13.pdf
+# tests
+.pytest_cache
