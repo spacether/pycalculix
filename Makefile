@@ -41,6 +41,7 @@ dist_docs:
 	rm -rf docs
 	rm -rf documentation
 	sphinx-apidoc -F -A "Justin Black" -o docs pycalculix
+	echo ' ' >> docs/conf.py
 	echo 'from pycalculix.version import __version__' >> docs/conf.py
 	echo 'version = __version__' >> docs/conf.py
 	echo 'release = version' >> docs/conf.py

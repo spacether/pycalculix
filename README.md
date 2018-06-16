@@ -228,7 +228,7 @@ Initial Release: December 2014
 
 ## Change Log
 
-#### 0.9.5 (github only for now)
+#### 0.9.5 (github only)
 - Currently in branch 'feature/adds_samples_testing'
 - Adds tests: sample tests at tests/test_samples.py
 - Adds tests: meshing tests at tests/test_meshing.py
@@ -236,18 +236,22 @@ Initial Release: December 2014
 - Fixes dxf import feature, syntax updates to use dfxgrabber >= 0.8.0,
   Issue 32
 - Adds requirement for dfxgrabber >= 0.8.0 to ensure that dxf import works
-- Switches mac gmsh version to gmsh == 3.0.5 because version 3.0.6
+- Pegs Mac gmsh version to gmsh == 3.0.5 because version 3.0.6
   throws segault errors when meshing
 - Fixes a bug where solver input file does not write material before
   time steps, Issue 32
 - Fixed ccx installer on Windows: zip file is now found and
   downloaded
-- TODO: peg installed windows gmsh to working binaries
-- TODO: peg installed mac gmsh to working binaries
-- TODO: peg installed linux gmsh to working binaries
-- TODO: fix bug where ccw and cw meshing isn't working
-- TODO: conditionally handle incorrectly formatted calculix results
-  files https://github.com/Homebrew/homebrew-core/issues/2502
+- Throws an exception if ccx version is too old, v 2.7 and earlier is
+  too old
+- Pegs Win gmsh install version to 3.0.5
+- Updates the calculation for element Seqv, S1, S2, and S3 avg max
+  and min values. Now calculates Seqv and principal stresses at all
+  integration points, then calculates the avg max and min of those
+  values
+- Win pegged ccx to version 2.12
+- Mac brew brewsci/science/calculix-ccx is currently at ccx version 2.13
+- Ubuntu apt-get calculix-ccx is currently is currently at version 2.11
 
 #### 0.9.4 (github only)
 - removed gmsh and calculix
@@ -312,58 +316,3 @@ Initial Release: December 2014
 - BACKEND: Implemented signed line and signed arc class.
   - Pressures can now be applied on these signed lines.
   - Many methods and variables made private to clean up name space.
-
-## Developer Todo:
-- Note per 2.14 CCX it lists the real components of displacement as DISP rathe than DISPR
-  - this changed from STRESSR and FORCR DISPR
-  - https://github.com/spacether/pycalculix/commit/413a9a26e3419b1c5a680b934c9745d4d5915edb#diff-c705ae85decd46a4e686f46deb5d1b60
-  - current 2.14
-  - original Dec 24, 2015
-    - latest release then was 2.9 per https://web.archive.org/web/20151126213843/http://www.dhondt.de/new_calc.htm
-    - 2.7 (old format)
-      - DISPR and DISPI
-      - FORC and FORCI
-      - Confirmed that pycalculix v 0.9.3 version include ccx 2.7, it says 'this is version 2.7'
-    - 2.8 per `*NODE FILE`
-      - DISP and DISPI
-      - FORC and FORCI
-    - Need to check what version is installed in original pycalculix and if it in fact outputs above names
-    - 2.8p2 (but calculix for windows) when I released (pg 367)
-      - DISP and DISPI
-      - FORC and FORCI
-    - 2.9 (pg 373)
-      - DISP and DISPI
-      - FORC and FORCI
-    - 2.10 (pg 373)
-      - DISP and DISPI
-      - FORC and FORCI
-    - 2.11 (pg 394)
-      - DISP and DISPI
-      - FORC and FORCI
-    - 2.12
-    - 2.13
-    - 2.14 (new flags)
-  - https://web.archive.org/web/20150101000000*/http://www.dhondt.de/new_calc.htm
-- fix issue where some examples no longer work
-- 2/15 failing: F..F.........F.
-  - TestExamples.test_import_dxf
-    - Why is meshing hanging for this example?
-    - Because gmsh v3.0.6 only throws a segfault:11 error on quad meshing only
-    - Why are my tests not detecting the failure? because samples are try meshing
-    - Gmsh 3.0.5 works. I had to install it from a dmg, there are no old brew formulas for it that I can get to
-    - I should copy down this file here: https://github.com/Homebrew/homebrew-core/blob/master/Formula/gmsh.rb
-    - or use the old one from: https://github.com/Homebrew/homebrew-science/blob/23d8fd3b84df902d549c0a4cde9dfec369676d18/gmsh.rb
-    - See the tutorial here: https://github.com/Homebrew/brew/blob/master/docs/Formula-Cookbook.md
-    - it installs to /Applications/Gmsh.app/Contents/MacOS/gmsh
-    - turn the gui off
-  - TestExamples.test_compr_rotor
-    - `feamodel.py", line 1541, in __read_inp\n    area.elements = sets[\'E\'][aname]\nKeyError: \'A0\'\n'`
-  - TestExamples.test_rounded_square_ccw
-    - `/partmodule.py", line 778, in __get_cut_line\n    end = points[1][\'point\']\nIndexError: list index out of range\n'`
-- confirm that set_ediv still works
-- For windows do we ant to install from GE calculix?
-  - https://github.com/GeneralElectric/CalculiX
-  - version is older, 2.10
-- add images to the readme
-- add new release on github release branch
-- add new release on pypi

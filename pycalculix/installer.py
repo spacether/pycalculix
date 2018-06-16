@@ -61,7 +61,7 @@ def remove():
     print('Done!')
 
 def ubuntu_add():
-    """Adds programs on ubuntu 16.04, uses apt"""
+    """Adds ccx and gmsh programs on ubuntu, uses apt"""
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('Installing gmsh')
@@ -78,7 +78,7 @@ def ubuntu_add():
         print('calculix (ccx) present')
 
 def ubuntu_remove():
-    """Removes programs on ubuntu, uses apt"""
+    """Removes ccx and gmsh programs on ubuntu, uses apt"""
     ccx_installed = shutil.which('ccx')
     if not ccx_installed:
         print('calculix (ccx) is not on your system')
@@ -95,7 +95,7 @@ def ubuntu_remove():
         subprocess.check_call(command_line, shell=True)
 
 def mac_add():
-    """Adds programs on mac, uses brew"""
+    """Adds ccx and gmsh programs on mac, uses brew"""
     brew_installed = shutil.which('brew')
     if not brew_installed:
         print('Installing brew')
@@ -142,7 +142,7 @@ def find_brew_binary_location(package_folder, search_string):
     return None
 
 def mac_remove():
-    """Removes programs on mac, uses brew"""
+    """Removes ccx and gmsh programs on mac, uses brew"""
     brew_installed = shutil.which('brew')
     if not brew_installed:
         print('Installing brew')
@@ -172,7 +172,7 @@ def mac_remove():
 
 
 def windows_add(bitsize):
-    """Adds programs on windows"""
+    """Adds ccx and gmsh programs on windows"""
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('Installing gmsh')
@@ -190,7 +190,7 @@ def windows_add(bitsize):
         print('calculix (ccx) present')
 
 def windows_remove(bitsize):
-    """Removes programs on windows"""
+    """Removes ccx and gmh programs on windows"""
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('gmsh is not on your system')
@@ -280,6 +280,11 @@ def zipfile_by_bitsize(binaries_url, headers, zipfile_regex, bitsize):
     return url_choices[bitsize]
 
 def href_from_link_text(url, headers, link_text):
+    """
+    Returns the url for a link with link_text description, if this
+    function fails, it raises an error with tells the users a link
+    which creates an issue on the pycalculix repo
+    """
     response = requests.get(url, headers=headers)
     html = response.text.replace("\"", "'")
     link_text_pos = html.find(link_text)

@@ -17,7 +17,6 @@ eshape = 'quad'
 if '-tri' in sys.argv:
     eshape = 'tri'
 
-#fname = 'test.dxf'
 abs_path = os.path.dirname(os.path.abspath(__file__))
 fname = os.path.join(abs_path, '%s.dxf' % model_name)
 importer = pyc.CadImporter(model, fname, swapxy=True)
