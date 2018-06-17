@@ -315,3 +315,5 @@ Initial Release: December 2014
 - BACKEND: Implemented signed line and signed arc class.
   - Pressures can now be applied on these signed lines.
   - Many methods and variables made private to clean up name space.
+
+![Analytics](https://ga-beacon.appspot.com/UA-97855011-1/pycalculix_github?pixel)
