@@ -36,7 +36,7 @@ Python 3 library to automate and build finite element analysis (FEA) models in C
 Meshing uses Calculix or GMSH.
 Website: http://justinablack.com/pycalculix/
 Source Code: https://github.com/spacether/pycalculix
-Documentation: http://spacether.github.io/pycalculix/pycalculix.html
+Documentation: https://pythonhosted.org/pycalculix/
 
 Useful applications of Pycalculix:
 -Trade studies for plane stress, plane strain, or axisymmetric parts
