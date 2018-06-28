@@ -53,9 +53,7 @@ dist_docs:
 	rm -R -f documentation/.doctrees
 	zip -r documentation.zip documentation
 	mv documentation.zip dist/
-	rm -rf docs
 	rm -rf documentation
-	rm -rf build
 
 dist_source:
 	python3 setup.py sdist --formats=zip
