@@ -2,12 +2,13 @@
 
 pycalculix is a Python 3 library to automate and build finite element analysis (FEA) models in Calculix.
 
-Meshing uses Calculix or GMSH
-- Website: http://justinablack.com/pycalculix/  
-- Source Code: https://github.com/spacether/pycalculix  
-- Documentation: http://pythonhosted.org/pycalculix/
+![build passing](https://readthedocs.org/projects/docs/badge/?version=latest)
 
-Usefull applications of Pycalculix:
+Website: http://justinablack.com/pycalculix/  
+Source Code: https://github.com/spacether/pycalculix  
+Documentation: https://pycalculix.readthedocs.io/en/latest/index.html  
+
+#### Usefull applications of Pycalculix
 - Trade studies for plane stress, plane strain, or axisymmetric parts
 - Quick Kt analysis of 2D geometry
 - Learning finite element analyis (FEA) and Python
@@ -228,7 +229,7 @@ Initial Release: December 2014
 
 ## Change Log
 
-#### 0.9.5 (github only)
+#### 0.9.5 (github + pypi)
 - Adds tests: sample tests at tests/test_samples.py
 - Adds tests: meshing tests at tests/test_meshing.py
 - Adds solving and meshing timeout exception to capture when they hang
