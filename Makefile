@@ -37,14 +37,12 @@ dist_examples:
 	zip -r examples.zip examples
 	mv examples.zip dist/
 
-dist_docs:
+docs:
+	# make docs version="0.9.5"
 	rm -rf docs
 	rm -rf documentation
-	sphinx-apidoc -F -A "Justin Black" -o docs pycalculix
-	echo ' ' >> docs/conf.py
-	echo 'from pycalculix.version import __version__' >> docs/conf.py
-	echo 'version = __version__' >> docs/conf.py
-	echo 'release = version' >> docs/conf.py
+	sphinx-apidoc -F -H "pycalculix" -V $(version) -A "Justin Black" -o docs pycalculix
+	echo " " >> docs/conf.py
 	echo "extensions = ['sphinx.ext.autodoc'," >> docs/conf.py
 	echo "    'sphinx.ext.napoleon'," >> docs/conf.py
 	echo "    'sphinx.ext.todo'," >> docs/conf.py
