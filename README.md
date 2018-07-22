@@ -229,6 +229,11 @@ Initial Release: December 2014
 
 ## Change Log
 
+#### 0.9.6
+- Fixes part.fillet_lines method, all tests now pass
+  - Verified on Mac OS X
+  - Closes github Issue 32: '2/15 of the tests fail'
+
 #### 0.9.5 (github + pypi)
 - Adds tests: sample tests at tests/test_samples.py
 - Adds tests: meshing tests at tests/test_meshing.py

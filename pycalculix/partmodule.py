@@ -291,7 +291,7 @@ class Part(base_classes.Idobj):
             center_y (float): y-axis hole center
             radius (float): hole radius
             num_arcs (int): number of arcs to use, must be >= 3
-        
+
         Returns:
             loop (geometry.LineLoop): a LineLoop list of SignArc
         """
@@ -518,66 +518,76 @@ class Part(base_classes.Idobj):
 
         Args:
             line1 (SignLine): line that the arc starts on, arc is tangent
-            line2 (SignLine): line that the ar ends on, arc is tangent
+            line2 (SignLine): line that the arc ends on, arc is tangent
             radius (float): arc radius size
-        
+
         Returns:
             list: [arc, start_point, end_point]
         """
-        # this function fillets lines in a part
         # check if the lines are touching
-        tmp = self.__cursor
+        if not line1.line.touches(line2.line):
+            print('ERROR: Cannot fillet! Lines must touch!')
+            return
 
-        if line1.touches(line2):
-            # offset the lines, assuming area is being traced clockwise
-            # get the intersection point
-            magnitude = radius
-            l1_off = line1.offset(magnitude)
-            l2_off = line2.offset(magnitude)
-            ctrpt = l1_off.intersects(l2_off)
-            if ctrpt == None:
-                # flip the offset direction if lines don't intersect
-                magnitude = -radius
-                l1_off = line1.offset(magnitude)
-                l2_off = line2.offset(magnitude)
-                ctrpt = l1_off.intersects(l2_off)
-
-            # now we have an intersecting point
-            #print('Arc center pt is: ', ctrpt)
-            p1_new = line1.arc_tang_intersection(ctrpt, magnitude)
-            p2_new = line2.arc_tang_intersection(ctrpt, magnitude)
-            rempt = line1.pt(1)
-
-            p1_new = self.__make_get_pt(p1_new.x, p1_new.y)[0]
-            ctrpt = self.__make_get_pt(ctrpt.x, ctrpt.y)[0]
-            p2_new = self.__make_get_pt(p2_new.x, p2_new.y)[0]
-
-            # make the new arc
-            arc = self.__make_get_sline(geometry.Arc(p1_new, p2_new, ctrpt))[0]
-
-            # put the arc in the right location in the area
-            area = line1.lineloop.parent
-            area.line_insert(line1, arc)
-            print('Arc inserted into area %i' % (area.id))
-
-            # edit the adjacent lines to replace the removed pt
-            line1.set_pt(1, arc.pt(0))
-            line2.set_pt(0, arc.pt(1))
-            # del old pt, store new points for the arc
-            self.fea.points.remove(rempt)
-            
-            return [arc, arc.pt(0), arc.pt(1)]
+        if line1.line.pt(1) == line2.line.pt(0):
+            first_line = line1
+            second_line = line2
+        elif line2.line.pt(1) == line1.line.pt(0):
+            first_line = line2
+            second_line = line1
         else:
-            print('Cannot fillet! Lines must touch!')
+            print('ERROR: Sign lines must both be going in CW or CCW '
+                  'direction. The two passed lines are going in '
+                  'different directions. Unable to fillet them.')
+            return
+
+        tmp = self.__cursor
+        # offset the lines, assuming area is being traced clockwise
+        # get the intersection point
+        magnitude = radius
+        l1_off = first_line.offset(magnitude)
+        l2_off = second_line.offset(magnitude)
+        ctrpt = l1_off.intersects(l2_off)
+        if ctrpt == None:
+            # flip the offset direction if lines don't intersect
+            magnitude = -radius
+            l1_off = first_line.offset(magnitude)
+            l2_off = second_line.offset(magnitude)
+            ctrpt = l1_off.intersects(l2_off)
+
+        # now we have an intersecting point
+        p1_new = first_line.arc_tang_intersection(ctrpt, magnitude)
+        p2_new = second_line.arc_tang_intersection(ctrpt, magnitude)
+        rempt = first_line.pt(1)
+
+        p1_new = self.__make_get_pt(p1_new.x, p1_new.y)[0]
+        ctrpt = self.__make_get_pt(ctrpt.x, ctrpt.y)[0]
+        p2_new = self.__make_get_pt(p2_new.x, p2_new.y)[0]
+
+        # make the new arc
+        arc = self.__make_get_sline(geometry.Arc(p1_new, p2_new, ctrpt))[0]
+
+        # put the arc in the right location in the area
+        area = first_line.lineloop.parent
+        area.line_insert(first_line, arc)
+        print('Arc inserted into area %i' % (area.id))
+
+        # edit the adjacent lines to replace the removed pt
+        first_line.set_pt(1, arc.pt(0))
+        second_line.set_pt(0, arc.pt(1))
+        # del old pt, store new points for the arc
+        self.fea.points.remove(rempt)
+
         # reset the cursor to where it should be
         self.__cursor = tmp
+        return [arc, arc.pt(0), arc.pt(1)]
 
     def fillet_all(self, radius):
         """Fillets all external lines not within 10 degrees of tangency
-        
+
         Args:
             radius (float): the fillet radius to use
-        
+
         Returns:
             arcs (list): list of SignArc
         """
@@ -630,7 +640,7 @@ class Part(base_classes.Idobj):
         # apply the label
         if label:
             self.label(axis)
-    
+
     def __cut_line(self, point, line):
         """Cuts the passed line at the passed point.
 
@@ -781,7 +791,7 @@ class Part(base_classes.Idobj):
 
     def __cut_with_line(self, cutline, debug):
         """Cuts the part using the passed line.
-        
+
         Args:
             cutline (Line): line to cut the area with
             debug (list): bool for printing, bool for plotting after every cut
@@ -898,7 +908,7 @@ class Part(base_classes.Idobj):
         Args:
             point (Point): the location we are cutting from
             cvect (Point): the vector direction of the cut from pt
-        
+
         Returns:
         cutline (Line): cut line
         """

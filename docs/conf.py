@@ -24,9 +24,9 @@ copyright = '2018, Justin Black'
 author = 'Justin Black'
 
 # The short X.Y version
-version = '0.9.5'
+version = ''
 # The full version, including alpha/beta/rc tags
-release = '0.9.5'
+release = ''
 
 
 # -- General configuration ---------------------------------------------------
@@ -184,7 +184,10 @@ epub_exclude_files = ['search.html']
 # -- Options for todo extension ----------------------------------------------
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = True 
+todo_include_todos = True
+from pycalculix.version import __version__
+version = __version__
+release = version
 extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',

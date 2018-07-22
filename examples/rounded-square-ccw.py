@@ -30,6 +30,7 @@ line_1 = part.draw_line_rad(thickness)[0]
 line_2 = part.draw_line_ax(-length)[0]
 part.draw_line_rad(-thickness*0.4)
 part.draw_line_to(radius_inner, axial)
+model.plot_geometry(model_name + '_pre', display=show_gui)
 part.fillet_lines(line_1, line_2, radius)
 
 model.plot_geometry(model_name + '_geom', display=show_gui)
