@@ -29,13 +29,9 @@ part.draw_line_ax(length*0.5)
 line_1 = part.draw_line_rad(thickness)[0]
 line_2 = part.draw_line_ax(-length)[0]
 part.draw_line_rad(-thickness*0.4)
-print(line_2)
 part.draw_line_to(radius_inner, axial)
-print(line_2)
-# change the closure to flip the signline, not the line
 model.plot_geometry(model_name + '_pre', display=show_gui)
 part.fillet_lines(line_1, line_2, radius)
-# this fails for ccw geometry, but works for cw geometry
 
 model.plot_geometry(model_name + '_geom', display=show_gui)
 part.chunk()

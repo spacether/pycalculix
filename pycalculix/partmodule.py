@@ -518,38 +518,47 @@ class Part(base_classes.Idobj):
 
         Args:
             line1 (SignLine): line that the arc starts on, arc is tangent
-            line2 (SignLine): line that the ar ends on, arc is tangent
+            line2 (SignLine): line that the arc ends on, arc is tangent
             radius (float): arc radius size
 
         Returns:
             list: [arc, start_point, end_point]
         """
         # check if the lines are touching
-        if not line1.touches(line2):
+        if not line1.line.touches(line2.line):
             print('ERROR: Cannot fillet! Lines must touch!')
+            return
+
+        if line1.line.pt(1) == line2.line.pt(0):
+            first_line = line1
+            second_line = line2
+        elif line2.line.pt(1) == line1.line.pt(0):
+            first_line = line2
+            second_line = line1
+        else:
+            print('ERROR: Sign lines must both be going in CW or CCW '
+                  'direction. The two passed lines are going in '
+                  'different directions. Unable to fillet them.')
             return
 
         tmp = self.__cursor
         # offset the lines, assuming area is being traced clockwise
         # get the intersection point
         magnitude = radius
-        l1_off = line1.offset(magnitude)
-        l2_off = line2.offset(magnitude)
+        l1_off = first_line.offset(magnitude)
+        l2_off = second_line.offset(magnitude)
         ctrpt = l1_off.intersects(l2_off)
         if ctrpt == None:
             # flip the offset direction if lines don't intersect
-            print('Ofsetting in the other direction')
             magnitude = -radius
-            l1_off = line1.offset(magnitude)
-            l2_off = line2.offset(magnitude)
+            l1_off = first_line.offset(magnitude)
+            l2_off = second_line.offset(magnitude)
             ctrpt = l1_off.intersects(l2_off)
 
         # now we have an intersecting point
-        #print('Arc center pt is: ', ctrpt)
-        p1_new = line1.arc_tang_intersection(ctrpt, magnitude)
-        p2_new = line2.arc_tang_intersection(ctrpt, magnitude)
-        rempt = line1.pt(1)
-        print('Point to remove is: %s' % rempt)
+        p1_new = first_line.arc_tang_intersection(ctrpt, magnitude)
+        p2_new = second_line.arc_tang_intersection(ctrpt, magnitude)
+        rempt = first_line.pt(1)
 
         p1_new = self.__make_get_pt(p1_new.x, p1_new.y)[0]
         ctrpt = self.__make_get_pt(ctrpt.x, ctrpt.y)[0]
@@ -559,13 +568,13 @@ class Part(base_classes.Idobj):
         arc = self.__make_get_sline(geometry.Arc(p1_new, p2_new, ctrpt))[0]
 
         # put the arc in the right location in the area
-        area = line1.lineloop.parent
-        area.line_insert(line1, arc)
+        area = first_line.lineloop.parent
+        area.line_insert(first_line, arc)
         print('Arc inserted into area %i' % (area.id))
 
         # edit the adjacent lines to replace the removed pt
-        line1.set_pt(1, arc.pt(0))
-        line2.set_pt(0, arc.pt(1))
+        first_line.set_pt(1, arc.pt(0))
+        second_line.set_pt(0, arc.pt(1))
         # del old pt, store new points for the arc
         self.fea.points.remove(rempt)
 
