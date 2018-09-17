@@ -260,9 +260,9 @@ def win_add_gmsh(bitsize, binaries_url, program_name, version_str):
             os.unlink(path)
         elif os.path.isdir(path):
             shutil.rmtree(path)
-    command_line = "move %s %s" % (zipfile_folder_name, folder_to)
+    commands = ['move', zipfile_folder_name, folder_to]
     print('Installing %s to %s' % (program_name, folder_to))
-    subprocess.check_call(command_line, shell=True)
+    subprocess.check_call(commands, shell=True)
     os.link(exe_loc, exe_link)
 
 def zipfile_by_bitsize(binaries_url, headers, zipfile_regex, bitsize):

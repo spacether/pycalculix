@@ -229,6 +229,12 @@ Initial Release: December 2014
 
 ## Change Log
 
+#### 1.0.0
+- Fixes the issue where the windows FEA installer hangs:
+  https://github.com/spacether/pycalculix/issues/47 (Needs verification)
+- Fixes the issue where the ccx version check in Windows fails
+  https://github.com/spacether/pycalculix/issues/48 (TODO)
+
 #### 0.9.6
 - Fixes part.fillet_lines method, all tests now pass
   - Verified on Mac OS X
