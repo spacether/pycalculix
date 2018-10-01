@@ -10,7 +10,6 @@ import sys
 from urllib.parse import urlparse
 from urllib.parse import ParseResult
 import zipfile
-from distutils.dir_util import copy_tree
 
 from sys import platform as platform
 
@@ -260,9 +259,8 @@ def win_add_gmsh(bitsize, binaries_url, program_name, version_str):
             os.unlink(path)
         elif os.path.isdir(path):
             shutil.rmtree(path)
-    commands = ['move', zipfile_folder_name, folder_to]
     print('Installing %s to %s' % (program_name, folder_to))
-    subprocess.check_call(commands, shell=True)
+    shutil.move(zipfile_folder_name, folder_to)
     os.link(exe_loc, exe_link)
 
 def zipfile_by_bitsize(binaries_url, headers, zipfile_regex, bitsize):
@@ -370,7 +368,7 @@ def win_add_ccx(bitsize, binaries_url, program_name):
             shutil.rmtree(path)
 
     print('Installing %s to %s' % (program_name, folder_to))
-    copy_tree(folder_from, folder_to)
+    shutil.move(folder_from, folder_to)
     shutil.rmtree(zipfile_folder_name)
     add_remove_dll_links(folder_to, scripts_path, add=True)
     os.link(exe_loc, exe_link)
