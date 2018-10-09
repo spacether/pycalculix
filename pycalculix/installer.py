@@ -119,16 +119,40 @@ def mac_add():
         print('gmsh present')
     ccx_installed = shutil.which('ccx')
     if not ccx_installed:
-        print('Installing calculix (ccx)')
-        command_line = "brew install brewsci/science/calculix-ccx"
-        subprocess.check_call(command_line, shell=True)
-        ccx_path = find_brew_binary_location('calculix-ccx', 'ccx')
-        if not ccx_path:
-            raise Exception('Failed to find ccx binary')
-        command_line = "ln -s %s /usr/local/bin/ccx" % ccx_path
-        subprocess.check_call(command_line, shell=True)
+        mac_add_ccx()
     else:
         print('calculix (ccx) present')
+
+def mac_add_ccx():
+    print('Installing calculix (ccx)')
+    command_line = "brew install brewsci/science/calculix-ccx"
+    subprocess.check_call(command_line, shell=True)
+    ccx_path = find_brew_binary_location('calculix-ccx', 'ccx')
+    if not ccx_path:
+        raise Exception('Failed to find ccx binary')
+    # link the ccx command to the ccx binary
+    command_line = "ln -s %s /usr/local/bin/ccx" % ccx_path
+    subprocess.check_call(command_line, shell=True)
+    # check to see if we have the fortran that ccx needs and return if we do
+    gcc7_to_path = "/usr/local/opt/gcc/lib/gcc/7"
+    needed_fortran_path = "%s/libgfortran.4.dylib" % gcc7_to_path
+    if os.path.isfile(needed_fortran_path):
+        if os.path.islink(link_to_path):
+            print('Linked gcc7 fortran found and used')
+        else:
+            print('System gcc7 fortran found and used')
+        return
+    # install gcc@7 with brew if we don't have it
+    brew_fortran_path = ("/usr/local/Cellar/gcc@7/7.3.0/lib/gcc/7/"
+                         "libgfortran.4.dylib")
+    if not os.path.isfile(brew_fortran_path):
+        command_line = "brew install gcc@7"
+        subprocess.check_call(command_line, shell=True)
+    # link gcc@7 from_path to to_path
+    gcc7_from_path = "/usr/local/Cellar/gcc@7/7.3.0/lib/gcc/7"
+    command_line = "ln -s %s %s" % (gcc7_from_path, gcc7_to_path)
+    subprocess.check_call(command_line, shell=True)
+
 
 def find_brew_binary_location(package_folder, search_string):
     """Finds the location of a binary installed by homebrew"""
@@ -155,10 +179,13 @@ def mac_remove():
         print('calculix (ccx) is not on your system')
     else:
         print('Removing calculix (ccx)')
+        # remove link to ccx
         command_line = "rm /usr/local/bin/ccx"
         subprocess.check_call(command_line, shell=True)
         command_line = "brew uninstall calculix-ccx"
         subprocess.check_call(command_line, shell=True)
+        # TODO: add removal of gcc7 link if it exists
+        # TODO: add removal of gcc@7 if it exists
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('gmsh is not on your system')
