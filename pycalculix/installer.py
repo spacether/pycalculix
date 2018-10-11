@@ -51,10 +51,7 @@ def remove():
     elif platform == "darwin":
         printos('Mac OS X', bitsize)
         mac_remove()
-    elif platform == "win32":
-        printos('Windows', bitsize)
-        windows_remove(bitsize)
-    elif platform == "win64":
+    elif platform in ["win32", "win64"]:
         printos('Windows', bitsize)
         windows_remove(bitsize)
     print('Done!')
@@ -148,10 +145,12 @@ def mac_add_ccx():
     if not os.path.isfile(brew_fortran_path):
         command_line = "brew install gcc@7"
         subprocess.check_call(command_line, shell=True)
+        print('Installed gcc@7 (needed by calculix)')
     # link gcc@7 from_path to to_path
     gcc7_from_path = "/usr/local/Cellar/gcc@7/7.3.0/lib/gcc/7"
     command_line = "ln -s %s %s" % (gcc7_from_path, gcc7_to_path)
     subprocess.check_call(command_line, shell=True)
+    print('Finished installing calculix (ccx)')
 
 
 def find_brew_binary_location(package_folder, search_string):
@@ -182,10 +181,24 @@ def mac_remove():
         # remove link to ccx
         command_line = "rm /usr/local/bin/ccx"
         subprocess.check_call(command_line, shell=True)
+        print('Calculix (ccx) symlink was removed')
+        # remove binary
         command_line = "brew uninstall calculix-ccx"
         subprocess.check_call(command_line, shell=True)
-        # TODO: add removal of gcc7 link if it exists
-        # TODO: add removal of gcc@7 if it exists
+        print('Calculix (ccx) binary was removed')
+        # remove gcc7 link if it exists
+        gcc7_sys_path = "/usr/local/opt/gcc/lib/gcc/7"
+        if os.path.islink(gcc7_sys_path):
+            command_line = "rm %s" % gcc7_sys_path
+            subprocess.check_call(command_line, shell=True)
+            print('gcc@7 symlink was removed (it was needed by calculix)')
+        # remove gcc@7 if it exists
+        gcc7_brew_path = "/usr/local/Cellar/gcc@7"
+        if os.path.isdir(gcc7_brew_path):
+            command_line = "brew uninstall gcc@7"
+            subprocess.check_call(command_line, shell=True)
+            print('gcc@7 was removed (it was needed by calculix)')
+
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('gmsh is not on your system')
