@@ -27,7 +27,7 @@ jobs:
   - script: python -m pip install --upgrade pip && pip install .
     displayName: 'Install library'
 
-  - script: sudo pycalculix-add-feaprograms
+  - script: pycalculix-add-feaprograms
     displayName: 'Install required FEA programs'
 
   - script: |
