@@ -1,6 +1,7 @@
 import glob
 import os
 import subprocess
+from sys import platform as platform
 import unittest
 
 import pycalculix as pyc
@@ -70,10 +71,20 @@ class TestExamples(unittest.TestCase):
         self.example_tester(file_name)
 
     def test_pinned_plate(self, file_name='pinned-plate.py'):
+        if platform in ['linux', 'linux2']:
+            # skip if Ubuntu
+            # on Ubuntu this example throws a segmentation fault in ccx
+            self.skipTest('skipped test because Ubuntu detected and ccx would '
+                          'throw a segmentation fault on this test')
         self.example_tester(file_name)
 
     def test_pipe_crush_elastic(self,
                                 file_name='pipe-crush-elastic.py'):
+        if platform in ['linux', 'linux2']:
+            # skip if Ubuntu
+            # on Ubuntu this example throws a segmentation fault in ccx
+            self.skipTest('skipped test because Ubuntu detected and ccx would '
+                          'throw a segmentation fault on this test')
         self.example_tester(file_name)
 
     def test_rounded_square_ccw(self,
@@ -84,8 +95,6 @@ class TestExamples(unittest.TestCase):
                                file_name='rounded-square-cw.py'):
         self.example_tester(file_name)
 
-    # note, once tests are written, make sure to add travisci file too
-    # to ensure that it works on mac and linux
 
 if __name__ == '__main__':
     unittest.main()
