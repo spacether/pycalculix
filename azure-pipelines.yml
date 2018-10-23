@@ -60,14 +60,11 @@ jobs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
 
-  - script: python -m venv venv && source venv/bin/activate
+  - script: python -m venv venv && source venv/bin/activate && which python
     displayName: 'Create and activate virtual environment'
 
   - script: python -m pip install --upgrade pip && pip install .
     displayName: 'Install library'
-
-  - script: python -mpip install -U matplotlib
-    displayName: 'Install matplotlib'
 
   - script: pycalculix-add-feaprograms
     displayName: 'Install required FEA programs'
