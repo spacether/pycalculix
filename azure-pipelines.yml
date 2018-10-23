@@ -5,7 +5,7 @@
 
 jobs:
 
-- job: 'Test Ubuntu'
+- job: 'Ubuntu'
   pool:
     vmImage: 'Ubuntu 16.04'
   strategy:
@@ -41,7 +41,7 @@ jobs:
       testRunTitle: 'Python $(python.version)'
     condition: succeededOrFailed()
 
-- job: 'Test Mac'
+- job: 'Mac'
   pool:
     vmImage: 'macOS-10.13'
   strategy:
