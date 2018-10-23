@@ -27,6 +27,9 @@ jobs:
   - script: python -m pip install --upgrade pip && pip install .
     displayName: 'Install library'
 
+  - script: apt-get install libibverbs-dev
+    displayName: 'Install libibverbs'
+
   - script: pycalculix-add-feaprograms
     displayName: 'Install required FEA programs'
 
