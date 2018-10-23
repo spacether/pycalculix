@@ -63,6 +63,9 @@ jobs:
   - script: python -m pip install --upgrade pip && pip install .
     displayName: 'Install library'
 
+  - script: python -mpip install -U matplotlib
+    displayName: 'Install matplotlib'
+
   - script: pycalculix-add-feaprograms
     displayName: 'Install required FEA programs'
 
