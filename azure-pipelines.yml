@@ -60,11 +60,14 @@ jobs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
 
-  - script: |
-      python -m venv venv
-      source venv/bin/activate
-      which python
-    displayName: 'Create and activate virtual environment'
+  - script: python -m venv venv
+    displayName: 'Create virtual env'
+
+  - script: source venv/bin/activate
+    displayName: 'Activate virtual env'
+
+  - script: which python
+    displayName: 'List python location'
 
   - script: python -m pip install --upgrade pip && pip install .
     displayName: 'Install library'
