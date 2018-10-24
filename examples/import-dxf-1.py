@@ -19,8 +19,6 @@ if '-tri' in sys.argv:
 
 abs_path = os.path.dirname(os.path.abspath(__file__))
 fname = os.path.join(abs_path, '%s.dxf' % model_name)
-print('fname=%s' % fname)
-print('os.path.exists(fname)=%s' % os.path.exists(fname))
 importer = pyc.CadImporter(model, fname=fname, swapxy=True)
 parts = importer.load()
 model.plot_geometry(model_name+'_imported', display=show_gui)
