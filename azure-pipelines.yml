@@ -55,13 +55,16 @@ jobs:
     maxParallel: 4
 
   steps:
-  - task: CondaEnvironment@0
+  - task: UsePythonVersion@0
     inputs:
-      environmentName: '$(python.version)'
-      packageSpecs: 'python=$(python.version)'
+      versionSpec: '$(python.version)'
+      architecture: 'x64'
 
-  - script: pip install .
+  - script: python -m pip install --upgrade pip && pip install .
     displayName: 'Install library'
+
+  - script: mkdir ~/.matplotlib && echo "backend : TkAgg" >>~/.matplotlib/matplotlibrc
+    displayName: 'Set matplotlib backend to TkAgg (only needed for non-framework python installation)'
 
   - script: pycalculix-add-feaprograms
     displayName: 'Install required FEA programs'
