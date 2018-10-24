@@ -57,8 +57,10 @@ class CadImporter(object):
         if len(self.__fea.points) > 0:
             first_pt = self.__fea.points[0]
         if ext == 'dxf':
+            print('load dxf case')
             parts = self.__load_dxf()
         elif ext in ['brep', 'brp', 'iges', 'igs', 'step', 'stp']:
+            print('load %s case' % ext)
             self.__make_geo()
             parts = self.__load_geo()
         last_pt = None
