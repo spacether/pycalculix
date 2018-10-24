@@ -69,13 +69,13 @@ jobs:
       echo "backend : TkAgg" >> ~/.matplotlib/matplotlibrc
     displayName: 'Set matplotlib backend = TkAgg for non-framework python'
 
-  - script: ls /Users/vsts/hostedtoolcache/Python/3.5.5/x64/lib/python3.5/site-packages/pycalculix
+  - script: ls -la /Users/vsts/hostedtoolcache/Python/3.5.5/x64/lib/python3.5/site-packages/pycalculix
     displayName: 'list contents of py35'
 
-  - script: ls /Users/vsts/hostedtoolcache/Python/3.5.5/x64/lib/python3.6/site-packages/pycalculix
+  - script: ls -la /Users/vsts/hostedtoolcache/Python/3.5.5/x64/lib/python3.6/site-packages/pycalculix
     displayName: 'list contents of py36'
 
-  - script: ls /Users/vsts/hostedtoolcache/Python/3.5.5/x64/lib/python3.7/site-packages/pycalculix
+  - script: ls -la /Users/vsts/hostedtoolcache/Python/3.5.5/x64/lib/python3.7/site-packages/pycalculix
     displayName: 'list contents of py37'
 
   - script: pycalculix-add-feaprograms
