@@ -41,42 +41,6 @@ jobs:
       testRunTitle: 'Python $(python.version)'
     condition: succeededOrFailed()
 
-- job: 'Ubuntu32'
-  pool:
-    vmImage: 'Ubuntu 16.04'
-  strategy:
-    matrix:
-      Python35:
-        python.version: '3.5'
-      Python36:
-        python.version: '3.6'
-      Python37:
-        python.version: '3.7'
-    maxParallel: 4
-
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '$(python.version)'
-      architecture: 'x86'
-
-  - script: python -m pip install --upgrade pip && pip install .
-    displayName: 'Install library'
-
-  - script: pycalculix-add-feaprograms
-    displayName: 'Install required FEA programs'
-
-  - script: |
-      pip install pytest
-      pytest tests --doctest-modules --junitxml=junit/test-results.xml
-    displayName: 'pytest'
-
-  - task: PublishTestResults@2
-    inputs:
-      testResultsFiles: '**/test-results.xml'
-      testRunTitle: 'Python $(python.version)'
-    condition: succeededOrFailed()
-
 - job: 'Mac64'
   pool:
     vmImage: 'macOS-10.13'
@@ -95,48 +59,6 @@ jobs:
     inputs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
-      addToPath: true
-
-  - script: python -m pip install --upgrade pip && pip install .
-    displayName: 'Install library'
-
-  - script: |
-      mkdir ~/.matplotlib
-      echo "backend : TkAgg" >> ~/.matplotlib/matplotlibrc
-    displayName: 'Set matplotlib backend = TkAgg for non-framework python'
-
-  - script: pycalculix-add-feaprograms
-    displayName: 'Install required FEA programs'
-
-  - script: |
-      pip install pytest
-      pytest tests --doctest-modules --junitxml=junit/test-results.xml
-    displayName: 'pytest'
-
-  - task: PublishTestResults@2
-    inputs:
-      testResultsFiles: '**/test-results.xml'
-      testRunTitle: 'Python $(python.version)'
-    condition: succeededOrFailed()
-
-- job: 'Mac32'
-  pool:
-    vmImage: 'macOS-10.13'
-  strategy:
-    matrix:
-      Python35:
-        python.version: '3.5'
-      Python36:
-        python.version: '3.6'
-      Python37:
-        python.version: '3.7'
-    maxParallel: 4
-
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '$(python.version)'
-      architecture: 'x86'
       addToPath: true
 
   - script: python -m pip install --upgrade pip && pip install .
