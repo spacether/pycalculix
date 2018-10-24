@@ -57,7 +57,7 @@ jobs:
   steps:
   - task: CondaEnvironment@0
     inputs:
-      environmentName: 'venv'
+      environmentName: '$(python.version)'
       packageSpecs: 'python=$(python.version)'
 
   - script: pip install .
