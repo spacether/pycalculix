@@ -2,6 +2,7 @@ import glob
 import os
 import subprocess
 from sys import platform as platform
+import time
 import unittest
 
 import pycalculix as pyc
@@ -26,13 +27,24 @@ class TestExamples(unittest.TestCase):
                 os.unlink(local_file)
 
     def example_tester(self, file_name, args=['-tri', '-nogui']):
-        command_str = 'python examples/%s %s' % (file_name,
-                                                  ' '.join(args))
-        output = subprocess.check_output(
-            command_str, stderr=subprocess.STDOUT, shell=True,
-            timeout=60,
-            universal_newlines=True)
-        # this raises subprocess.CalledProcessError if it fails
+        command_args = ['python',
+                        os.path.join('examples', file_name),
+                        *args]
+        command_str = ' '.join(command_args)
+        try:
+            # this raises subprocess.CalledProcessError if it fails
+            output = subprocess.check_output(
+                        command_str,
+                        stderr=subprocess.STDOUT,
+                        shell=True,
+                        timeout=60,
+                        universal_newlines=True)
+        except Exception as ex:
+            print(ex)
+            if ex.output:
+                for line in ex.output.splitlines():
+                    print(line)
+            raise ex
 
     def test_compr_rotor(self, file_name='compr-rotor.py'):
         self.example_tester(file_name)
