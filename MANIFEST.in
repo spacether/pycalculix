@@ -1,1 +1,3 @@
 include pycalculix/dmginstall.sh
+include examples/import-dxf-1.dxf
+include examples/import-dxf-2.dxf
