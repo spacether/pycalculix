@@ -15,6 +15,9 @@ from sys import platform as platform
 
 import requests
 
+WINDOWS_PLATFORMS = ['win32', 'win64']
+LINUX_PLATFORMS = ['linux', 'linux2']
+
 def printos(os, bits):
     """Prints the operating system and bit size"""
     print('Detected {} {} bit'.format(os, bits))
@@ -25,16 +28,13 @@ def add():
     is_64bit = sys.maxsize > 2**32
     bitsize_dict = {True: 64, False: 32}
     bitsize = bitsize_dict[is_64bit]
-    if platform == "linux" or platform == "linux2":
+    if platform in LINUX_PLATFORMS:
         printos('Linux', bitsize)
         ubuntu_add()
     elif platform == "darwin":
         printos('Mac OS X', bitsize)
         mac_add()
-    elif platform == "win32":
-        printos('Windows', bitsize)
-        windows_add(bitsize)
-    elif platform == "win64":
+    elif platform in WINDOWS_PLATFORMS:
         printos('Windows', bitsize)
         windows_add(bitsize)
     print('Done!')
@@ -45,13 +45,13 @@ def remove():
     is_64bit = sys.maxsize > 2**32
     bitsize_dict = {True: 64, False: 32}
     bitsize = bitsize_dict[is_64bit]
-    if platform == "linux" or platform == "linux2":
+    if platform in LINUX_PLATFORMS:
         printos('Linux', bitsize)
         ubuntu_remove()
     elif platform == "darwin":
         printos('Mac OS X', bitsize)
         mac_remove()
-    elif platform in ["win32", "win64"]:
+    elif platform in WINDOWS_PLATFORMS:
         printos('Windows', bitsize)
         windows_remove(bitsize)
     print('Done!')
