@@ -1100,12 +1100,15 @@ class ResultsFile(object):
 
     def check_ccx_version(self, timeout=1):
         """Raises an exception of the calculix ccx version is too old"""
-        runstr = "%s -version; exit 0" % (environment.CCX)
-        output_str = subprocess.check_output(runstr,
-                                             timeout=timeout,
-                                             shell=True)
+        runstr = "%s -version" % (environment.CCX)
+        try:
+            output_str = subprocess.check_output(runstr,
+                                                 timeout=timeout,
+                                                 shell=True)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as ex:
+            output_str = ex.output
         output_str = str(output_str, 'utf-8')
-        matches = re.findall('\d+\.\d+', output_str)
+        matches = re.findall(r'\d+\.\d+', output_str)
         version_number = matches[-1]
         print('Using Calculix ccx version=%s '
               '(trailing characters like the p in 2.8p are omitted)'

@@ -10,7 +10,6 @@ import sys
 from urllib.parse import urlparse
 from urllib.parse import ParseResult
 import zipfile
-from distutils.dir_util import copy_tree
 
 from sys import platform as platform
 
@@ -52,10 +51,7 @@ def remove():
     elif platform == "darwin":
         printos('Mac OS X', bitsize)
         mac_remove()
-    elif platform == "win32":
-        printos('Windows', bitsize)
-        windows_remove(bitsize)
-    elif platform == "win64":
+    elif platform in ["win32", "win64"]:
         printos('Windows', bitsize)
         windows_remove(bitsize)
     print('Done!')
@@ -120,16 +116,42 @@ def mac_add():
         print('gmsh present')
     ccx_installed = shutil.which('ccx')
     if not ccx_installed:
-        print('Installing calculix (ccx)')
-        command_line = "brew install brewsci/science/calculix-ccx"
-        subprocess.check_call(command_line, shell=True)
-        ccx_path = find_brew_binary_location('calculix-ccx', 'ccx')
-        if not ccx_path:
-            raise Exception('Failed to find ccx binary')
-        command_line = "ln -s %s /usr/local/bin/ccx" % ccx_path
-        subprocess.check_call(command_line, shell=True)
+        mac_add_ccx()
     else:
         print('calculix (ccx) present')
+
+def mac_add_ccx():
+    print('Installing calculix (ccx)')
+    command_line = "brew install brewsci/science/calculix-ccx"
+    subprocess.check_call(command_line, shell=True)
+    ccx_path = find_brew_binary_location('calculix-ccx', 'ccx')
+    if not ccx_path:
+        raise Exception('Failed to find ccx binary')
+    # link the ccx command to the ccx binary
+    command_line = "ln -s %s /usr/local/bin/ccx" % ccx_path
+    subprocess.check_call(command_line, shell=True)
+    # check to see if we have the fortran that ccx needs and return if we do
+    gcc7_to_path = "/usr/local/opt/gcc/lib/gcc/7"
+    needed_fortran_path = "%s/libgfortran.4.dylib" % gcc7_to_path
+    if os.path.isfile(needed_fortran_path):
+        if os.path.islink(link_to_path):
+            print('Linked gcc7 fortran found and used')
+        else:
+            print('System gcc7 fortran found and used')
+        return
+    # install gcc@7 with brew if we don't have it
+    brew_fortran_path = ("/usr/local/Cellar/gcc@7/7.3.0/lib/gcc/7/"
+                         "libgfortran.4.dylib")
+    if not os.path.isfile(brew_fortran_path):
+        command_line = "brew install gcc@7"
+        subprocess.check_call(command_line, shell=True)
+        print('Installed gcc@7 (needed by calculix)')
+    # link gcc@7 from_path to to_path
+    gcc7_from_path = "/usr/local/Cellar/gcc@7/7.3.0/lib/gcc/7"
+    command_line = "ln -s %s %s" % (gcc7_from_path, gcc7_to_path)
+    subprocess.check_call(command_line, shell=True)
+    print('Finished installing calculix (ccx)')
+
 
 def find_brew_binary_location(package_folder, search_string):
     """Finds the location of a binary installed by homebrew"""
@@ -156,10 +178,27 @@ def mac_remove():
         print('calculix (ccx) is not on your system')
     else:
         print('Removing calculix (ccx)')
+        # remove link to ccx
         command_line = "rm /usr/local/bin/ccx"
         subprocess.check_call(command_line, shell=True)
+        print('Calculix (ccx) symlink was removed')
+        # remove binary
         command_line = "brew uninstall calculix-ccx"
         subprocess.check_call(command_line, shell=True)
+        print('Calculix (ccx) binary was removed')
+        # remove gcc7 link if it exists
+        gcc7_sys_path = "/usr/local/opt/gcc/lib/gcc/7"
+        if os.path.islink(gcc7_sys_path):
+            command_line = "rm %s" % gcc7_sys_path
+            subprocess.check_call(command_line, shell=True)
+            print('gcc@7 symlink was removed (it was needed by calculix)')
+        # remove gcc@7 if it exists
+        gcc7_brew_path = "/usr/local/Cellar/gcc@7"
+        if os.path.isdir(gcc7_brew_path):
+            command_line = "brew uninstall gcc@7"
+            subprocess.check_call(command_line, shell=True)
+            print('gcc@7 was removed (it was needed by calculix)')
+
     gmsh_installed = shutil.which('gmsh')
     if not gmsh_installed:
         print('gmsh is not on your system')
@@ -260,9 +299,8 @@ def win_add_gmsh(bitsize, binaries_url, program_name, version_str):
             os.unlink(path)
         elif os.path.isdir(path):
             shutil.rmtree(path)
-    command_line = "move %s %s" % (zipfile_folder_name, folder_to)
     print('Installing %s to %s' % (program_name, folder_to))
-    subprocess.check_call(command_line, shell=True)
+    shutil.move(zipfile_folder_name, folder_to)
     os.link(exe_loc, exe_link)
 
 def zipfile_by_bitsize(binaries_url, headers, zipfile_regex, bitsize):
@@ -370,7 +408,7 @@ def win_add_ccx(bitsize, binaries_url, program_name):
             shutil.rmtree(path)
 
     print('Installing %s to %s' % (program_name, folder_to))
-    copy_tree(folder_from, folder_to)
+    shutil.move(folder_from, folder_to)
     shutil.rmtree(zipfile_folder_name)
     add_remove_dll_links(folder_to, scripts_path, add=True)
     os.link(exe_loc, exe_link)

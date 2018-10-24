@@ -229,6 +229,16 @@ Initial Release: December 2014
 
 ## Change Log
 
+#### 1.0.0
+- Fixes the issue where the windows FEA installer hangs:
+  https://github.com/spacether/pycalculix/issues/47
+- Fixes the issue where the ccx version check in Windows fails
+  https://github.com/spacether/pycalculix/issues/48
+- Fixes the issue on OS X High Sierra where ccx assumes that the host has gcc7
+  installed on it: https://github.com/spacether/pycalculix/issues/50
+  - Solution: install gcc@7 and symbolic link it to the expected location
+
+
 #### 0.9.6
 - Fixes part.fillet_lines method, all tests now pass
   - Verified on Mac OS X
