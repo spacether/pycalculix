@@ -59,6 +59,7 @@ jobs:
     inputs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
+      addToPath: true
 
   - script: python -m pip install --upgrade pip && pip install .
     displayName: 'Install library'
@@ -66,7 +67,7 @@ jobs:
   - script: |
       mkdir ~/.matplotlib
       echo "backend : TkAgg" >> ~/.matplotlib/matplotlibrc
-    displayName: 'Set matplotlib backend to TkAgg (only needed for non-framework python installation)'
+    displayName: 'Set matplotlib backend = TkAgg for non-framework python'
 
   - script: pycalculix-add-feaprograms
     displayName: 'Install required FEA programs'
