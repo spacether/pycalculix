@@ -88,16 +88,12 @@ class TestExamples(unittest.TestCase):
             # skip if Ubuntu
             self.skipTest('skipped test because Ubuntu detected and ccx would '
                           'throw a segmentation fault on this test')
-        # if (sys.platform == 'win32' and
-        #         sys.version_info.major == 3 and
-        #         sys.version_info.minor == 6):
-        #     # skip if Win32 (reported as Win32 eventhough using x64 arch)
-        #     # and Python 3.6
-        #     self.skipTest('skipped test because on Win32 with python3.6 '
-        #                   'this test does not converge and fails in ccx')
-        print('platform=%s machine=%s python_version=%s' %
-              (sys.platform, platform.machine(), sys.version))
-        # win64 py36 and py37 have failed so far
+        if (platform.machine() == 'AMD64' and
+                sys.version_info.major == 3 and
+                sys.version_info.minor >= 6):
+            # skip if Win64 and Python >= 3.6
+            self.skipTest('skipped test because on Win64 with python >= 3.6 '
+                          'this test does not converge and fails in ccx')
         self.example_tester(file_name)
 
     def test_pipe_crush_elastic(self,
