@@ -1,7 +1,7 @@
 import glob
 import os
 import subprocess
-from sys import platform as platform
+import sys
 import time
 import unittest
 
@@ -83,18 +83,22 @@ class TestExamples(unittest.TestCase):
         self.example_tester(file_name)
 
     def test_pinned_plate(self, file_name='pinned-plate.py'):
-        if platform in ['linux', 'linux2']:
+        if sys.platform in ['linux', 'linux2']:
             # skip if Ubuntu
-            # on Ubuntu this example throws a segmentation fault in ccx
             self.skipTest('skipped test because Ubuntu detected and ccx would '
                           'throw a segmentation fault on this test')
+        if (sys.platform == 'win64' and
+                sys.version_info.major == 3 and
+                sys.version_info.minor == 6):
+            # skip if Win64 and Python 3.6
+            self.skipTest('skipped test because on Win64 with python3.6 '
+                          'this test does not converge and fails in ccx')
         self.example_tester(file_name)
 
     def test_pipe_crush_elastic(self,
                                 file_name='pipe-crush-elastic.py'):
-        if platform in ['linux', 'linux2']:
+        if sys.platform in ['linux', 'linux2']:
             # skip if Ubuntu
-            # on Ubuntu this example throws a segmentation fault in ccx
             self.skipTest('skipped test because Ubuntu detected and ccx would '
                           'throw a segmentation fault on this test')
         self.example_tester(file_name)
