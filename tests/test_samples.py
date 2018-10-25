@@ -93,6 +93,7 @@ class TestExamples(unittest.TestCase):
             # skip if Win64 and Python 3.6
             self.skipTest('skipped test because on Win64 with python3.6 '
                           'this test does not converge and fails in ccx')
+        print('platform=%s python_version=%s' % (sys.platform, sys.version))
         self.example_tester(file_name)
 
     def test_pipe_crush_elastic(self,
