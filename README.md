@@ -2,7 +2,8 @@
 
 pycalculix is a Python 3 library to automate and build finite element analysis (FEA) models in Calculix.
 
-![build passing](https://readthedocs.org/projects/docs/badge/?version=latest)
+[![Tests Build Status](https://dev.azure.com/pycalculix/pycalculix/_apis/build/status/spacether.pycalculix)](https://dev.azure.com/pycalculix/pycalculix/_build/latest?definitionId=1)  
+![Docs Build Status](https://readthedocs.org/projects/docs/badge/?version=latest)
 
 Website: http://justinablack.com/pycalculix/  
 Source Code: https://github.com/spacether/pycalculix  
@@ -228,6 +229,13 @@ Initial Release: December 2014
 
 
 ## Change Log
+
+#### 1.1.0
+- Adds Microsoft Azure continuous integration tests to verify that the library is working. The following environments are tested:
+  - Windows Server 2016 (x64 and x86 architecture)
+  - Mac OS X (x64)
+  - Ubuntu 16.04 (x64)
+- Fixes a bug where cad files could not be loaded if they had a period in their path
 
 #### 1.0.0
 - Fixes the issue where the windows FEA installer hangs:
