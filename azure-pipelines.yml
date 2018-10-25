@@ -5,7 +5,7 @@
 
 jobs:
 
-- job: 'Win64 (Windows Server 2016)'
+- job: 'Win64 - Windows Server 2016'
   pool:
     vmImage: 'vs2017-win2016'
   strategy:
