@@ -230,7 +230,7 @@ Initial Release: December 2014
 
 ## Change Log
 
-#### 1.1.0
+#### 1.1.1
 - Omits test_pinned_plate from Mac OS X with Python >= 3.6 because it does not
 converge in ccx
 
