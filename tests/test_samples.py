@@ -84,7 +84,7 @@ class TestExamples(unittest.TestCase):
         self.example_tester(file_name)
 
     def test_pinned_plate(self, file_name='pinned-plate.py'):
-        if sys.platform == 'darwin' and sys.version_info.major == 3 and
+        if (sys.platform == 'darwin' and sys.version_info.major == 3 and
                 sys.version_info.minor == 6):
             # skip if OS X and Python = 3.6
             self.skipTest('skipped test because on OS X '
