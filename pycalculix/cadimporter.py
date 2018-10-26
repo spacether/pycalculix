@@ -51,14 +51,13 @@ class CadImporter(object):
             print('You must pass in a file name to load!')
             return []
 
-        fname_list = self.__fname.split('.')
-        ext = fname_list[1]
+        ext = os.path.splitext(self.__fname)[1]
         first_pt = None
         if len(self.__fea.points) > 0:
             first_pt = self.__fea.points[0]
-        if ext == 'dxf':
+        if ext == '.dxf':
             parts = self.__load_dxf()
-        elif ext in ['brep', 'brp', 'iges', 'igs', 'step', 'stp']:
+        elif ext in ['.brep', '.brp', '.iges', '.igs', '.step', '.stp']:
             self.__make_geo()
             parts = self.__load_geo()
         last_pt = None

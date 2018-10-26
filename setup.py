@@ -10,6 +10,7 @@ setup(
     author = "Justin Black",
     author_email = "justin.a.black@gmail.com",
     packages = find_packages(),
+    include_package_data=True,
     url = "http://justinablack.com/pycalculix/",
     entry_points = {
         'console_scripts': ['pycalculix-add-feaprograms=pycalculix.installer:add',
