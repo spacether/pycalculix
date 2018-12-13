@@ -148,14 +148,15 @@ class Part(base_classes.Idobj):
         points = self.points
         # sort the points low to high
         points = sorted(points, key=lambda pt: getattr(pt, axis))
-        # store the value
-        val = getattr(points[ind], axis)
+        # store the target value
+        target_value = getattr(points[ind], axis)
         res = []
         lines = self.signlines
         for sline in lines:
             if isinstance(sline, geometry.SignLine):
-                vals = [getattr(pt, axis) for pt in sline.points]
-                if vals == [val, val]:
+                pt_axis_vals = [getattr(pt, axis) for pt in sline.points]
+                pt_dist_vals = [abs(target_value - pt_axis_val) for pt_axis_val in pt_axis_vals]
+                if all([pt_dist_val < geometry.ACC for pt_dist_val in pt_dist_vals]):
                     # line is on the left side
                     res.append(sline)
         setattr(self, side, res)
