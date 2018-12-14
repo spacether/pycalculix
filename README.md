@@ -230,6 +230,11 @@ Initial Release: December 2014
 
 ## Change Log
 
+#### 1.1.2
+- Sets part.left/right/top/bottom using geometry.ACC constant, tests added
+- Fixes issue https://github.com/spacether/pycalculix/issues/57 where part.left
+  was not being set if a line was slightly skewed
+
 #### 1.1.1
 - Omits test_pinned_plate from Mac OS X with Python >= 3.6 because it does not
 converge in ccx
