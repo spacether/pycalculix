@@ -1,10 +1,11 @@
 .PHONY: dist docs
 
 dist:
+	# make dist version="X.X.X"
 	rm -rf dist
 	mkdir dist
 	make dist_source
-	make dist_docs
+	make dist_docs version=$(version)
 	make dist_examples
 
 clean_examples:
@@ -31,14 +32,13 @@ clean:
 	rm -f ./*.sta
 	rm -f ./*.out
 
-
 dist_examples:
 	make clean_examples
 	zip -r examples.zip examples
 	mv examples.zip dist/
 
-docs:
-	# make docs version="0.9.5"
+dist_docs:
+	# make dist_docs version="X.X.X"
 	rm -rf docs
 	rm -rf documentation
 	sphinx-apidoc -F -H "pycalculix" -V $(version) -A "Justin Black" -o docs pycalculix

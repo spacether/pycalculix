@@ -3,7 +3,6 @@
 import collections
 import math
 import os
-import pdb
 # needed to prevent dxfgrabber from crashing on import
 os.environ['DXFGRABBER_CYTHON'] = 'OFF'
 import dxfgrabber # needed for dxf files
@@ -213,7 +212,6 @@ class CadImporter(object):
         Returns:
             list: list of Part
         """
-        # pdb.set_trace()
         print('Loading file: %s' % self.__fname)
         dwg = dxfgrabber.readfile(self.__fname)
         lines = [item for item in dwg.entities if item.dxftype == 'LINE']
@@ -238,7 +236,6 @@ class CadImporter(object):
 
         # remove all lines that are not part of areas
         dangling_points = self.__dangling_points(all_points)
-        # pdb.set_trace()
         pruned_geometry = bool(dangling_points)
         while dangling_points:
             for point in dangling_points:

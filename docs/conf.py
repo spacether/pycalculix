@@ -14,7 +14,7 @@
 #
 # import os
 # import sys
-# sys.path.insert(0, '/Users/justin/Documents/programming/pycalculix/pycalculix')
+# sys.path.insert(0, '/Users/justin/programming/pycalculix/pycalculix')
 
 
 # -- Project information -----------------------------------------------------
@@ -24,9 +24,9 @@ copyright = '2018, Justin Black'
 author = 'Justin Black'
 
 # The short X.Y version
-version = ''
+version = '1.1.2'
 # The full version, including alpha/beta/rc tags
-release = ''
+release = '1.1.2'
 
 
 # -- General configuration ---------------------------------------------------
@@ -65,11 +65,11 @@ language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path .
+# This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = None
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -162,9 +162,6 @@ texinfo_documents = [
 
 # Bibliographic Dublin Core info.
 epub_title = project
-epub_author = author
-epub_publisher = author
-epub_copyright = copyright
 
 # The unique identifier of the text. This can be a ISBN number
 # or the project homepage.
@@ -184,10 +181,7 @@ epub_exclude_files = ['search.html']
 # -- Options for todo extension ----------------------------------------------
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = True
-from pycalculix.version import __version__
-version = __version__
-release = version
+todo_include_todos = True 
 extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
