@@ -234,6 +234,8 @@ Initial Release: December 2014
 - Sets part.left/right/top/bottom using geometry.ACC constant, tests added
 - Fixes issue https://github.com/spacether/pycalculix/issues/57 where part.left
   was not being set if a line was slightly skewed
+- Fixes a mac install issue where gcc@7 was assuming a specific X.X.X version
+  of gcc7
 
 #### 1.1.1
 - Omits test_pinned_plate from Mac OS X with Python >= 3.6 because it does not

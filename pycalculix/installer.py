@@ -131,24 +131,29 @@ def mac_add_ccx():
     subprocess.check_call(command_line, shell=True)
     # check to see if we have the fortran that ccx needs and return if we do
     gcc7_to_path = "/usr/local/opt/gcc/lib/gcc/7"
+
     needed_fortran_path = "%s/libgfortran.4.dylib" % gcc7_to_path
     if os.path.isfile(needed_fortran_path):
         if os.path.islink(link_to_path):
             print('Linked gcc7 fortran found and used')
         else:
             print('System gcc7 fortran found and used')
+        print('Finished installing calculix (ccx)')
         return
     # install gcc@7 with brew if we don't have it
-    brew_fortran_path = ("/usr/local/Cellar/gcc@7/7.3.0/lib/gcc/7/"
-                         "libgfortran.4.dylib")
-    if not os.path.isfile(brew_fortran_path):
+    paths = glob.glob("/usr/local/Cellar/gcc@7/*")
+    if not paths:
         command_line = "brew install gcc@7"
         subprocess.check_call(command_line, shell=True)
         print('Installed gcc@7 (needed by calculix)')
+        paths = glob.glob("/usr/local/Cellar/gcc@7/*")
     # link gcc@7 from_path to to_path
-    gcc7_from_path = "/usr/local/Cellar/gcc@7/7.3.0/lib/gcc/7"
+    gcc7_from_path = "%s/lib/gcc/7" % paths[-1]
     command_line = "ln -s %s %s" % (gcc7_from_path, gcc7_to_path)
     subprocess.check_call(command_line, shell=True)
+    if not os.path.isfile(needed_fortran_path):
+        raise Exception("Install failed, libgfortran.4.dylib (a library that "
+                        "ccx needs) was NOT FOUND")
     print('Finished installing calculix (ccx)')
 
 
