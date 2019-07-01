@@ -227,4 +227,8 @@ See LICENSE.txt (Apache 2.0)
 Justin Black, justin.a.black[at-sign]gmail[dot]com
 Initial Release: December 2014
 
+
+## Changes
+[See the change log](CHANGES.md)
+
 ![Analytics](https://ga-beacon.appspot.com/UA-97855011-1/pycalculix_github?pixel)

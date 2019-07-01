@@ -644,7 +644,7 @@ class Line(base_classes.Idobj):
                     return None
         elif isinstance(other, Arc) or isinstance(other, SignArc):
             # arc line intersection
-            return other.instersects(self)
+            return other.intersects(self)
 
     def __str__(self):
         """Returns string listing object type, name, and points"""
