@@ -1779,7 +1779,8 @@ class FeaModel(object):
         geo.append('Mesh.CharacteristicLengthMin = 0;')
         geo.append('Mesh.CharacteristicLengthMax = 1e+022;')
         # use this so small circles are meshed finely
-        geo.append('Mesh.CharacteristicLengthFromCurvature = 1;')
+        # this is broken in Gmsh 4.3.0
+        # geo.append('Mesh.CharacteristicLengthFromCurvature = 1;')
         geo.append('Mesh.CharacteristicLengthFromPoints = 1;')
         # geo.append('Mesh.Algorithm = 2; //delauny') #okay for quads
         geo.append('Mesh.Algorithm = 8; //delquad = delauny for quads')
