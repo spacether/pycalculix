@@ -1,0 +1,234 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>pycalculix.material &#8212; pycalculix 1.1.4 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pycalculix.material</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module stores material classes.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">base_classes</span>
+
+<div class="viewcode-block" id="Material"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.material.Material">[docs]</a><span class="k">class</span> <span class="nc">Material</span><span class="p">(</span><span class="n">base_classes</span><span class="o">.</span><span class="n">Idobj</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes a linear elastic meterial.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (str): a unique matl name</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        - id (int): material id number</span>
+<span class="sd">        - mechtype (str): defines mechanical material type: linear or non-linear material</span>
+<span class="sd">        - density (float): density in mass/volume units</span>
+<span class="sd">        - pratio (float): poisson&#39;s ratio (unitless)</span>
+<span class="sd">        - youngs (float): young&#39;s modulus in Force/area = stress units</span>
+<span class="sd">        - mechtpye (str): mechanical material type</span>
+<span class="sd">            options: &#39;linear&#39; or &#39;nonlinear&#39;</span>
+<span class="sd">        - exponent (float): exponent of Ramberg-Osgood stress-strain equation</span>
+<span class="sd">        - yield_stress (float): yield stress of material</span>
+<span class="sd">        - yield_offset (float): yield offset of Ramberg-Osgood stress-strain equation</span>
+<span class="sd">        - conductivity (float): thermal conductivity, Power / (distance-temp)</span>
+<span class="sd">        - spec_heat (float): specific heat (energy/(mass-temp)</span>
+<span class="sd">        - thermal_exp (dict): a dict storing temperature dependent thermal</span>
+<span class="sd">            -- expansion properties</span>
+
+<span class="sd">            -- Thermal expansion is in strain per temperature</span>
+
+<span class="sd">            - dict[&#39;data&#39;] = zip of (temp, thermal_expansion)</span>
+<span class="sd">            - dict[&#39;tzero&#39;] = the temperature zero point</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="n">base_classes</span><span class="o">.</span><span class="n">Idobj</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># mechanical</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mechtype</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">youngs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pratio</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yield_stress</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yield_offset</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># thermal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conductivity</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spec_heat</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># thermal growth</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thermal_exp</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="Material.set_mech_props"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.material.Material.set_mech_props">[docs]</a>    <span class="k">def</span> <span class="nf">set_mech_props</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">youngs</span><span class="p">,</span> <span class="n">pratio</span><span class="p">,</span> <span class="n">mechtype</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">exponent</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">yield_stress</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">yield_offset</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the mechanical properties: density, youngs, poisson_ratio.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          - density (float): density in mass/volume units</span>
+<span class="sd">          - pratio (float): poisson&#39;s ratio (unitless)</span>
+<span class="sd">          - youngs (float): young&#39;s modulus in Force/area = stress units</span>
+<span class="sd">          </span>
+<span class="sd">        Kargs:</span>
+<span class="sd">          - mechtpye (str): mechanical material type</span>
+<span class="sd">            options: &#39;linear&#39; or &#39;nonlinear&#39;</span>
+<span class="sd">          - exponent (float): exponent of Ramberg-Osgood stress-strain equation</span>
+<span class="sd">          - yield_stress (float): yield stress of material</span>
+<span class="sd">          - yield_offset (float): yield offset of Ramberg-Osgood stress-strain equation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">=</span> <span class="n">density</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">youngs</span> <span class="o">=</span> <span class="n">youngs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pratio</span> <span class="o">=</span> <span class="n">pratio</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mechtype</span> <span class="o">=</span> <span class="n">mechtype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span> <span class="o">=</span> <span class="n">exponent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yield_stress</span> <span class="o">=</span> <span class="n">yield_stress</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yield_offset</span> <span class="o">=</span> <span class="n">yield_offset</span></div>
+
+<div class="viewcode-block" id="Material.set_therm_props"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.material.Material.set_therm_props">[docs]</a>    <span class="k">def</span> <span class="nf">set_therm_props</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conductivity</span><span class="p">,</span> <span class="n">spec_heat</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the thermal properties: conductivity, specifc_heat.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          - conductivity (float): Power / (distance-temp)</span>
+<span class="sd">          - spec_heat (float): specific heat (energy/(mass-temp)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conductivity</span> <span class="o">=</span> <span class="n">conductivity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spec_heat</span> <span class="o">=</span> <span class="n">spec_heat</span></div>
+
+<div class="viewcode-block" id="Material.set_therm_expan"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.material.Material.set_therm_expan">[docs]</a>    <span class="k">def</span> <span class="nf">set_therm_expan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alphas</span><span class="p">,</span> <span class="n">temps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tzero</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the thermal expansion of the material.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          - alphas (float or list): list of thermal expansion alphas</span>
+<span class="sd">                         length must be the same as the passed temps</span>
+<span class="sd">          - temps (list): list of temperatures</span>
+<span class="sd">          - tzero (float): temperature zero point</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thermal_exp</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">isnum</span> <span class="o">=</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">alphas</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">alphas</span><span class="p">,</span> <span class="nb">int</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">alphas</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">temps</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thermal_exp</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">temps</span><span class="p">,</span> <span class="n">alphas</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">temps</span> <span class="o">==</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">isnum</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thermal_exp</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">alphas</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">tzero</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thermal_exp</span><span class="p">[</span><span class="s1">&#39;tzero&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tzero</span></div>
+
+<div class="viewcode-block" id="Material.ccx"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.material.Material.ccx">[docs]</a>    <span class="k">def</span> <span class="nf">ccx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of text strings for ccx defining the material.&quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*MATERIAL,NAME=&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mechtype</span> <span class="o">==</span> <span class="s1">&#39;linear&#39;</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*ELASTIC&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">youngs</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;,&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pratio</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">mechtype</span> <span class="o">==</span> <span class="s1">&#39;nonlinear&#39;</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*DEFORMATION PLASTICITY&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">youngs</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pratio</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yield_stress</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yield_offset</span><span class="p">)]))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*DENSITY&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">conductivity</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*CONDUCTIVITY&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conductivity</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spec_heat</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*SPECIFIC HEAT&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spec_heat</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_exp</span> <span class="o">!=</span> <span class="p">{}:</span>
+            <span class="k">if</span> <span class="s1">&#39;tzero&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_exp</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*EXPANSION,ZERO=&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thermal_exp</span><span class="p">[</span><span class="s1">&#39;tzero&#39;</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*EXPANSION&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_exp</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pair</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># temp, val</span>
+                    <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%f</span><span class="s1"> </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">res</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">pycalculix</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../pycalculix.html">pycalculix package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Justin Black.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

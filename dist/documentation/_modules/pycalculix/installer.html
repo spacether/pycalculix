@@ -1,0 +1,534 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>pycalculix.installer &#8212; pycalculix 1.1.4 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pycalculix.installer</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">shlex</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">urlparse</span>
+<span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">ParseResult</span>
+<span class="kn">import</span> <span class="nn">zipfile</span>
+
+<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">platform</span> <span class="k">as</span> <span class="n">platform</span>
+
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="n">WINDOWS_PLATFORMS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;win32&#39;</span><span class="p">,</span> <span class="s1">&#39;win64&#39;</span><span class="p">]</span>
+<span class="n">LINUX_PLATFORMS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;linux&#39;</span><span class="p">,</span> <span class="s1">&#39;linux2&#39;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="printos"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.printos">[docs]</a><span class="k">def</span> <span class="nf">printos</span><span class="p">(</span><span class="n">os</span><span class="p">,</span> <span class="n">bits</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Prints the operating system and bit size&quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Detected </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> bit&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="p">,</span> <span class="n">bits</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="add"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.add">[docs]</a><span class="k">def</span> <span class="nf">add</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Installs the fea tools on windows/mac/linux&quot;&quot;&quot;</span>
+    <span class="n">osname</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">is_64bit</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="o">**</span><span class="mi">32</span>
+    <span class="n">bitsize_dict</span> <span class="o">=</span> <span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="mi">32</span><span class="p">}</span>
+    <span class="n">bitsize</span> <span class="o">=</span> <span class="n">bitsize_dict</span><span class="p">[</span><span class="n">is_64bit</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">platform</span> <span class="ow">in</span> <span class="n">LINUX_PLATFORMS</span><span class="p">:</span>
+        <span class="n">printos</span><span class="p">(</span><span class="s1">&#39;Linux&#39;</span><span class="p">,</span> <span class="n">bitsize</span><span class="p">)</span>
+        <span class="n">ubuntu_add</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">platform</span> <span class="o">==</span> <span class="s2">&quot;darwin&quot;</span><span class="p">:</span>
+        <span class="n">printos</span><span class="p">(</span><span class="s1">&#39;Mac OS X&#39;</span><span class="p">,</span> <span class="n">bitsize</span><span class="p">)</span>
+        <span class="n">mac_add</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">platform</span> <span class="ow">in</span> <span class="n">WINDOWS_PLATFORMS</span><span class="p">:</span>
+        <span class="n">printos</span><span class="p">(</span><span class="s1">&#39;Windows&#39;</span><span class="p">,</span> <span class="n">bitsize</span><span class="p">)</span>
+        <span class="n">windows_add</span><span class="p">(</span><span class="n">bitsize</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done!&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="remove"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.remove">[docs]</a><span class="k">def</span> <span class="nf">remove</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Removes the fea tools on windows/mac/linux&quot;&quot;&quot;</span>
+    <span class="n">osname</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">is_64bit</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="o">**</span><span class="mi">32</span>
+    <span class="n">bitsize_dict</span> <span class="o">=</span> <span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="mi">32</span><span class="p">}</span>
+    <span class="n">bitsize</span> <span class="o">=</span> <span class="n">bitsize_dict</span><span class="p">[</span><span class="n">is_64bit</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">platform</span> <span class="ow">in</span> <span class="n">LINUX_PLATFORMS</span><span class="p">:</span>
+        <span class="n">printos</span><span class="p">(</span><span class="s1">&#39;Linux&#39;</span><span class="p">,</span> <span class="n">bitsize</span><span class="p">)</span>
+        <span class="n">ubuntu_remove</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">platform</span> <span class="o">==</span> <span class="s2">&quot;darwin&quot;</span><span class="p">:</span>
+        <span class="n">printos</span><span class="p">(</span><span class="s1">&#39;Mac OS X&#39;</span><span class="p">,</span> <span class="n">bitsize</span><span class="p">)</span>
+        <span class="n">mac_remove</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">platform</span> <span class="ow">in</span> <span class="n">WINDOWS_PLATFORMS</span><span class="p">:</span>
+        <span class="n">printos</span><span class="p">(</span><span class="s1">&#39;Windows&#39;</span><span class="p">,</span> <span class="n">bitsize</span><span class="p">)</span>
+        <span class="n">windows_remove</span><span class="p">(</span><span class="n">bitsize</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done!&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ubuntu_add"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.ubuntu_add">[docs]</a><span class="k">def</span> <span class="nf">ubuntu_add</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Adds ccx and gmsh programs on ubuntu, uses apt&quot;&quot;&quot;</span>
+    <span class="n">gmsh_installed</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s1">&#39;gmsh&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">gmsh_installed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Installing gmsh&#39;</span><span class="p">)</span>
+        <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;sudo apt-get install gmsh&quot;</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;gmsh present&#39;</span><span class="p">)</span>
+    <span class="n">ccx_installed</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s1">&#39;ccx&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ccx_installed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Installing calculix (ccx)&#39;</span><span class="p">)</span>
+        <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;sudo apt-get install calculix-ccx&quot;</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;calculix (ccx) present&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ubuntu_remove"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.ubuntu_remove">[docs]</a><span class="k">def</span> <span class="nf">ubuntu_remove</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Removes ccx and gmsh programs on ubuntu, uses apt&quot;&quot;&quot;</span>
+    <span class="n">ccx_installed</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s1">&#39;ccx&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ccx_installed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;calculix (ccx) is not on your system&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Removing calculix (ccx)&#39;</span><span class="p">)</span>
+        <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;sudo apt-get remove calculix-ccx&quot;</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">gmsh_installed</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s1">&#39;gmsh&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">gmsh_installed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;gmsh is not on your system&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Removing gmsh&#39;</span><span class="p">)</span>
+        <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;sudo apt-get remove gmsh&quot;</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="mac_add"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.mac_add">[docs]</a><span class="k">def</span> <span class="nf">mac_add</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Adds ccx and gmsh programs on mac, uses brew&quot;&quot;&quot;</span>
+    <span class="n">brew_installed</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s1">&#39;brew&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">brew_installed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Installing brew&#39;</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://raw.githubusercontent.com/Homebrew/install/master/install&#39;</span>
+        <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;/usr/bin/ruby -e </span><span class="se">\&quot;</span><span class="s2">$(curl -fsSL </span><span class="si">%s</span><span class="s2">)</span><span class="se">\&quot;</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">url</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;brew present&#39;</span><span class="p">)</span>
+    <span class="n">gmsh_installed</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s1">&#39;gmsh&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">gmsh_installed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Installing gmsh&#39;</span><span class="p">)</span>
+        <span class="n">folder_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+        <span class="n">dmginstall_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_path</span><span class="p">,</span> <span class="s1">&#39;dmginstall.sh&#39;</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;http://gmsh.info/bin/MacOSX/gmsh-3.0.5-MacOSX.dmg&#39;</span>
+        <span class="n">command_line</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">dmginstall_path</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;command_line=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">command_line</span><span class="p">)</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">gmsh_path</span> <span class="o">=</span> <span class="s1">&#39;/Applications/Gmsh.app/Contents/MacOS/gmsh&#39;</span>
+        <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;ln -s </span><span class="si">%s</span><span class="s2"> /usr/local/bin/gmsh&quot;</span> <span class="o">%</span> <span class="n">gmsh_path</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;gmsh present&#39;</span><span class="p">)</span>
+    <span class="n">ccx_installed</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s1">&#39;ccx&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ccx_installed</span><span class="p">:</span>
+        <span class="n">mac_add_ccx</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;calculix (ccx) present&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="mac_add_ccx"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.mac_add_ccx">[docs]</a><span class="k">def</span> <span class="nf">mac_add_ccx</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Installing calculix (ccx)&#39;</span><span class="p">)</span>
+    <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;brew install brewsci/science/calculix-ccx&quot;</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ccx_path</span> <span class="o">=</span> <span class="n">find_brew_binary_location</span><span class="p">(</span><span class="s1">&#39;calculix-ccx&#39;</span><span class="p">,</span> <span class="s1">&#39;ccx&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ccx_path</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Failed to find ccx binary&#39;</span><span class="p">)</span>
+    <span class="c1"># link the ccx command to the ccx binary</span>
+    <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;ln -s </span><span class="si">%s</span><span class="s2"> /usr/local/bin/ccx&quot;</span> <span class="o">%</span> <span class="n">ccx_path</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># check to see if we have the fortran that ccx needs and return if we do</span>
+    <span class="n">gcc7_to_path</span> <span class="o">=</span> <span class="s2">&quot;/usr/local/opt/gcc/lib/gcc/7&quot;</span>
+
+    <span class="n">needed_fortran_path</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/libgfortran.4.dylib&quot;</span> <span class="o">%</span> <span class="n">gcc7_to_path</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">needed_fortran_path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">islink</span><span class="p">(</span><span class="n">link_to_path</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Linked gcc7 fortran found and used&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;System gcc7 fortran found and used&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Finished installing calculix (ccx)&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="c1"># install gcc@7 with brew if we don&#39;t have it</span>
+    <span class="n">paths</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;/usr/local/Cellar/gcc@7/*&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">paths</span><span class="p">:</span>
+        <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;brew install gcc@7&quot;</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Installed gcc@7 (needed by calculix)&#39;</span><span class="p">)</span>
+        <span class="n">paths</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;/usr/local/Cellar/gcc@7/*&quot;</span><span class="p">)</span>
+    <span class="c1"># link gcc@7 from_path to to_path</span>
+    <span class="n">gcc7_from_path</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/lib/gcc/7&quot;</span> <span class="o">%</span> <span class="n">paths</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;ln -s </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">gcc7_from_path</span><span class="p">,</span> <span class="n">gcc7_to_path</span><span class="p">)</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">needed_fortran_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Install failed, libgfortran.4.dylib (a library that &quot;</span>
+                        <span class="s2">&quot;ccx needs) was NOT FOUND&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Finished installing calculix (ccx)&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="find_brew_binary_location"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.find_brew_binary_location">[docs]</a><span class="k">def</span> <span class="nf">find_brew_binary_location</span><span class="p">(</span><span class="n">package_folder</span><span class="p">,</span> <span class="n">search_string</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Finds the location of a binary installed by homebrew&quot;&quot;&quot;</span>
+    <span class="n">match_str</span> <span class="o">=</span> <span class="s1">&#39;/usr/local/Cellar/</span><span class="si">%s</span><span class="s1">/**/*</span><span class="si">%s</span><span class="s1">*&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">package_folder</span><span class="p">,</span>
+                                             <span class="n">search_string</span><span class="p">)</span>
+    <span class="n">paths</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">match_str</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">X_OK</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">path</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="mac_remove"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.mac_remove">[docs]</a><span class="k">def</span> <span class="nf">mac_remove</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Removes ccx and gmsh programs on mac, uses brew&quot;&quot;&quot;</span>
+    <span class="n">brew_installed</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s1">&#39;brew&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">brew_installed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Installing brew&#39;</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://raw.githubusercontent.com/Homebrew/install/master/install&#39;</span>
+        <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;/usr/bin/ruby -e </span><span class="se">\&quot;</span><span class="s2">$(curl -fsSL </span><span class="si">%s</span><span class="s2">)</span><span class="se">\&quot;</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">url</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;brew present&#39;</span><span class="p">)</span>
+    <span class="n">ccx_installed</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s1">&#39;ccx&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ccx_installed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;calculix (ccx) is not on your system&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Removing calculix (ccx)&#39;</span><span class="p">)</span>
+        <span class="c1"># remove link to ccx</span>
+        <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;rm /usr/local/bin/ccx&quot;</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Calculix (ccx) symlink was removed&#39;</span><span class="p">)</span>
+        <span class="c1"># remove binary</span>
+        <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;brew uninstall calculix-ccx&quot;</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Calculix (ccx) binary was removed&#39;</span><span class="p">)</span>
+        <span class="c1"># remove gcc7 link if it exists</span>
+        <span class="n">gcc7_sys_path</span> <span class="o">=</span> <span class="s2">&quot;/usr/local/opt/gcc/lib/gcc/7&quot;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">islink</span><span class="p">(</span><span class="n">gcc7_sys_path</span><span class="p">):</span>
+            <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;rm </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">gcc7_sys_path</span>
+            <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;gcc@7 symlink was removed (it was needed by calculix)&#39;</span><span class="p">)</span>
+        <span class="c1"># remove gcc@7 if it exists</span>
+        <span class="n">gcc7_brew_path</span> <span class="o">=</span> <span class="s2">&quot;/usr/local/Cellar/gcc@7&quot;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">gcc7_brew_path</span><span class="p">):</span>
+            <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;brew uninstall gcc@7&quot;</span>
+            <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;gcc@7 was removed (it was needed by calculix)&#39;</span><span class="p">)</span>
+
+    <span class="n">gmsh_installed</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s1">&#39;gmsh&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">gmsh_installed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;gmsh is not on your system&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Removing gmsh&#39;</span><span class="p">)</span>
+        <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;rm /usr/local/bin/gmsh&quot;</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">command_line</span> <span class="o">=</span> <span class="s2">&quot;rm -rf /Applications/Gmsh.app&quot;</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command_line</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="windows_add"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.windows_add">[docs]</a><span class="k">def</span> <span class="nf">windows_add</span><span class="p">(</span><span class="n">bitsize</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Adds ccx and gmsh programs on windows&quot;&quot;&quot;</span>
+    <span class="n">gmsh_installed</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s1">&#39;gmsh&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">gmsh_installed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Installing gmsh&#39;</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;http://gmsh.info/bin/Windows/&#39;</span>
+        <span class="n">win_add_gmsh</span><span class="p">(</span><span class="n">bitsize</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="s1">&#39;gmsh&#39;</span><span class="p">,</span> <span class="s1">&#39;3.0.5&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;gmsh present&#39;</span><span class="p">)</span>
+
+    <span class="n">ccx_installed</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s1">&#39;ccx&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ccx_installed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Installing calculix (ccx)&#39;</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://sourceforge.net/projects/calculixforwin/files/03.2/&#39;</span>
+        <span class="n">win_add_ccx</span><span class="p">(</span><span class="n">bitsize</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="s1">&#39;ccx&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;calculix (ccx) present&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="windows_remove"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.windows_remove">[docs]</a><span class="k">def</span> <span class="nf">windows_remove</span><span class="p">(</span><span class="n">bitsize</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Removes ccx and gmh programs on windows&quot;&quot;&quot;</span>
+    <span class="n">gmsh_installed</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s1">&#39;gmsh&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">gmsh_installed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;gmsh is not on your system&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Removing gmsh&#39;</span><span class="p">)</span>
+        <span class="n">env_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;VIRTUAL_ENV&#39;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exec_prefix</span><span class="p">)</span>
+        <span class="n">scripts_folder</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">\Scripts</span><span class="se">\\</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">env_path</span>
+        <span class="n">remove_like</span><span class="p">(</span><span class="n">scripts_folder</span><span class="p">,</span> <span class="s1">&#39;gmsh&#39;</span><span class="p">)</span>
+    <span class="n">ccx_installed</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s1">&#39;ccx&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ccx_installed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ccx is not on your system&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Removing ccx&#39;</span><span class="p">)</span>
+        <span class="n">env_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;VIRTUAL_ENV&#39;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exec_prefix</span><span class="p">)</span>
+        <span class="n">scripts_folder</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">\Scripts</span><span class="se">\\</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">env_path</span>
+        <span class="n">ccx_folder</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">ccx&#39;</span> <span class="o">%</span> <span class="n">scripts_folder</span>
+        <span class="n">add_remove_dll_links</span><span class="p">(</span><span class="n">ccx_folder</span><span class="p">,</span> <span class="n">scripts_folder</span><span class="p">,</span> <span class="n">add</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">remove_like</span><span class="p">(</span><span class="n">scripts_folder</span><span class="p">,</span> <span class="s1">&#39;ccx&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="remove_like"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.remove_like">[docs]</a><span class="k">def</span> <span class="nf">remove_like</span><span class="p">(</span><span class="n">search_path</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Searches for files or folders matching name in search_path and deletes them</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">match_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">*</span><span class="si">%s</span><span class="s1">*&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">search_path</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">paths</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">match_str</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Removing </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="win_add_gmsh"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.win_add_gmsh">[docs]</a><span class="k">def</span> <span class="nf">win_add_gmsh</span><span class="p">(</span><span class="n">bitsize</span><span class="p">,</span> <span class="n">binaries_url</span><span class="p">,</span> <span class="n">program_name</span><span class="p">,</span> <span class="n">version_str</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Installs a program from an apache server file listing page&quot;&quot;&quot;</span>
+    <span class="c1"># Needs the user agent header to exist for it to send back the content</span>
+    <span class="n">user_agent</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:56.0) &#39;</span>
+                  <span class="s1">&#39;Gecko/20100101 Firefox/56.0&#39;</span><span class="p">)</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;User-Agent&#39;</span><span class="p">:</span> <span class="n">user_agent</span><span class="p">}</span>
+
+    <span class="n">zipfile_regex</span> <span class="o">=</span> <span class="s1">&#39;.*</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">.*&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">program_name</span><span class="p">,</span> <span class="n">version_str</span><span class="p">)</span>
+    <span class="c1"># Windows 10 64 bit, gmsh version: Gmsh 3.0.7-git-35176e26 hangs</span>
+    <span class="n">zipfile_name</span> <span class="o">=</span> <span class="n">zipfile_by_bitsize</span><span class="p">(</span><span class="n">binaries_url</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="n">zipfile_regex</span><span class="p">,</span>
+                                      <span class="n">bitsize</span><span class="p">)</span>
+
+    <span class="n">zipfile_url</span> <span class="o">=</span> <span class="n">binaries_url</span> <span class="o">+</span> <span class="n">zipfile_name</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Downloading </span><span class="si">%s</span><span class="s1"> from </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">program_name</span><span class="p">,</span> <span class="n">zipfile_url</span><span class="p">))</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">zipfile_url</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">zipfile_name</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">out_file</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">iter_content</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">chunk</span><span class="p">:</span> <span class="c1"># filter out keep-alive new chunks</span>
+                <span class="n">out_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Unzipping </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">program_name</span><span class="p">)</span>
+    <span class="n">zip_ref</span> <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">zipfile_name</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">zipfile_folder_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">zip_ref</span><span class="o">.</span><span class="n">namelist</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">zip_ref</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">zip_ref</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Removing </span><span class="si">%s</span><span class="s1"> zipfile&#39;</span> <span class="o">%</span> <span class="n">program_name</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">zipfile_name</span><span class="p">)</span>
+
+    <span class="n">env_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;VIRTUAL_ENV&#39;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exec_prefix</span><span class="p">)</span>
+    <span class="n">folder_to</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">\Scripts\</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">env_path</span><span class="p">,</span> <span class="n">zipfile_folder_name</span><span class="p">)</span>
+    <span class="n">exe_loc</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">\</span><span class="si">%s</span><span class="s1">.exe&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">folder_to</span><span class="p">,</span> <span class="n">program_name</span><span class="p">)</span>
+    <span class="n">exe_link</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">\Scripts\</span><span class="si">%s</span><span class="s1">.exe&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">env_path</span><span class="p">,</span> <span class="n">program_name</span><span class="p">)</span>
+    <span class="n">paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">exe_link</span><span class="p">,</span> <span class="n">folder_to</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span>  <span class="n">paths</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Installing </span><span class="si">%s</span><span class="s1"> to </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">program_name</span><span class="p">,</span> <span class="n">folder_to</span><span class="p">))</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">zipfile_folder_name</span><span class="p">,</span> <span class="n">folder_to</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="n">exe_loc</span><span class="p">,</span> <span class="n">exe_link</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="zipfile_by_bitsize"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.zipfile_by_bitsize">[docs]</a><span class="k">def</span> <span class="nf">zipfile_by_bitsize</span><span class="p">(</span><span class="n">binaries_url</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="n">zipfile_regex</span><span class="p">,</span> <span class="n">bitsize</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the url linking to the correct zipfile&quot;&quot;&quot;</span>
+    <span class="c1"># this is used by ccx and gmsh</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">binaries_url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">text</span>
+    <span class="n">urls</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;href=[</span><span class="se">\&#39;</span><span class="s1">&quot;]?([^</span><span class="se">\&#39;</span><span class="s1">&quot; &gt;]+)&#39;</span><span class="p">,</span> <span class="n">html</span><span class="p">)</span>
+    <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">zipfile_regex</span><span class="p">)</span>
+    <span class="n">urls</span> <span class="o">=</span> <span class="p">[</span><span class="n">url</span> <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">urls</span> <span class="k">if</span> <span class="n">pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">url</span><span class="p">)]</span>
+    <span class="n">urls</span> <span class="o">=</span> <span class="n">urls</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+    <span class="n">url_choices</span> <span class="o">=</span> <span class="p">{</span><span class="mi">32</span><span class="p">:</span> <span class="n">urls</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">64</span><span class="p">:</span> <span class="n">urls</span><span class="p">[</span><span class="mi">1</span><span class="p">]}</span>
+    <span class="k">if</span> <span class="s1">&#39;win32&#39;</span> <span class="ow">in</span> <span class="n">urls</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">or</span> <span class="s1">&#39;Windows32&#39;</span> <span class="ow">in</span> <span class="n">urls</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">url_choices</span> <span class="o">=</span> <span class="p">{</span><span class="mi">32</span><span class="p">:</span> <span class="n">urls</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">64</span><span class="p">:</span> <span class="n">urls</span><span class="p">[</span><span class="mi">0</span><span class="p">]}</span>
+    <span class="k">return</span> <span class="n">url_choices</span><span class="p">[</span><span class="n">bitsize</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="href_from_link_text"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.href_from_link_text">[docs]</a><span class="k">def</span> <span class="nf">href_from_link_text</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="n">link_text</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the url for a link with link_text description, if this</span>
+<span class="sd">    function fails, it raises an error with tells the users a link</span>
+<span class="sd">    which creates an issue on the pycalculix repo</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">)</span>
+    <span class="n">link_text_pos</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">link_text</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">link_text_pos</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">issue_url</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;https://github.com/spacether/pycalculix/issues/new?title=&#39;</span>
+                     <span class="s1">&#39;CCX%20zip</span><span class="si">%20d</span><span class="s1">ownload</span><span class="si">%20f</span><span class="s1">ails</span><span class="si">%20o</span><span class="s1">n%20windows&amp;body=Please%2&#39;</span>
+                     <span class="s1">&#39;0update%20the</span><span class="si">%20i</span><span class="s1">nstaller.py</span><span class="si">%20g</span><span class="s1">et_direct_url</span><span class="si">%20f</span><span class="s1">unction.&#39;</span>
+                     <span class="s1">&#39;%20It%20no</span><span class="si">%20lo</span><span class="s1">nger%20works&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unable to download file because there was not a link &#39;</span>
+                         <span class="s1">&#39;with text=</span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s1"> on the page at url=</span><span class="si">%s</span><span class="se">\n</span><span class="s1">To fix this, &#39;</span>
+                         <span class="s1">&#39;please click the </span><span class="se">\&#39;</span><span class="s1">Submit new issue</span><span class="se">\&#39;</span><span class="s1"> button &#39;</span>
+                         <span class="s1">&#39;here:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">link_text</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">issue_url</span><span class="p">))</span>
+    <span class="n">href_pos</span> <span class="o">=</span> <span class="n">html</span><span class="p">[:</span><span class="n">link_text_pos</span><span class="p">]</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s1">&#39;href&#39;</span><span class="p">)</span>
+    <span class="n">first_char</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="n">href_pos</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+    <span class="n">last_char</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="n">first_char</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">html</span><span class="p">[</span><span class="n">first_char</span><span class="p">:</span><span class="n">last_char</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="get_direct_url"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.get_direct_url">[docs]</a><span class="k">def</span> <span class="nf">get_direct_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Gets the zip direct download link from the project download page&quot;&quot;&quot;</span>
+    <span class="n">direct_download_url</span> <span class="o">=</span> <span class="n">href_from_link_text</span><span class="p">(</span><span class="n">url</span><span class="p">,</span>
+                                              <span class="n">headers</span><span class="p">,</span>
+                                              <span class="s1">&#39;Problems Downloading&#39;</span><span class="p">)</span>
+    <span class="n">parsed_download_url</span> <span class="o">=</span> <span class="n">urlparse</span><span class="p">(</span><span class="n">direct_download_url</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">parsed_download_url</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;http&#39;</span><span class="p">,</span> <span class="s1">&#39;https&#39;</span><span class="p">]:</span>
+        <span class="c1"># url is relative, and is missing the scheme and netloc</span>
+        <span class="n">parsed_parent_url</span> <span class="o">=</span> <span class="n">urlparse</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="n">parsed_download_url</span> <span class="o">=</span> <span class="n">ParseResult</span><span class="p">(</span><span class="n">parsed_parent_url</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span>
+                                          <span class="n">parsed_parent_url</span><span class="o">.</span><span class="n">netloc</span><span class="p">,</span>
+                                          <span class="n">parsed_download_url</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+                                          <span class="n">parsed_download_url</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
+                                          <span class="n">parsed_download_url</span><span class="o">.</span><span class="n">query</span><span class="p">,</span>
+                                          <span class="n">parsed_download_url</span><span class="o">.</span><span class="n">fragment</span><span class="p">)</span>
+        <span class="n">direct_download_url</span> <span class="o">=</span> <span class="n">parsed_download_url</span><span class="o">.</span><span class="n">geturl</span><span class="p">()</span>
+    <span class="n">direct_download_url</span> <span class="o">=</span> <span class="n">href_from_link_text</span><span class="p">(</span><span class="n">direct_download_url</span><span class="p">,</span>
+                                              <span class="n">headers</span><span class="p">,</span>
+                                              <span class="s1">&#39;direct link&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">direct_download_url</span></div>
+
+<div class="viewcode-block" id="win_add_ccx"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.win_add_ccx">[docs]</a><span class="k">def</span> <span class="nf">win_add_ccx</span><span class="p">(</span><span class="n">bitsize</span><span class="p">,</span> <span class="n">binaries_url</span><span class="p">,</span> <span class="n">program_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Installs ccx on a windows computer&quot;&quot;&quot;</span>
+    <span class="c1"># Needs the user agent header to exist for it to send back the content</span>
+    <span class="n">user_agent</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:56.0) &#39;</span>
+                  <span class="s1">&#39;Gecko/20100101 Firefox/56.0&#39;</span><span class="p">)</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;User-Agent&#39;</span><span class="p">:</span> <span class="n">user_agent</span><span class="p">}</span>
+
+    <span class="n">zipfile_regex</span> <span class="o">=</span> <span class="s1">&#39;.+CL.+win.+zip/download$&#39;</span>
+    <span class="n">zipfile_webpage_url</span> <span class="o">=</span> <span class="n">zipfile_by_bitsize</span><span class="p">(</span><span class="n">binaries_url</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span>
+                                             <span class="n">zipfile_regex</span><span class="p">,</span> <span class="n">bitsize</span><span class="p">)</span>
+
+    <span class="n">zipfile_name</span> <span class="o">=</span> <span class="n">zipfile_webpage_url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">zipfile_url</span> <span class="o">=</span> <span class="n">get_direct_url</span><span class="p">(</span><span class="n">zipfile_webpage_url</span><span class="p">,</span> <span class="n">headers</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Downloading </span><span class="si">%s</span><span class="s1"> from </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">zipfile_name</span><span class="p">,</span> <span class="n">zipfile_url</span><span class="p">))</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">zipfile_url</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">zipfile_name</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">out_file</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">iter_content</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">chunk</span><span class="p">:</span> <span class="c1"># filter out keep-alive new chunks</span>
+                <span class="n">out_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Unzipping </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">program_name</span><span class="p">)</span>
+    <span class="n">zip_ref</span> <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">zipfile_name</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">zipfile_folder_name</span> <span class="o">=</span> <span class="n">zip_ref</span><span class="o">.</span><span class="n">namelist</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">zipfile_ccx_path</span> <span class="o">=</span> <span class="n">zipfile_folder_name</span> <span class="o">+</span> <span class="s1">&#39;/bin/ccx&#39;</span>
+    <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">zip_ref</span><span class="o">.</span><span class="n">namelist</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">zipfile_ccx_path</span> <span class="ow">in</span> <span class="n">member</span><span class="p">:</span>
+            <span class="n">zip_ref</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="n">member</span><span class="p">)</span>
+    <span class="n">zip_ref</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Removing </span><span class="si">%s</span><span class="s1"> zipfile&#39;</span> <span class="o">%</span> <span class="n">program_name</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">zipfile_name</span><span class="p">)</span>
+
+    <span class="n">folder_from</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="se">\\</span><span class="s1">bin</span><span class="se">\\</span><span class="s1">ccx&#39;</span> <span class="o">%</span> <span class="n">zipfile_folder_name</span>
+    <span class="n">env_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;VIRTUAL_ENV&#39;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exec_prefix</span><span class="p">)</span>
+    <span class="n">scripts_path</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">\Scripts&#39;</span> <span class="o">%</span> <span class="n">env_path</span>
+    <span class="n">folder_to</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">\</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">scripts_path</span><span class="p">,</span> <span class="n">program_name</span><span class="p">)</span>
+
+    <span class="n">binary_name</span> <span class="o">=</span> <span class="s1">&#39;ccx212.exe&#39;</span>
+    <span class="n">exe_loc</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">\</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">folder_to</span><span class="p">,</span> <span class="n">binary_name</span><span class="p">)</span>
+    <span class="n">exe_link</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">\</span><span class="si">%s</span><span class="s1">.exe&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">scripts_path</span><span class="p">,</span> <span class="n">program_name</span><span class="p">)</span>
+    <span class="n">paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">exe_link</span><span class="p">,</span> <span class="n">folder_to</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span>  <span class="n">paths</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Installing </span><span class="si">%s</span><span class="s1"> to </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">program_name</span><span class="p">,</span> <span class="n">folder_to</span><span class="p">))</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">folder_from</span><span class="p">,</span> <span class="n">folder_to</span><span class="p">)</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">zipfile_folder_name</span><span class="p">)</span>
+    <span class="n">add_remove_dll_links</span><span class="p">(</span><span class="n">folder_to</span><span class="p">,</span> <span class="n">scripts_path</span><span class="p">,</span> <span class="n">add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="n">exe_loc</span><span class="p">,</span> <span class="n">exe_link</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="add_remove_dll_links"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.installer.add_remove_dll_links">[docs]</a><span class="k">def</span> <span class="nf">add_remove_dll_links</span><span class="p">(</span><span class="n">folder_dlls</span><span class="p">,</span> <span class="n">folder_dll_links</span><span class="p">,</span> <span class="n">add</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Finds all dlls in folder_from and adds hard links to them in folder_to</span>
+<span class="sd">    Or removes the hard links if add=False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">match_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">\*.dll&#39;</span> <span class="o">%</span> <span class="n">folder_dlls</span>
+    <span class="n">dll_paths</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">match_str</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">dll_path</span> <span class="ow">in</span> <span class="n">dll_paths</span><span class="p">:</span>
+        <span class="n">dll_name</span> <span class="o">=</span> <span class="n">dll_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">dll_link_path</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">\</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">folder_dll_links</span><span class="p">,</span> <span class="n">dll_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">add</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="n">dll_path</span><span class="p">,</span> <span class="n">dll_link_path</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">dll_link_path</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">dll_link_path</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">pycalculix</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../pycalculix.html">pycalculix package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Justin Black.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

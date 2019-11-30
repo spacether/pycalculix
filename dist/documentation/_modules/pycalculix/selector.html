@@ -1,0 +1,653 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>pycalculix.selector &#8212; pycalculix 1.1.4 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pycalculix.selector</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module stores the Selector object</span>
+
+<span class="sd">Selector is used in FeaModel to store the model&#39;s selected set.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">partmodule</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">geometry</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">mesh</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">components</span>
+
+<div class="viewcode-block" id="Selector"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.selector.Selector">[docs]</a><span class="k">class</span> <span class="nc">Selector</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes a selector which stores the selected items in the FeaModel.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        feamodel (FeaModel): the parent FeaModel object</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        __fea (FeaModel): the parent FeaModel</span>
+<span class="sd">        __all (bool): If everything is selected all=True</span>
+<span class="sd">        parts (set): currently selected parts</span>
+<span class="sd">        areas (set): currently selected areas</span>
+<span class="sd">        lines (set): currently selected signed lines or arcs</span>
+<span class="sd">        points (set): currently selected points</span>
+<span class="sd">        elements (set): currently selected elements</span>
+<span class="sd">        faces (set): currently selected faces</span>
+<span class="sd">        nodes (set): currently selected nodes</span>
+<span class="sd">        __parts (set): internal storage set of parts</span>
+<span class="sd">        __areas (set): internal storage set of areas</span>
+<span class="sd">        __slines (set): internal storage set of signed lines and arcs</span>
+<span class="sd">        __points (set): internal storage set of points</span>
+<span class="sd">        __elements (set): internal storage set of elements</span>
+<span class="sd">        __faces (set): internal storage set of faces</span>
+<span class="sd">        __nodes (set): internal storage set of nodes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feamodel</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__fea</span> <span class="o">=</span> <span class="n">feamodel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__all</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__parts</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__areas</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__slines</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__points</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__elements</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__faces</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns selected parts.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__all</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fea</span><span class="o">.</span><span class="n">parts</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__parts</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">areas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns selected areas.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__all</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fea</span><span class="o">.</span><span class="n">areas</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__areas</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">lines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns selected signed lines or arcs.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__all</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fea</span><span class="o">.</span><span class="n">signlines</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__slines</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns selected points.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__all</span><span class="p">:</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="p">[</span><span class="n">pnt</span> <span class="k">for</span> <span class="n">pnt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fea</span><span class="o">.</span><span class="n">points</span> <span class="k">if</span> <span class="n">pnt</span><span class="o">.</span><span class="n">arc_center</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">points</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__points</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">elements</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns selected elements.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__all</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fea</span><span class="o">.</span><span class="n">elements</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__elements</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">faces</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns selected faces.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__all</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fea</span><span class="o">.</span><span class="n">faces</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__faces</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns selected nodes.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__all</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fea</span><span class="o">.</span><span class="n">nodes</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__nodes</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__add_items</span><span class="p">(</span><span class="n">inclusive</span><span class="p">,</span> <span class="n">items</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">parent_list</span><span class="p">,</span> <span class="n">this_set</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds an item to items if appropriate.</span>
+
+<span class="sd">        Helper function for select_above_all</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">inclusive</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="n">items</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parent_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">parent_list</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">parent_set</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">this_set</span><span class="p">):</span>
+                <span class="n">items</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__add_select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds items to the selection set.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">partmodule</span><span class="o">.</span><span class="n">Part</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__parts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Area</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__areas</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">SignLine</span><span class="p">)</span>
+                  <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">SignArc</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__slines</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__points</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">mesh</span><span class="o">.</span><span class="n">Element</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__elements</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">mesh</span><span class="o">.</span><span class="n">Face</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__faces</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">mesh</span><span class="o">.</span><span class="n">Node</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__nodes</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Selector.allsel_under"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.selector.Selector.allsel_under">[docs]</a>    <span class="k">def</span> <span class="nf">allsel_under</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sel_type</span><span class="p">,</span> <span class="n">full</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">byfaces</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Selects all progeny under current sel_type items.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sel_type (str): the item type to select under</span>
+
+<span class="sd">                - &#39;parts&#39;</span>
+<span class="sd">                - &#39;areas&#39;</span>
+<span class="sd">                - &#39;lines&#39;</span>
+<span class="sd">                - &#39;points&#39; (needs full=True)</span>
+<span class="sd">                - &#39;elements&#39;</span>
+<span class="sd">                - &#39;faces&#39;</span>
+
+<span class="sd">            full (bool): if False selects under one branch</span>
+
+<span class="sd">                - solid modeling branch: area-&gt;line-&gt;keypoints-&gt;points</span>
+<span class="sd">                - mesh branch: elements-&gt;faces-&gt;nodes</span>
+
+<span class="sd">                Cross branch connections:</span>
+<span class="sd">                - faces are under lines</span>
+<span class="sd">                - elements are under areas</span>
+<span class="sd">                - nodes are under lines and points</span>
+
+<span class="sd">                If True, selects all items connected to sub items:</span>
+<span class="sd">                - Parts:</span>
+
+<span class="sd">                    - Areas</span>
+<span class="sd">                    - Elements, element faces + element nodes</span>
+<span class="sd">                    - Lines, line points</span>
+
+<span class="sd">                - Areas:</span>
+
+<span class="sd">                    - Elements, element faces + element nodes</span>
+<span class="sd">                    - Lines, line points</span>
+
+<span class="sd">                -Lines:</span>
+
+<span class="sd">                    - Faces, nodes</span>
+<span class="sd">                    - byfaces=True: elements above faces</span>
+<span class="sd">                    - byfaces=False: elements above line nodes selected</span>
+
+<span class="sd">                -Points:</span>
+
+<span class="sd">                    - Nodes</span>
+<span class="sd">                    - byfaces=True: no elements selected</span>
+<span class="sd">                    - byfaces=False: elements above point nodes selected</span>
+
+<span class="sd">            byfaces (bool): If true, the child elements will only be selected</span>
+<span class="sd">                if a parent face was selected. If false just an element node</span>
+<span class="sd">                needs to be selected to select the element.</span>
+
+<span class="sd">                -This is only applicable when sel_type == &#39;lines&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sets</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;parts&#39;</span><span class="p">,</span> <span class="s1">&#39;areas&#39;</span><span class="p">,</span> <span class="s1">&#39;lines&#39;</span><span class="p">,</span> <span class="s1">&#39;points&#39;</span><span class="p">,</span> <span class="s1">&#39;elements&#39;</span><span class="p">,</span> <span class="s1">&#39;faces&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sel_type</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">sel_type</span> <span class="ow">in</span> <span class="n">sets</span><span class="p">:</span>
+                <span class="n">this_set</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sel_type</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">this_set</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">partmodule</span><span class="o">.</span><span class="n">Part</span><span class="p">):</span>
+                        <span class="c1"># areas</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">select_below_all</span><span class="p">(</span><span class="s1">&#39;parts&#39;</span><span class="p">)</span>
+                        <span class="c1"># slines</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">select_below_all</span><span class="p">(</span><span class="s1">&#39;areas&#39;</span><span class="p">)</span>
+                        <span class="c1"># points</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">select_below_all</span><span class="p">(</span><span class="s1">&#39;lines&#39;</span><span class="p">)</span>
+                        <span class="c1"># select related elements if full is on</span>
+                        <span class="k">if</span> <span class="n">full</span><span class="p">:</span>
+                            <span class="n">elements</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">elements</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">also</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                            <span class="c1"># sel faces</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">select_below_all</span><span class="p">(</span><span class="s1">&#39;elements&#39;</span><span class="p">)</span>
+                            <span class="c1"># sel nodes</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">select_below_all</span><span class="p">(</span><span class="s1">&#39;faces&#39;</span><span class="p">)</span>
+
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Area</span><span class="p">):</span>
+                        <span class="c1"># slines</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">select_below_all</span><span class="p">(</span><span class="s1">&#39;areas&#39;</span><span class="p">)</span>
+                        <span class="c1"># points</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">select_below_all</span><span class="p">(</span><span class="s1">&#39;lines&#39;</span><span class="p">)</span>
+                        <span class="c1"># select related elements if full is on</span>
+                        <span class="k">if</span> <span class="n">full</span><span class="p">:</span>
+                            <span class="n">elements</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">elements</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">also</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                            <span class="c1"># sel faces</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">select_below_all</span><span class="p">(</span><span class="s1">&#39;elements&#39;</span><span class="p">)</span>
+                            <span class="c1"># sel nodes</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">select_below_all</span><span class="p">(</span><span class="s1">&#39;faces&#39;</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">SignLine</span><span class="p">)</span>
+                          <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">SignArc</span><span class="p">)):</span>
+                        <span class="c1"># sel points</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">select_below_all</span><span class="p">(</span><span class="s1">&#39;lines&#39;</span><span class="p">)</span>
+                        <span class="c1"># select related faces, nodes, and elements</span>
+                        <span class="k">if</span> <span class="n">full</span><span class="p">:</span>
+                            <span class="c1"># select faces</span>
+                            <span class="n">faces</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">faces</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">faces</span><span class="p">,</span> <span class="n">also</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                            <span class="c1"># sel nodes</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">select_below_all</span><span class="p">(</span><span class="s1">&#39;faces&#39;</span><span class="p">)</span>
+                            <span class="c1"># byfaces logic</span>
+                            <span class="k">if</span> <span class="n">byfaces</span><span class="p">:</span>
+                                <span class="c1"># sel elements above faces</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">select_above_all</span><span class="p">(</span><span class="s1">&#39;faces&#39;</span><span class="p">,</span> <span class="n">inclusive</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="c1"># select elements connected to nodes</span>
+                                <span class="n">elements</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+                                <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+                                    <span class="n">elements</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">elements</span><span class="p">)</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">also</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">full</span><span class="p">:</span>
+                            <span class="c1"># sel nodes and elements</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">nodes</span><span class="p">,</span> <span class="n">also</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">byfaces</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                                <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">elements</span><span class="p">,</span> <span class="n">also</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;The passed sel_type must be a valid type.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;The passed sel_type must be a string!&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Selector.select_below"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.selector.Selector.select_below">[docs]</a>    <span class="k">def</span> <span class="nf">select_below</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Selects children below currently selected items.</span>
+
+<span class="sd">        Only one set must be selected.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sets</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;parts&#39;</span><span class="p">,</span> <span class="s1">&#39;areas&#39;</span><span class="p">,</span> <span class="s1">&#39;lines&#39;</span><span class="p">,</span> <span class="s1">&#39;points&#39;</span><span class="p">,</span> <span class="s1">&#39;elements&#39;</span><span class="p">,</span> <span class="s1">&#39;faces&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;nodes&#39;</span><span class="p">]</span>
+        <span class="n">sel_sets</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">set_name</span> <span class="ow">in</span> <span class="n">sets</span><span class="p">:</span>
+            <span class="n">this_set</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">set_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">this_set</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">sel_sets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">set_name</span><span class="p">)</span>
+        <span class="c1"># check if number of visible sets is one</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel_sets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel_sets</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Only one set must be selected to use this function.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel_sets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">sel_type</span> <span class="o">=</span> <span class="n">sel_sets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;nodes&#39;</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;One can&#39;t select anything below nodes!&#39;&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">select_below_all</span><span class="p">(</span><span class="n">sel_type</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Selector.select_below_all"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.selector.Selector.select_below_all">[docs]</a>    <span class="k">def</span> <span class="nf">select_below_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sel_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Selects children below all currently selected items of sel_type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sel_type (str): type to select items below</span>
+
+<span class="sd">                - &#39;parts&#39;: selects areas</span>
+<span class="sd">                - &#39;areas&#39;: selects lines (type SignLine and SignArc)</span>
+<span class="sd">                - &#39;lines&#39;: selects points</span>
+<span class="sd">                - &#39;elements&#39;: selects faces</span>
+<span class="sd">                - &#39;faces&#39;: selects nodes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;parts&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">area</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">areas</span><span class="p">:</span>
+                    <span class="n">items</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">area</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;areas&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">area</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">areas</span><span class="p">:</span>
+                <span class="n">items</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">area</span><span class="o">.</span><span class="n">signlines</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;lines&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">sline</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="p">:</span>
+                <span class="n">items</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sline</span><span class="o">.</span><span class="n">line</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;elements&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
+                <span class="n">items</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">faces</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;faces&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">faces</span><span class="p">:</span>
+                <span class="n">items</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">face</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__add_select</span><span class="p">(</span><span class="n">items</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Selector.select_above"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.selector.Selector.select_above">[docs]</a>    <span class="k">def</span> <span class="nf">select_above</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inclusive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Selects parents above currently selected items.</span>
+
+<span class="sd">        Only one set must be selected.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sets</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;parts&#39;</span><span class="p">,</span> <span class="s1">&#39;areas&#39;</span><span class="p">,</span> <span class="s1">&#39;lines&#39;</span><span class="p">,</span> <span class="s1">&#39;points&#39;</span><span class="p">,</span> <span class="s1">&#39;elements&#39;</span><span class="p">,</span> <span class="s1">&#39;faces&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;nodes&#39;</span><span class="p">]</span>
+        <span class="n">sel_sets</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">set_name</span> <span class="ow">in</span> <span class="n">sets</span><span class="p">:</span>
+            <span class="n">this_set</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">set_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">this_set</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">sel_sets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">set_name</span><span class="p">)</span>
+        <span class="c1"># check if number of visible sets is one</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel_sets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel_sets</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Only one set must be selected to use this function.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">sel_sets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">sel_type</span> <span class="o">=</span> <span class="n">sel_sets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;parts&#39;</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;One can&#39;t select anything above parts!&#39;&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">select_above_all</span><span class="p">(</span><span class="n">sel_type</span><span class="p">,</span> <span class="n">inclusive</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Selector.select_above_all"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.selector.Selector.select_above_all">[docs]</a>    <span class="k">def</span> <span class="nf">select_above_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sel_type</span><span class="p">,</span> <span class="n">inclusive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Selects parents above all currently selected items of sel_type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sel_type (str): type to select items above</span>
+
+<span class="sd">                - &#39;areas&#39;: selects parts</span>
+<span class="sd">                - &#39;lines&#39;: selects areas</span>
+<span class="sd">                - &#39;points&#39;: selects signlines or signarcs</span>
+<span class="sd">                - &#39;faces&#39;: selects elements</span>
+<span class="sd">                - &#39;nodes&#39;: selects faces</span>
+
+<span class="sd">            inclusive (bool): if True, all child entities must be selected for</span>
+<span class="sd">                the parent to be selected. If false all parents connected to</span>
+<span class="sd">                the child are selected. Exampes:</span>
+
+<span class="sd">                - &#39;areas&#39; + True: all part areas must be selected to select part</span>
+<span class="sd">                - &#39;areas&#39; + False: parts with selected areas in them are selected</span>
+<span class="sd">                - &#39;lines&#39; + True: all lines must be selected to select area</span>
+<span class="sd">                - &#39;lines&#39; + False: areas with selected lines in them are selected</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;areas&#39;</span><span class="p">:</span>
+            <span class="n">this_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">areas</span>
+            <span class="k">for</span> <span class="n">area</span> <span class="ow">in</span> <span class="n">this_set</span><span class="p">:</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="n">area</span><span class="o">.</span><span class="n">parent</span>
+                <span class="n">parent_list</span> <span class="o">=</span> <span class="n">area</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">areas</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__add_items</span><span class="p">(</span><span class="n">inclusive</span><span class="p">,</span> <span class="n">items</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">parent_list</span><span class="p">,</span> <span class="n">this_set</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;lines&#39;</span><span class="p">:</span>
+            <span class="n">this_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines</span>
+            <span class="k">for</span> <span class="n">sline</span> <span class="ow">in</span> <span class="n">this_set</span><span class="p">:</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="n">sline</span><span class="o">.</span><span class="n">parent</span>
+                <span class="n">parent_list</span> <span class="o">=</span> <span class="n">sline</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">signlines</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__add_items</span><span class="p">(</span><span class="n">inclusive</span><span class="p">,</span> <span class="n">items</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">parent_list</span><span class="p">,</span> <span class="n">this_set</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;points&#39;</span><span class="p">:</span>
+            <span class="n">this_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">this_set</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">parent_line</span> <span class="ow">in</span> <span class="n">point</span><span class="o">.</span><span class="n">lines</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">sline</span> <span class="ow">in</span> <span class="n">parent_line</span><span class="o">.</span><span class="n">signlines</span><span class="p">:</span>
+                        <span class="n">item</span> <span class="o">=</span> <span class="n">sline</span>
+                        <span class="n">parent_list</span> <span class="o">=</span> <span class="n">sline</span><span class="o">.</span><span class="n">points</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">__add_items</span><span class="p">(</span><span class="n">inclusive</span><span class="p">,</span> <span class="n">items</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">parent_list</span><span class="p">,</span>
+                                         <span class="n">this_set</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;faces&#39;</span><span class="p">:</span>
+            <span class="n">this_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">faces</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="n">this_set</span><span class="p">:</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="n">face</span><span class="o">.</span><span class="n">element</span>
+                <span class="n">parent_list</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">faces</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__add_items</span><span class="p">(</span><span class="n">inclusive</span><span class="p">,</span> <span class="n">items</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">parent_list</span><span class="p">,</span> <span class="n">this_set</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;nodes&#39;</span><span class="p">:</span>
+            <span class="n">this_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">this_set</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">faces</span><span class="p">:</span>
+                    <span class="n">item</span> <span class="o">=</span> <span class="n">face</span>
+                    <span class="n">parent_list</span> <span class="o">=</span> <span class="n">face</span><span class="o">.</span><span class="n">nodes</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__add_items</span><span class="p">(</span><span class="n">inclusive</span><span class="p">,</span> <span class="n">items</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">parent_list</span><span class="p">,</span>
+                                     <span class="n">this_set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__add_select</span><span class="p">(</span><span class="n">items</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Selector.allselect"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.selector.Selector.allselect">[docs]</a>    <span class="k">def</span> <span class="nf">allselect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Selects all items.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">items</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Selector.select"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.selector.Selector.select">[docs]</a>    <span class="k">def</span> <span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">also</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Selects an item or a list of items.</span>
+
+<span class="sd">        Agrs:</span>
+<span class="sd">            items (str or item or list): item(s) to select</span>
+<span class="sd">            also (bool): whether to add the items to the current selection set</span>
+
+<span class="sd">                - True: add the items to the current selection set</span>
+<span class="sd">                - False: only select the passed items</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># empty the selection set if also == False</span>
+        <span class="k">if</span> <span class="n">items</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;You must pass in an item or item(s)!&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">also</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">select_none</span><span class="p">()</span>
+            <span class="c1"># Turn on &#39;all&#39; mode if items == None, otherwise, get the items</span>
+            <span class="k">if</span> <span class="n">items</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__all</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fea</span><span class="o">.</span><span class="n">get_items</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+                    <span class="c1"># if a component was passed, get its child items instead</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">components</span><span class="o">.</span><span class="n">Component</span><span class="p">):</span>
+                        <span class="n">real_items</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span>
+                        <span class="n">items</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">real_items</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__add_select</span><span class="p">(</span><span class="n">items</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Selector.select_all"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.selector.Selector.select_all">[docs]</a>    <span class="k">def</span> <span class="nf">select_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sel_type</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">also</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Selects all items of sel_type from the full feamodel.</span>
+
+<span class="sd">        All items currently selected items are removed from the selection set</span>
+<span class="sd">        before the all set is selected.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sel_type (str): the items to select</span>
+
+<span class="sd">                - &#39;all&#39;</span>
+<span class="sd">                - &#39;parts&#39;</span>
+<span class="sd">                - &#39;areas&#39;</span>
+<span class="sd">                - &#39;lines&#39;</span>
+<span class="sd">                - &#39;points&#39;</span>
+<span class="sd">                - &#39;elements&#39;</span>
+<span class="sd">                - &#39;faces&#39;</span>
+<span class="sd">                - &#39;nodes&#39;</span>
+<span class="sd">            also (bool): if False, empties the selection set before selecting</span>
+<span class="sd">                all items, if True adds new items to the current set</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">also</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__all</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">select_none</span><span class="p">()</span>
+        <span class="c1"># now select all items of type</span>
+        <span class="k">if</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">select</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;parts&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__add_select</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__fea</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;areas&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__add_select</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__fea</span><span class="o">.</span><span class="n">areas</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;lines&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__add_select</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__fea</span><span class="o">.</span><span class="n">signlines</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;points&#39;</span><span class="p">:</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="p">[</span><span class="n">pnt</span> <span class="k">for</span> <span class="n">pnt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fea</span><span class="o">.</span><span class="n">points</span> <span class="k">if</span> <span class="n">pnt</span><span class="o">.</span><span class="n">arc_center</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__add_select</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;elements&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__add_select</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__fea</span><span class="o">.</span><span class="n">elements</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;faces&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__add_select</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__fea</span><span class="o">.</span><span class="n">faces</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;nodes&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__add_select</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__fea</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Selector.deselect"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.selector.Selector.deselect">[docs]</a>    <span class="k">def</span> <span class="nf">deselect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes the passed item or items from the selection set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__all</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">partmodule</span><span class="o">.</span><span class="n">Part</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__parts</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Area</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__areas</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">SignLine</span><span class="p">)</span>
+                  <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">SignArc</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__slines</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__points</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">mesh</span><span class="o">.</span><span class="n">Element</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__elements</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">mesh</span><span class="o">.</span><span class="n">Face</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__faces</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">mesh</span><span class="o">.</span><span class="n">Node</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__nodes</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">item</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Selector.deselect_all"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.selector.Selector.deselect_all">[docs]</a>    <span class="k">def</span> <span class="nf">deselect_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sel_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deselects all items of sel_type.</span>
+
+<span class="sd">        All items currently selected items are removed from the selection set</span>
+<span class="sd">        before the all set is selected.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sel_type (str): the items to select</span>
+
+<span class="sd">                - &#39;all&#39;</span>
+<span class="sd">                - &#39;parts&#39;</span>
+<span class="sd">                - &#39;areas&#39;</span>
+<span class="sd">                - &#39;lines&#39;</span>
+<span class="sd">                - &#39;points&#39;</span>
+<span class="sd">                - &#39;elements&#39;</span>
+<span class="sd">                - &#39;faces&#39;</span>
+<span class="sd">                - &#39;nodes&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__all</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__areas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">areas</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__slines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__elements</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__faces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">faces</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__all</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">select_none</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;parts&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__parts</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;areas&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__areas</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;lines&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__slines</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;points&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__points</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;elements&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__elements</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;faces&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__faces</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">sel_type</span> <span class="o">==</span> <span class="s1">&#39;nodes&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Selector.select_none"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.selector.Selector.select_none">[docs]</a>    <span class="k">def</span> <span class="nf">select_none</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Empties out the selection object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__all</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__parts</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__areas</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__slines</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__points</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__elements</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__faces</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Selector.print_summary"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.selector.Selector.print_summary">[docs]</a>    <span class="k">def</span> <span class="nf">print_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Prints a summary of the number so items selected in each sel_type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sets</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;parts&#39;</span><span class="p">,</span> <span class="s1">&#39;areas&#39;</span><span class="p">,</span> <span class="s1">&#39;lines&#39;</span><span class="p">,</span> <span class="s1">&#39;points&#39;</span><span class="p">,</span> <span class="s1">&#39;elements&#39;</span><span class="p">,</span> <span class="s1">&#39;faces&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;nodes&#39;</span><span class="p">]</span>
+        <span class="n">spacer</span> <span class="o">=</span> <span class="s1">&#39;----------------------------------&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">spacer</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;View&#39;s currently selected items:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">sel_type</span> <span class="ow">in</span> <span class="n">sets</span><span class="p">:</span>
+            <span class="n">items</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sel_type</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39; </span><span class="si">%s</span><span class="s1">: </span><span class="si">%i</span><span class="s1"> selected&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sel_type</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">spacer</span><span class="p">)</span></div></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">pycalculix</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../pycalculix.html">pycalculix package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Justin Black.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
