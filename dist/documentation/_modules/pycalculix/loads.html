@@ -1,0 +1,285 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>pycalculix.loads &#8212; pycalculix 1.1.4 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pycalculix.loads</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module stores load classes.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">pi</span>
+
+<div class="viewcode-block" id="ConstLoad"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.loads.ConstLoad">[docs]</a><span class="k">class</span> <span class="nc">ConstLoad</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes a load. Many types are supported.</span>
+
+<span class="sd">    Possible load types:</span>
+<span class="sd">        - forces</span>
+<span class="sd">        - displacements</span>
+<span class="sd">        - thickness (on nodes)</span>
+<span class="sd">        - matl (on elements)</span>
+<span class="sd">        - pressure (or stress on faces)</span>
+<span class="sd">        - gravity (on elements)</span>
+<span class="sd">        - rotation about an axis (on elements)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ltype (string): load type:</span>
+
+<span class="sd">            - &#39;fx&#39;,&#39;fy&#39;,&#39;fz&#39;: force on each axis</span>
+<span class="sd">            - &#39;ux&#39;,&#39;uy&#39;,&#39;uz&#39;: displacement on each axis</span>
+<span class="sd">            - &#39;nodal_thickness&#39;: thickness on element nodes</span>
+<span class="sd">            - &#39;matl&#39;: matl on elements</span>
+<span class="sd">            - &#39;press&#39;: pressure, + is tension, - is compresion</span>
+<span class="sd">            - &#39;gravity&#39;: gravity in x axis direction, - goes towards y axis</span>
+<span class="sd">            - &#39;radps&#39;: radians per second rotation</span>
+<span class="sd">            - &#39;rpm&#39;: rotations per minute rotation</span>
+
+<span class="sd">        comp (Component): component that the load is applied to</span>
+<span class="sd">        val (double or Matl): value of the load</span>
+<span class="sd">            Matl is needed when setting material loads</span>
+<span class="sd">            otherwise a double value is used to describe the load</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ltype</span><span class="p">,</span> <span class="n">comp</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ltype</span> <span class="o">=</span> <span class="n">ltype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comp</span> <span class="o">=</span> <span class="n">comp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="n">val</span>
+
+<div class="viewcode-block" id="ConstLoad.get_list"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.loads.ConstLoad.get_list">[docs]</a>    <span class="k">def</span> <span class="nf">get_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of [item, val] for plotting.&quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ltype</span> <span class="o">==</span> <span class="s1">&#39;press&#39;</span><span class="p">:</span>
+            <span class="c1"># pressure</span>
+            <span class="n">faces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="n">faces</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">face</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ltype</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ux&#39;</span><span class="p">,</span> <span class="s1">&#39;uy&#39;</span><span class="p">,</span> <span class="s1">&#39;uz&#39;</span><span class="p">]:</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span>
+            <span class="n">load_dict</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ltype</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">node</span><span class="p">,</span> <span class="n">load_dict</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+<div class="viewcode-block" id="ConstLoad.ccx"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.loads.ConstLoad.ccx">[docs]</a>    <span class="k">def</span> <span class="nf">ccx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes a load for Calculix ccx solver.</span>
+
+<span class="sd">        Returns a list strings, where each item is a line to write</span>
+<span class="sd">        to a Calculix .inp text file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">cname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ltype</span> <span class="o">==</span> <span class="s1">&#39;press&#39;</span><span class="p">:</span>
+            <span class="c1"># pressure</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;** Pressure on component: &#39;</span><span class="o">+</span><span class="n">cname</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*DLOAD&#39;</span><span class="p">)</span>
+            <span class="n">faces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="n">faces</span><span class="p">:</span>
+                <span class="n">myline</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%i</span><span class="s1">,P</span><span class="si">%i</span><span class="s1">,</span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">face</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">face</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">)</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">myline</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ltype</span> <span class="o">==</span> <span class="s1">&#39;gravity&#39;</span><span class="p">:</span>
+            <span class="c1"># gravity</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;** Gravity on component: &#39;</span><span class="o">+</span><span class="n">cname</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*DLOAD&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">,GRAV,</span><span class="si">%f</span><span class="s1">,-1.,0.,0.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ltype</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;u&#39;</span><span class="p">:</span>
+            <span class="c1"># displacement</span>
+            <span class="n">axis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ltype</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">anum</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">}</span>
+            <span class="n">axis</span> <span class="o">=</span> <span class="n">anum</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*BOUNDARY&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">,</span><span class="si">%i</span><span class="s1">,</span><span class="si">%i</span><span class="s1">,</span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cname</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ltype</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;f&#39;</span><span class="p">:</span>
+            <span class="c1"># force</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;** Force on component: &#39;</span><span class="o">+</span><span class="n">cname</span><span class="p">)</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comp</span><span class="o">.</span><span class="n">items</span><span class="p">)</span>
+            <span class="n">fval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="o">/</span><span class="n">nodes</span>
+            <span class="n">axis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ltype</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">anum</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">}</span>
+            <span class="n">axis</span> <span class="o">=</span> <span class="n">anum</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*CLOAD&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">,</span><span class="si">%i</span><span class="s1">,</span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cname</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">fval</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ltype</span> <span class="o">==</span> <span class="s1">&#39;nodal_thickness&#39;</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*NODAL THICKNESS&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">, </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ltype</span> <span class="o">==</span> <span class="s1">&#39;radps&#39;</span><span class="p">:</span>
+            <span class="n">radsq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="o">**</span><span class="mi">2</span> <span class="c1"># square the speed in radians per sec</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;** Rotation force on component: &#39;</span><span class="o">+</span><span class="n">cname</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;** Speed = &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; radians/sec&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*DLOAD&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">,CENTRIF,</span><span class="si">%f</span><span class="s1">,0.,0.,0.,0.,1.,0.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cname</span><span class="p">,</span> <span class="n">radsq</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ltype</span> <span class="o">==</span> <span class="s1">&#39;rpm&#39;</span><span class="p">:</span>
+            <span class="n">rad</span> <span class="o">=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="o">/</span><span class="mf">60.0</span><span class="p">)</span>
+            <span class="n">radsq</span> <span class="o">=</span> <span class="n">rad</span><span class="o">**</span><span class="mi">2</span> <span class="c1"># square the speed in radians per sec</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;** Rotation force on component: &#39;</span><span class="o">+</span><span class="n">cname</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;** Speed = &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; rotations/minute&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*DLOAD&#39;</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">,CENTRIF,</span><span class="si">%f</span><span class="s1">,0.,0.,0.,0.,1.,0.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cname</span><span class="p">,</span> <span class="n">radsq</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ltype</span> <span class="o">==</span> <span class="s1">&#39;matl&#39;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*SOLID SECTION,ELSET=</span><span class="si">%s</span><span class="s1">,MATERIAL=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                       <span class="p">(</span><span class="n">cname</span><span class="p">,</span> <span class="n">mat</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">res</span></div></div>
+
+
+<div class="viewcode-block" id="LinearLoad"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.loads.LinearLoad">[docs]</a><span class="k">class</span> <span class="nc">LinearLoad</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes a load which varies depending on x, y, or z location.</span>
+
+<span class="sd">    Load Equation:</span>
+<span class="sd">        Load(x) = const + mult*(xo - x)</span>
+
+<span class="sd">    This load is used to set water pressure, where p = po + rho*g*(xo - x)</span>
+<span class="sd">    For water pressure this becomes:</span>
+
+<span class="sd">        - P(x) = po + (rho*g)*(xo-x)</span>
+<span class="sd">        - P(x) = po + mult*(xo-x)</span>
+<span class="sd">        - g is positive, xo &gt; x</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ltype (str): load type &#39;press_fluid&#39; is the only valid option</span>
+<span class="sd">        comp (Component): component that the load acts on</span>
+<span class="sd">        const (float): constant term in load equation</span>
+<span class="sd">        mult (float): mult term in the load equation</span>
+<span class="sd">        xo (float): xo term in the load equation</span>
+<span class="sd">        axis (str): axis that the load depends on</span>
+<span class="sd">            &#39;x&#39; or &#39;y&#39; are valid options</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ltype</span><span class="p">,</span> <span class="n">comp</span><span class="p">,</span> <span class="n">const</span><span class="p">,</span> <span class="n">mult</span><span class="p">,</span> <span class="n">xo</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ltype</span> <span class="o">=</span> <span class="n">ltype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comp</span> <span class="o">=</span> <span class="n">comp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">const</span> <span class="o">=</span> <span class="n">const</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mult</span> <span class="o">=</span> <span class="n">mult</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xo</span> <span class="o">=</span> <span class="n">xo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axis</span> <span class="o">=</span> <span class="n">axis</span>
+
+<div class="viewcode-block" id="LinearLoad.get_val"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.loads.LinearLoad.get_val">[docs]</a>    <span class="k">def</span> <span class="nf">get_val</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the load function value at the given location.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            xval (float): the location where we want to find the load</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">const</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xo</span> <span class="o">-</span> <span class="n">xval</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">mult</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+<div class="viewcode-block" id="LinearLoad.get_list"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.loads.LinearLoad.get_list">[docs]</a>    <span class="k">def</span> <span class="nf">get_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of [item, val] for plotting.&quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">faces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="n">faces</span><span class="p">:</span>
+            <span class="n">xvals</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">face</span><span class="o">.</span><span class="n">nodes</span><span class="p">]</span>
+            <span class="n">xavg</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">xvals</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">xvals</span><span class="p">)</span>
+            <span class="n">pval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_val</span><span class="p">(</span><span class="n">xavg</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">face</span><span class="p">,</span> <span class="n">pval</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+<div class="viewcode-block" id="LinearLoad.ccx"><a class="viewcode-back" href="../../pycalculix.html#pycalculix.loads.LinearLoad.ccx">[docs]</a>    <span class="k">def</span> <span class="nf">ccx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes a load for Calculix ccx solver.</span>
+
+<span class="sd">        Returns a list strings, where each item is a line to write</span>
+<span class="sd">        to a Calculix .inp text file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;** Fluid pressure on component: &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">comp</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">faces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="n">faces</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;*DLOAD&#39;</span><span class="p">)</span>
+            <span class="n">xvals</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">face</span><span class="o">.</span><span class="n">nodes</span><span class="p">]</span>
+            <span class="n">xavg</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">xvals</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">xvals</span><span class="p">)</span>
+            <span class="n">pval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_val</span><span class="p">(</span><span class="n">xavg</span><span class="p">)</span>
+            <span class="n">myline</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%i</span><span class="s1">,P</span><span class="si">%i</span><span class="s1">,</span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">face</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">face</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">pval</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">myline</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">pycalculix</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../pycalculix.html">pycalculix package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Justin Black.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
