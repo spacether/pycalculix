@@ -48,7 +48,7 @@ Useful applications of Pycalculix:
 
 Notes:
 ~~~~~~~~~~~~~~~~~~~~~~
-I build a chunker in python which tries to cut big areas (> 5 sides) which
+I built a chunker in python which tries to cut big areas (> 5 sides) which
 cgx can't mesh into smaller areas (<= 5 sides) which are meshable in cgx.
 The chunker may not always be able to cut areas correctly.
 
