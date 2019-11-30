@@ -31,49 +31,57 @@ setup(
         "Topic :: Scientific/Engineering :: Physics",
         "Topic :: Scientific/Engineering"],
     long_description = """\
-'''
-Python 3 library to automate and build finite element analysis (FEA) models in Calculix.
-----------------------------------------------------------------------------------------
-Meshing uses Calculix or GMSH.
-Website: http://justinablack.com/pycalculix/
-Source Code: https://github.com/spacether/pycalculix
-Documentation: https://pythonhosted.org/pycalculix/
+Python 3 library to automate and build finite element analysis (FEA) models in Calculix
+================================================================================================
+
+* Meshing uses Calculix or GMSH
+* Website: http://justinablack.com/pycalculix/
+* Source Code: https://github.com/spacether/pycalculix
+* Documentation: https://pythonhosted.org/pycalculix/
 
 Useful applications of Pycalculix:
--Trade studies for plane stress, plane strain, or axisymmetric parts
--Quick Kt analysis of 2D geometry
--Learning finite element analyis (FEA) and Python
+-----------------------------------
+
+* Trade studies for plane stress, plane strain, or axisymmetric parts
+* Quick Kt analysis of 2D geometry
+* Learning finite element analyis (FEA) and Python
 
 Notes:
+~~~~~~~~~~~~~~~~~~~~~~
 I build a chunker in python which tries to cut big areas (> 5 sides) which
 cgx can't mesh into smaller areas (<= 5 sides) which are meshable in cgx.
 The chunker may not always be able to cut areas correctly.
 
 Elements Supported:
+~~~~~~~~~~~~~~~~~~~~~~
 Axisymmetric, plane stress, and plane strain elements are supported.
 First and second order triangles and quadrilaterals are supported.
-  First order elements only have corner nodes
-  Second order elements have corner and mid-side nodes
+
+* First order elements only have corner nodes
+* Second order elements have corner and mid-side nodes
+
 Second order elements produce more accurate results
 Setting element divisions on lines is supported
 
 Geometry Building:
+~~~~~~~~~~~~~~~~~~~~~~
 One can build separate parts made of points, lines, arcs, and areas.
 One can draw a part made of straight lines, then smooth out corners by adding
 blends/fillets with the part method: part.fillet_lines(L1, L2, arc_radius)
 The new fillet will be tangent to both adjacent lines.
 
 Loading:
-Force loading
-Constant pressure
-Linearly varying pressure (water pressure)
-Gravity
-Rotational speed forces
-Displacement constraints are supported
-Loads are stored on geometry primitives (points lines etc) and can be applied
-before or after meshing.
+~~~~~~~~~~~~~~~~~~~~~~
+* Force loading
+* Constant pressure
+* Linearly varying pressure (water pressure)
+* Gravity
+* Rotational speed forces
+* Displacement constraints are supported
+* Loads are stored on geometry primitives (points lines etc) and can be applied before or after meshing
 
 Examples:
+~~~~~~~~~~~~~~~~~~~~~~
 https://github.com/spacether/pycalculix/tree/master/examples
 """
 )

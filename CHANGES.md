@@ -1,5 +1,8 @@
 ## Change Log
 
+#### 1.1.4
+- Updates setup.py long_description to reStructuredText
+
 #### 1.1.3
 - Removes gmsh exerimental flag Mesh.CharacteristicLengthFromCurvature
 - Fixes typo in geometry.py
