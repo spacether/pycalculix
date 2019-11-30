@@ -1,7 +1,8 @@
 ## Change Log
 
-#### 1.1.3 (Unreleased)
+#### 1.1.3
 - Removes gmsh exerimental flag Mesh.CharacteristicLengthFromCurvature
+- Fixes typo in geometry.py
 
 #### 1.1.2
 - Sets part.left/right/top/bottom using geometry.ACC constant, tests added
