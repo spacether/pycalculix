@@ -1018,7 +1018,8 @@ class ResultsFile(object):
         mode_by_name = {'DISP': 'displ',
                         'STRESS': 'stress',
                         'TOSTRAIN': 'strain',
-                        'FORC': 'force'}
+                        'FORC': 'force',
+                        'ERROR': 'error'}
         mode = mode_by_name[name]
         print('Reading '+mode+' storing: '+
               ','.join(base_classes.RESFIELDS[mode]))
@@ -1073,6 +1074,16 @@ class ResultsFile(object):
         node, f_x, f_y, f_z = self.__get_vals(rfstr, line)[1:]
         labs = base_classes.RESFIELDS[mode]
         vals = [f_x, f_y, f_z]
+        adict = self.__results[time]['node'][node]
+        for (label, val) in zip(labs, vals):
+            adict[label] = val
+
+    def _save_node_error(self, line, rfstr, time, mode='error'):
+        """Saves node error"""
+        # [key, node, error]
+        node, error = self.__get_vals(rfstr, line)[1:]
+        labs = base_classes.RESFIELDS[mode]
+        vals = [error]
         adict = self.__results[time]['node'][node]
         for (label, val) in zip(labs, vals):
             adict[label] = val
