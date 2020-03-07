@@ -46,7 +46,13 @@ class TestExamples(unittest.TestCase):
                 for line in ex.output.splitlines():
                     print(line)
             raise ex
-
+            
+    def example_load_results(self, file_name):
+        proj_name = os.path.join('examples', file_name)
+        model = pyc.FeaModel(proj_name)
+        prob = pyc.Problem(model, 'struct')
+        prob.rfile.load()
+        
     def test_compr_rotor(self, file_name='compr-rotor.py'):
         self.example_tester(file_name)
 
@@ -64,6 +70,9 @@ class TestExamples(unittest.TestCase):
 
     def test_hole_full(self, file_name='hole-in-plate-full.py'):
         self.example_tester(file_name)
+        
+    def test_hole_full_load_result(self, file_name='hole-in-plate-full-from-ccx-ver2-16.frd'):
+        self.example_load_results(file_name)
 
     def test_hole_quarter(self, file_name='hole-in-plate-quarter.py'):
         self.example_tester(file_name)
@@ -104,7 +113,7 @@ class TestExamples(unittest.TestCase):
         self.example_tester(file_name)
 
     def test_rounded_square_cw(self,
-                               file_name='rounded-square-cw.py'):
+                                file_name='rounded-square-cw.py'):
         self.example_tester(file_name)
 
 

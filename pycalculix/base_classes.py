@@ -8,11 +8,13 @@ Attributes:
             - 'stress': stress
             - 'strain': strain
             - 'force': force
+            - 'error': FE discretization error in stress
         value (list):
             - 'displ' = 'ux','uy','uz','utot'
             - 'stress' = 'Sx','Sy','Sz','Sxy','Syz','Szx','Seqv','S1','S2','S3'
             - 'strain' = 'ex','ey','ez','exy','eyz','ezx','eeqv','e1','e2','e3'
             - 'force' = 'fx','fy','fz'
+            = 'error' = 'STR(%)'
     FIELDTYPE (dict): the inverse dict of RESFIELDS
 
         For example: key 'ux' --> value: 'displ'
@@ -25,6 +27,7 @@ RESFIELDS['displ'] = 'ux,uy,uz,utot'.split(',')
 RESFIELDS['stress'] = 'Sx,Sy,Sz,Sxy,Syz,Szx,Seqv,S1,S2,S3'.split(',')
 RESFIELDS['strain'] = 'ex,ey,ez,exy,eyz,ezx,eeqv,e1,e2,e3'.split(',')
 RESFIELDS['force'] = 'fx,fy,fz'.split(',')
+RESFIELDS['error'] = ['STR(%)']
 
 #FIELDTYPE is a dict that inverts the RESFIELDS dictionary mapping.
 FIELDTYPE = {}

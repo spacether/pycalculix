@@ -11,3 +11,12 @@ __pycache__
 # tests
 .pytest_cache
 junit/
+*.12d
+*.cvg
+*.dat
+*.geo
+*.inp
+*.msh
+*.sta
+*.png
+*.ipynb
