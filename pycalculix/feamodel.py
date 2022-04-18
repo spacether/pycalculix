@@ -40,14 +40,14 @@ class FeaModel(object):
     Args:
         model_name (str): project name for this FeaModel, this is a file prefix
         ccx (None or str): path to Calculix ccx solver, pass this when you want
-            to overwite the default program location.
-            None means the default envionment.CCX is used.
+            to overwrite the default program location.
+            None means the default environment.CCX is used.
         cgx (None or str): path to Calculix cgx mesher, pass this when you want
-            to overwite the default program location.
-            None means the default envionment.CGX is used.
+            to overwrite the default program location.
+            None means the default environment.CGX is used.
         gmsh (None or str): path to gmsh mesher, pass this when you want
-            to overwite the default program location.
-            None means the default envionment.GMSH is used.
+            to overwrite the default program location.
+            None means the default environment.GMSH is used.
 
     Attributes:
         fname (str): FeaModel project file name prefix
@@ -199,7 +199,7 @@ class FeaModel(object):
             dist_unit (str): string of distance unit. Options:
 
                 - 'm': meter
-                - 'mm': milimeter
+                - 'mm': millimeter
                 - 'in': inch
                 - 'ft': foot
 
@@ -409,7 +409,7 @@ class FeaModel(object):
             base_classes.plot_finish(plt, fname, display)
 
         else:
-            # no elements exist or no elemnts are selected
+            # no elements exist or no elements are selected
             res = ''
             if len(self.nodes) == 0:
                 res = 'No nodes exist! Try meshing your parts!'
@@ -479,7 +479,7 @@ class FeaModel(object):
             base_classes.plot_finish(plt, fname, display)
 
         else:
-            # no elements exist or no elemnts are selected
+            # no elements exist or no elements are selected
             res = ''
             if len(self.elements) == 0:
                 res = 'No elements exist! Try meshing your parts!'
@@ -503,7 +503,7 @@ class FeaModel(object):
         faces = self.view.faces
         nodes = self.view.nodes
 
-        # plot all elements and store length, length determins min pressure arrow
+        # plot all elements and store length, length determines min pressure arrow
         if len(elements) > 0:
             # plotting elements
             fig = plt.figure()
@@ -1079,7 +1079,7 @@ class FeaModel(object):
         Assumes gravity acts in the -x direction with magnitude grav.
 
         Args:
-            grav (float): gravity acceleration, MUST BE POSTIVE
+            grav (float): gravity acceleration, MUST BE POSITIVE
             items (Area or Part or list): items gravity acts on
 
                 - Area: gravity acts on elements in this area
@@ -1610,7 +1610,7 @@ class FeaModel(object):
 
             mesher (str): the mesher to use
 
-                - 'gmsh': mesh with Gmsh, this is reccomended, it allows holes
+                - 'gmsh': mesh with Gmsh, this is recommended, it allows holes
                 - 'cgx': mesh with Calculix cgx, it doesn't allow holes
         """
 
@@ -1751,13 +1751,13 @@ class FeaModel(object):
             txtline = txtline + '{' + ','.join(area_ids) + '};'
             geo.append(txtline)
 
-        # write all line componenets so we can get nodes out
+        # write all line components so we can get nodes out
         for line in self.lines:
             lid = ids['line'][line.id]
             txtline = "Physical Line('%s') = {%i};" % (line.get_name(), lid)
             geo.append(txtline)
 
-        # write node componenets
+        # write node components
         # ERROR: node list is not produced by gmsh
         for point in self.points:
             pname = point.get_name()
@@ -1871,7 +1871,7 @@ class FeaModel(object):
         for point in self.points:
             linestr = 'pnt %s %f %f %f' % (point.get_name(), point.x, point.y, 0.0)
             fbd.append(linestr)
-            # gmsh can't make node componenets so don't do it in cgx
+            # gmsh can't make node components so don't do it in cgx
             #L = 'seta %s p %s' % (pt.get_name(), pt.get_name())
             #comps.append(L)
 

@@ -92,7 +92,7 @@ class Itemlist(list):
 
     non-mesh items = Point, Line, Arc, Area, Part, Components, Loads
     This class allows us to automatically assign id numbers to items in the
-    list. Thes id numbers are needed when we send geometry out for meshing.
+    list. These id numbers are needed when we send geometry out for meshing.
     All instances of this class start as empty lists.
     """
 

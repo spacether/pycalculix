@@ -21,7 +21,7 @@ class ConstLoad(object):
             - 'ux','uy','uz': displacement on each axis
             - 'nodal_thickness': thickness on element nodes
             - 'matl': matl on elements
-            - 'press': pressure, + is tension, - is compresion
+            - 'press': pressure, + is tension, - is compression
             - 'gravity': gravity in x axis direction, - goes towards y axis
             - 'radps': radians per second rotation
             - 'rpm': rotations per minute rotation

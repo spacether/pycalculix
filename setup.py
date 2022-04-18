@@ -44,7 +44,7 @@ Useful applications of Pycalculix:
 
 * Trade studies for plane stress, plane strain, or axisymmetric parts
 * Quick Kt analysis of 2D geometry
-* Learning finite element analyis (FEA) and Python
+* Learning finite element analysis (FEA) and Python
 
 Notes:
 ~~~~~~~~~~~~~~~~~~~~~~

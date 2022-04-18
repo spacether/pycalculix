@@ -9,10 +9,10 @@ Website: http://justinablack.com/pycalculix/
 Source Code: https://github.com/spacether/pycalculix  
 Documentation: https://pycalculix.readthedocs.io/en/latest/index.html  
 
-#### Usefull applications of Pycalculix
+#### Useful applications of Pycalculix
 - Trade studies for plane stress, plane strain, or axisymmetric parts
 - Quick Kt analysis of 2D geometry
-- Learning finite element analyis (FEA) and Python
+- Learning finite element analysis (FEA) and Python
 
 ## Installation
 #### Mac OS X
@@ -146,7 +146,7 @@ https://github.com/spacether/pycalculix/tree/master/examples
 Axisymmetric, plane stress, and plane strain elements are supported.
 
 - First and second order triangles and quadrilaterals are supported.
-  - First order elments only have corner nodes
+  - First order elements only have corner nodes
   - Second order elements have corner and midside nodes
 
 Second order elements produce more accurate results
@@ -176,7 +176,7 @@ Meshing and solving are done in the background using cgx or gmsh for
 meshing, and Calculix ccx for solving.
 
 Files Used:
-- .fbd (Calculix cgx gemetry file)
+- .fbd (Calculix cgx geometry file)
 - .inp (Calculix solver input file, or mesh definition)
 - .geo (Gmsh geometry file)
 - .msh (Gmsh native mesh file)
@@ -199,7 +199,7 @@ pycalculix-remove-feaprograms
 pip3 uninstall pycalculix
 ```
 
-## Devlopment
+## Development
 - Download this repo
 ```
 git clone git@github.com:spacether/pycalculix.git

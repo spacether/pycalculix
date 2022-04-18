@@ -4,7 +4,7 @@
 - Updates setup.py long_description to reStructuredText
 
 #### 1.1.3
-- Removes gmsh exerimental flag Mesh.CharacteristicLengthFromCurvature
+- Removes gmsh experimental flag Mesh.CharacteristicLengthFromCurvature
 - Fixes typo in geometry.py
 
 #### 1.1.2
@@ -48,7 +48,7 @@ converge in ccx
   Issue 32
 - Adds requirement for dfxgrabber >= 0.8.0 to ensure that dxf import works
 - Pegs Mac gmsh version to gmsh == 3.0.5 because version 3.0.6
-  throws segault errors when meshing
+  throws segfault errors when meshing
 - Fixes a bug where solver input file does not write material before
   time steps, Issue 32
 - Fixed ccx installer on Windows: zip file is now found and

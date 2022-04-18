@@ -655,7 +655,7 @@ class Part(base_classes.Idobj):
         Returns:
             list: [pnew, lnew]
                 pnew: the new point we created to cut the original line
-                lnew: the new line we created, the end half of the orignal line
+                lnew: the new line we created, the end half of the original line
         """
         pnew = self.__make_get_pt(point.x, point.y)[0]
         if point.id != -1:
