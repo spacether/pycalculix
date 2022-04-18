@@ -951,7 +951,7 @@ class Arc(base_classes.Idobj):
                     area.part.fea.lines.remove(self)
 
     def mid(self):
-        """Caclulates and returns the midpoint of the arc."""
+        """Calculates and returns the midpoint of the arc."""
         pt = self.get_pt_at(0.5)
         return pt
 
@@ -1698,7 +1698,7 @@ class Area(base_classes.Idobj):
         points (list): a list of all points making the area, excludes arc centers
         allpoints (list): a list of all points, includes arc centers
         holepoints (list): a list of hole points, excludes arc centers
-        matl (Matl): the material fo the area
+        matl (Matl): the material of the area
         etype (str): element type of area. Options are:
             'plstress': plane stress
             'plstrain': plane strain
@@ -2028,7 +2028,7 @@ class Area(base_classes.Idobj):
         Args:
             esize (float): size of mesh elements on this area
         """
-        #size if set if no mesh size on points is peresent
+        #size if set if no mesh size on points is present
         for p in self.points:
             p.set_esize(esize)
 

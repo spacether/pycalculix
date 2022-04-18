@@ -269,7 +269,7 @@ class CadImporter(object):
             if len(other_lines) > 1:
                 # note: one could exclude connected segment nodes
                 # make disconnected line all_loops, then have another
-                # loop to connect thos disconnected line all_loops
+                # loop to connect those disconnected line all_loops
                 print('One point was connected to > 2 lines.')
                 print('Only import simple part all_loops, or surfaces.')
                 raise Exception('Import geometry is too complex')

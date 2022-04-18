@@ -794,7 +794,7 @@ class ResultsFile(object):
         return [fxx, fyy, fzz]
 
     def get_emax(self, field, time=None, mode='avg'):
-        """Returns the max results field value of selected elements at curent time.
+        """Returns the max results field value of selected elements at current time.
 
         Args:
             field (str): results field, stresses supported 'S1', 'Sx', etc.
@@ -809,7 +809,7 @@ class ResultsFile(object):
                 - 'min': for each element only use the min value of field over
                     all of its integration points
                 - 'avg': for each element only use an average of all integration
-                    points in the eleemnt. Principal streses and Seqv are
+                    points in the element. Principal streses and Seqv are
                     calculated after averaging 6 stress components.
         Returns:
             res (float): max value
@@ -827,7 +827,7 @@ class ResultsFile(object):
         return res
 
     def get_emin(self, field, time=None, mode='avg'):
-        """Returns the min results field value of selected elements at curent time.
+        """Returns the min results field value of selected elements at current time.
 
         Args:
             field (str): results field, stresses supported 'S1', 'Sx', etc.
@@ -842,7 +842,7 @@ class ResultsFile(object):
                 - 'min': for each element only use the min value of field over
                     all of its integration points
                 - 'avg': for each element only use an average of all integration
-                    points in the eleemnt. Principal streses and Seqv are
+                    points in the element. Principal streses and Seqv are
                     calculated after averaging 6 stress components.
         Returns:
             res (float): min value
@@ -1136,7 +1136,7 @@ class ResultsFile(object):
     def __read_frd(self):
         """
         Reads a ccx frd results file which contains nodal results.
-        The file format is desribed in the cgx docs
+        The file format is described in the cgx docs
         """
         fname = self.__problem.fname+'.frd'
         if not os.path.isfile(fname):

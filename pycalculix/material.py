@@ -4,7 +4,7 @@
 from . import base_classes
 
 class Material(base_classes.Idobj):
-    """Makes a linear elastic meterial.
+    """Makes a linear elastic material.
 
     Args:
         name (str): a unique matl name
