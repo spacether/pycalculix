@@ -2,10 +2,11 @@
 
 pycalculix is a Python 3 library to automate and build finite element analysis (FEA) models in Calculix.
 
+This repo is no longer actively maintained. If you want to continue further development, please fork it.
+
 [![Tests Build Status](https://dev.azure.com/pycalculix/pycalculix/_apis/build/status/spacether.pycalculix)](https://dev.azure.com/pycalculix/pycalculix/_build/latest?definitionId=1)  
 ![Docs Build Status](https://readthedocs.org/projects/docs/badge/?version=latest)
 
-Website: http://justinablack.com/pycalculix/  
 Source Code: https://github.com/spacether/pycalculix  
 Documentation: https://pycalculix.readthedocs.io/en/latest/index.html  
 
